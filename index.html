@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>다이즈하이미디어 공식 문서 시스템</title>
+<title>다이즈하이미디어 그룹 공식 문서 시스템</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Asta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
 <!-- 색상·폰트 변수(--navy, --font-kr, --font-en)와 기본 리셋은
      shared/styles/variables.css에서 공통으로 가져옵니다. 이 페이지만의
-     레이아웃(포털 카드 목록)은 아래 <style>에 남겨둡니다. -->
+     레이아웃(그룹사 선택 + 템플릿 미리보기)은 아래 <style>에 남겨둡니다. -->
 <link rel="stylesheet" href="shared/styles/variables.css">
 <style>
   /* variables.css의 기본 배경(#e9edf3)을 포털 페이지 전용 배경으로 덮어씀 */
@@ -19,64 +19,198 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    padding:60px 20px;
+    padding:60px 20px 40px;
   }
+
+  /* ---------- 상단: 다이즈 로고 + 그룹 타이틀 ---------- */
   header{
     text-align:center;
-    margin-bottom:40px;
+    margin-bottom:44px;
+  }
+  .hero-logo{
+    background-color:var(--navy);
+    -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+    -webkit-mask-position:center;mask-position:center;
+    -webkit-mask-size:contain;mask-size:contain;
+    margin:0 auto 18px;
   }
   header .eng{
     font-family:var(--font-en);
     color:#666;
-    letter-spacing:1px;
-    font-size:14px;
+    letter-spacing:2px;
+    font-size:13px;
   }
   h1{
     color:var(--navy);
     margin:8px 0 0;
-    font-size:26px;
+    font-size:25px;
   }
-  .card-list{
+  header .lead{
+    margin:10px 0 0;
+    font-size:14px;
+    color:var(--sub);
+  }
+
+  /* ---------- 그룹사 선택 카드 4개 ---------- */
+  .company-grid{
     width:100%;
-    max-width:640px;
+    max-width:720px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+    gap:16px;
+    margin-bottom:8px;
+  }
+  .company-card{
     display:flex;
     flex-direction:column;
-    gap:16px;
+    align-items:center;
+    gap:12px;
+    background:#fff;
+    border:2px solid #e2e6ee;
+    border-radius:12px;
+    padding:22px 16px;
+    cursor:pointer;
+    font-family:inherit;
+    transition:box-shadow .15s ease, transform .15s ease, border-color .15s ease;
   }
-  .card{
+  .company-card:hover{
+    box-shadow:0 6px 18px rgba(11,35,79,0.1);
+    transform:translateY(-1px);
+  }
+  .company-card.active{
+    border-color:var(--navy);
+    box-shadow:0 6px 18px rgba(11,35,79,0.16);
+  }
+  .company-logo-wrap{
+    width:100%;
+    height:52px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .company-logo{
+    background-color:var(--navy);
+    -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+    -webkit-mask-position:center;mask-position:center;
+    -webkit-mask-size:contain;mask-size:contain;
+    opacity:.55;
+    transition:opacity .15s ease;
+  }
+  .company-card.active .company-logo,
+  .company-card:hover .company-logo{
+    opacity:1;
+  }
+  .company-name{
+    font-family:var(--font-en);
+    font-weight:600;
+    font-size:13px;
+    color:var(--navy);
+    letter-spacing:.5px;
+  }
+  .company-name .kr{
     display:block;
+    font-family:var(--font-kr);
+    font-weight:600;
+    font-size:14.5px;
+    color:var(--ink);
+    letter-spacing:0;
+    margin-top:2px;
+  }
+
+  /* ---------- 하단: 선택한 그룹사의 문서 템플릿 ---------- */
+  .template-panel{
+    width:100%;
+    max-width:720px;
+    margin-top:28px;
+  }
+  .template-panel[hidden]{display:none;}
+  .template-panel h2{
+    font-size:15px;
+    color:var(--sub);
+    margin:0 0 14px;
+    font-weight:600;
+  }
+  .template-panel h2 b{color:var(--navy);}
+
+  .template-list{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .template-card{
+    display:flex;
+    align-items:center;
+    gap:20px;
     background:#fff;
     border:1px solid #e2e6ee;
     border-radius:10px;
-    padding:20px 24px;
+    padding:16px;
     text-decoration:none;
     color:inherit;
     transition:box-shadow .15s ease, transform .15s ease;
   }
-  .card:hover{
+  .template-card:hover{
     box-shadow:0 6px 18px rgba(11,35,79,0.12);
     transform:translateY(-1px);
   }
-  .card .tag{
-    display:inline-block;
-    font-family:var(--font-en);
-    font-size:11px;
-    color:#fff;
-    background:var(--navy);
-    border-radius:4px;
-    padding:2px 8px;
-    margin-bottom:8px;
+
+  /* 실제 A4(가로 210mm × 세로 297mm) 비율을 그대로 축소한 미리보기 —
+     문서 종류가 늘어도 이 클래스 하나로 항상 같은 비율을 유지합니다. */
+  .template-thumb{
+    flex:0 0 auto;
+    width:96px;
+    aspect-ratio:210 / 297;
+    background:#fff;
+    border:1px solid #dde3ee;
+    border-radius:5px;
+    overflow:hidden;
+    box-shadow:0 2px 6px rgba(20,30,60,0.08);
   }
-  .card h2{
+  .thumb-band{height:24%;background:var(--navy);}
+  .thumb-lines{padding:14% 14% 0;}
+  .thumb-lines span{
+    display:block;height:5px;background:#e2e6ee;border-radius:3px;margin-bottom:9px;
+  }
+  .thumb-lines span.w60{width:60%;}
+  .thumb-lines span.w80{width:80%;}
+
+  .template-info{flex:1 1 auto;min-width:0;}
+  .template-info h3{
     margin:0 0 6px;
-    font-size:18px;
+    font-size:16.5px;
     color:var(--navy);
   }
-  .card p{
+  .template-info p{
+    margin:0 0 12px;
+    font-size:13.5px;
+    color:#555;
+    line-height:1.55;
+  }
+  .template-btn{
+    display:inline-block;
+    font-family:var(--font-kr);
+    font-size:13px;
+    font-weight:600;
+    color:#fff;
+    background:var(--navy);
+    border-radius:6px;
+    padding:7px 14px;
+  }
+
+  .template-empty{
+    background:#fff;
+    border:1px dashed #d3d9e6;
+    border-radius:10px;
+    padding:34px 20px;
+    text-align:center;
+  }
+  .template-empty p{
     margin:0;
     font-size:14px;
-    color:#555;
+    color:#888;
   }
+  .template-empty p b{color:var(--sub);}
+
   footer{
     margin-top:48px;
     font-size:12px;
@@ -87,19 +221,114 @@
 </head>
 <body>
   <header>
-    <div class="eng">DISEHIMEDIA</div>
-    <h1>다이즈하이미디어 공식 문서 시스템</h1>
+    <div class="hero-logo" id="heroLogo"></div>
+    <div class="eng">DISEHIMEDIA GROUP</div>
+    <h1>다이즈하이미디어 그룹 공식 문서 시스템</h1>
+    <p class="lead">그룹사를 선택하면 사용할 수 있는 문서 템플릿이 아래에 나타납니다.</p>
   </header>
 
-  <div class="card-list">
-    <a class="card" href="templates/gongmun/">
-      <span class="tag">TEMPLATE</span>
-      <h2>공문 (대외 발송용)</h2>
-      <p>A4 세로 규격, 브라우저에서 직접 입력 및 인쇄 가능한 범용 공문 템플릿입니다.</p>
-    </a>
+  <div class="company-grid" id="companyGrid"></div>
 
-  </div>
+  <div class="template-panel" id="templatePanel" hidden></div>
 
-  <footer>&copy; DISEHIMEDIA. 내부 업무용 문서 시스템입니다. 제작 설정·기획 문서는 저장소의 docs/guide 폴더를 참고하세요.</footer>
+  <footer>&copy; DISEHIMEDIA GROUP. 내부 업무용 문서 시스템입니다. 제작 설정·기획 문서는 저장소의 docs/guide 폴더를 참고하세요.</footer>
+
+  <!-- 계열사 정보(로고·이름)는 company-info.js 한 곳에서 관리합니다 —
+       여기서는 그 값을 읽어 카드만 그립니다. 새 계열사가 추가되면
+       company-info.js에 항목만 추가하면 이 페이지에도 자동으로 카드가
+       늘어납니다. -->
+  <script src="shared/scripts/company-info.js"></script>
+  <script>
+    // 이 포털 페이지에서만 쓰는 "그룹사별 문서 템플릿" 목록 — 새 템플릿이
+    // 생기면 해당 계열사 key 아래에 { title, desc, href }를 추가하면
+    // 됩니다. 아직 템플릿이 없는 계열사는 항목을 만들지 않으면 자동으로
+    // "곧 생성됩니다" 안내가 나타납니다.
+    var TEMPLATES_BY_COMPANY = {
+      disehimedia: [
+        {
+          title: '공문 (대외 발송용)',
+          desc: 'A4 세로 규격, 브라우저에서 직접 입력 및 인쇄 가능한 범용 공문 템플릿입니다.',
+          href: 'templates/gongmun/'
+        }
+      ]
+    };
+
+    var LOGO_ROOT = 'shared/assets/logos/';
+
+    function maskStyle(logoMark, heightPx, ratio) {
+      var url = LOGO_ROOT + logoMark;
+      var widthPx = Math.round(heightPx * (ratio || 1));
+      return 'width:' + widthPx + 'px;height:' + heightPx + 'px;' +
+        '-webkit-mask-image:url(\'' + url + '\');mask-image:url(\'' + url + '\');';
+    }
+
+    // ---- 상단 히어로 로고: 다이즈하이미디어 로고를 그룹 대표로 사용 ----
+    var hero = DISE.companies.disehimedia;
+    document.getElementById('heroLogo').setAttribute(
+      'style', maskStyle(hero.logoMark, 44, hero.logoRatio)
+    );
+
+    // ---- 그룹사 카드 4개 ----
+    var grid = document.getElementById('companyGrid');
+    var companyKeys = Object.keys(DISE.companies);
+    companyKeys.forEach(function (key) {
+      var c = DISE.companies[key];
+      var card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'company-card';
+      card.setAttribute('data-company', key);
+      card.innerHTML =
+        '<span class="company-logo-wrap">' +
+          '<span class="company-logo" style="' + maskStyle(c.logoMark, 40, c.logoRatio) + '"></span>' +
+        '</span>' +
+        '<span class="company-name">' + c.nameEn +
+          (c.nameKr && c.nameKr !== c.nameEn ? '<span class="kr">' + c.nameKr + '</span>' : '') +
+        '</span>';
+      card.addEventListener('click', function () { selectCompany(key, card); });
+      grid.appendChild(card);
+    });
+
+    // ---- 카드 클릭 시 하단 템플릿 패널 갱신 ----
+    function selectCompany(key, card) {
+      Array.prototype.forEach.call(grid.children, function (el) {
+        el.classList.toggle('active', el === card);
+      });
+
+      var c = DISE.companies[key];
+      var templates = TEMPLATES_BY_COMPANY[key] || [];
+      var panel = document.getElementById('templatePanel');
+      panel.hidden = false;
+
+      if (templates.length) {
+        panel.innerHTML =
+          '<h2><b>' + c.nameKr + '</b>의 문서 템플릿</h2>' +
+          '<div class="template-list">' +
+          templates.map(function (t) {
+            return (
+              '<a class="template-card" href="' + t.href + '">' +
+                '<span class="template-thumb">' +
+                  '<span class="thumb-band"></span>' +
+                  '<span class="thumb-lines">' +
+                    '<span class="w80"></span><span></span><span class="w60"></span>' +
+                  '</span>' +
+                '</span>' +
+                '<span class="template-info">' +
+                  '<h3>' + t.title + '</h3>' +
+                  '<p>' + t.desc + '</p>' +
+                  '<span class="template-btn">편집기 열기 &rarr;</span>' +
+                '</span>' +
+              '</a>'
+            );
+          }).join('') +
+          '</div>';
+      } else {
+        panel.innerHTML =
+          '<div class="template-empty"><p>현재 <b>' + c.nameKr + '</b>의 문서 템플릿은 없습니다. 곧 생성됩니다.</p></div>';
+      }
+    }
+
+    // 첫 화면에서 바로 확인할 수 있도록 다이즈하이미디어를 기본 선택.
+    selectCompany('disehimedia', grid.querySelector('[data-company="disehimedia"]'));
+  </script>
 </body>
 </html>
