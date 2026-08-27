@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>다이즈하이미디어 공식 문서 시스템</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Asta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0b234f;
+    --font-kr:'Asta Sans','Open Sans',sans-serif;
+    --font-en:'Open Sans','Asta Sans',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:var(--font-kr);
+    background:#f4f6fa;
+    color:#1a1a1a;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:60px 20px;
+  }
+  header{
+    text-align:center;
+    margin-bottom:40px;
+  }
+  header .eng{
+    font-family:var(--font-en);
+    color:#666;
+    letter-spacing:1px;
+    font-size:14px;
+  }
+  h1{
+    color:var(--navy);
+    margin:8px 0 0;
+    font-size:26px;
+  }
+  .card-list{
+    width:100%;
+    max-width:640px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .card{
+    display:block;
+    background:#fff;
+    border:1px solid #e2e6ee;
+    border-radius:10px;
+    padding:20px 24px;
+    text-decoration:none;
+    color:inherit;
+    transition:box-shadow .15s ease, transform .15s ease;
+  }
+  .card:hover{
+    box-shadow:0 6px 18px rgba(11,35,79,0.12);
+    transform:translateY(-1px);
+  }
+  .card .tag{
+    display:inline-block;
+    font-family:var(--font-en);
+    font-size:11px;
+    color:#fff;
+    background:var(--navy);
+    border-radius:4px;
+    padding:2px 8px;
+    margin-bottom:8px;
+  }
+  .card h2{
+    margin:0 0 6px;
+    font-size:18px;
+    color:var(--navy);
+  }
+  .card p{
+    margin:0;
+    font-size:14px;
+    color:#555;
+  }
+  footer{
+    margin-top:48px;
+    font-size:12px;
+    color:#999;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="eng">DISEHIMEDIA</div>
+    <h1>다이즈하이미디어 공식 문서 시스템</h1>
+  </header>
+
+  <div class="card-list">
+    <a class="card" href="templates/gongmun/">
+      <span class="tag">TEMPLATE</span>
+      <h2>공문 (대외 발송용)</h2>
+      <p>A4 세로 규격, 브라우저에서 직접 입력 및 인쇄 가능한 범용 공문 템플릿입니다.</p>
+    </a>
+
+  </div>
+
+  <footer>&copy; DISEHIMEDIA. 내부 업무용 문서 시스템입니다. 제작 설정·기획 문서는 저장소의 docs/guide 폴더를 참고하세요.</footer>
+</body>
+</html>
