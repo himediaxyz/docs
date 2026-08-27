@@ -43,6 +43,23 @@
     return el ? el.getBoundingClientRect().height : 0;
   }
 
+  // el.getBoundingClientRect().height는 테두리 상자(border box)까지만
+  // 재고 바깥 여백(margin)은 빼놓습니다. 문단(<p>) 등은 위/아래로
+  // 16px씩 마진이 있는데, 정작 화면에서 항목과 항목 사이에 실제로
+  // 벌어지는 간격은 "위 항목의 margin-bottom과 아래 항목의 margin-top
+  // 중 더 큰 값"입니다(CSS 인접 형제 마진 겹침 규칙) — 단순히 더하는
+  // 게 아닙니다. 이걸 셈에 넣지 않으면 항목을 쌓을 때마다 실제보다
+  // 조금씩 작게 계산되어, 여러 항목이 누적되면 실제 화면에서는 이미
+  // 푸터를 한참 넘었는데도 계산상으로는 아직 여유가 있는 것처럼 나와
+  // 페이지 분할이 한참 늦게 일어나는 문제가 생깁니다.
+  function marginTopBottom(el) {
+    var cs = window.getComputedStyle(el);
+    return {
+      top: parseFloat(cs.marginTop) || 0,
+      bottom: parseFloat(cs.marginBottom) || 0
+    };
+  }
+
   // 헤더/푸터 내용은 모든 페이지가 동일합니다(components.js가 1페이지
   // 것만 채우고, 나머지 페이지는 그 마크업을 그대로 복제해서 쓰기
   // 때문) — 그래서 높이도 1페이지 기준으로 한 번만 실측해서 .pages에
@@ -163,17 +180,30 @@
 
     var assignment = []; // [{item, pageIndex}, ...]
     var pageIndex = 0, used = 0, budget = firstPageBudget;
+    // 같은 페이지에서 직전 항목의 margin-bottom — 다음 항목의
+    // margin-top과 겹침 계산에 씁니다. 페이지가 막 시작된 상태(맨 위)
+    // 에서는 "직전 항목"이 없으므로 0으로 취급합니다(맨 위 항목의
+    // margin-top은 페이지 상단과 겹쳐 실제 화면 공간을 차지하지
+    // 않습니다 — 실측으로 확인된 동작입니다).
+    var prevMarginBottom = 0;
     items.forEach(function (item) {
-      var h = item.getBoundingClientRect().height;
+      var rectH = item.getBoundingClientRect().height;
+      var m = marginTopBottom(item);
+      var isFirstOnPage = used === 0;
+      var gap = isFirstOnPage ? 0 : Math.max(m.top, prevMarginBottom);
+      var h = gap + rectH;
       // 이미 그 페이지에 뭔가 있는데 이 항목까지 더하면 넘칠 때만 다음
       // 페이지로 — 페이지가 비어있는 상태에서 항목 하나가 페이지보다
       // 커도 무한정 새 페이지를 만들지 않고 일단 그 페이지에 넣습니다
       // (매우 큰 그림 등 예외적인 경우의 안전장치).
       if (used > 0 && used + h > budget) {
         pageIndex++; used = 0; budget = bodyBudget;
+        // 새 페이지의 맨 위 항목이 되므로 위쪽 마진은 겹치지 않습니다.
+        gap = 0; h = rectH;
       }
       assignment.push({ item: item, pageIndex: pageIndex });
       used += h;
+      prevMarginBottom = m.bottom;
     });
     var pageCount = pageIndex + 1;
 
@@ -224,6 +254,31 @@
     return function () { clearTimeout(t); t = setTimeout(fn, wait); };
   }
   var debouncedRepaginate = debounce(repaginate, 200);
+
+  // ---- .page-body가 몰래 스크롤되는 것 막기 ----
+  // .page-body는 overflow:hidden이라 화면에 스크롤바는 안 보이지만,
+  // 그렇다고 스크롤이 아예 불가능한 건 아닙니다(scrollTop을 코드로
+  // 바꾸는 건 여전히 됩니다). 문제는 브라우저가 "커서가 화면 밖으로
+  // 나가면 보이는 곳까지 자동으로 스크롤해서 따라가는" 동작을 할 때,
+  // contenteditable(.flow-items)의 커서를 따라가려고 가장 가까운
+  // "스크롤 가능한 조상"인 .page-body를 실제로 스크롤시켜 버린다는
+  // 것입니다(오버플로만 hidden일 뿐 스크롤 컨테이너로는 취급됨). 이
+  // 렇게 되면 페이지 상단의 문서번호/제목/수신처(.page-body-fixed)
+  // 까지 통째로 위로 밀려 올라가 헤더 밑으로 사라지는 것처럼 보입니다
+  // (사용자가 실제로 겪은 증상). 페이지 분할이 제때 일어나면 애초에
+  // 이런 스크롤이 생길 이유가 없지만(커서가 항상 보이는 범위 안에
+  // 있으므로), 타이핑 도중 다시 계산되기 전까지의 짧은 순간에도 이
+  // 현상이 전혀 안 생기도록 이중 안전장치를 둡니다 — .page-body가
+  // 스크롤되는 순간(scroll 이벤트) 즉시 0으로 되돌립니다. scroll
+  // 이벤트는 버블링되지 않으므로 document에 캡처 단계로 등록해서
+  // 모든 .page-body(2페이지 이후 새로 생기는 것 포함)를 한 번에
+  // 잡습니다.
+  document.addEventListener('scroll', function (e) {
+    var t = e.target;
+    if (t && t.nodeType === 1 && t.classList && t.classList.contains('page-body') && t.scrollTop !== 0) {
+      t.scrollTop = 0;
+    }
+  }, true);
 
   // ---- 한글 등 IME 조합 중에는 재배치를 미룹니다 ----
   // 위에서 "실제로 옮길 항목만 옮기도록" 최소화했지만, 그래도 조합 중인
