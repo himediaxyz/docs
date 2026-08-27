@@ -18,15 +18,20 @@
 <link rel="stylesheet" href="../../shared/styles/document.css">
 <link rel="stylesheet" href="../../shared/styles/editable.css">
 <link rel="stylesheet" href="../../shared/styles/toolbar.css">
+<link rel="stylesheet" href="../../shared/styles/site.css">
 <link rel="stylesheet" href="../../shared/styles/print.css">
 </head>
 <body>
+
+  <!-- 사이트 헤더: 화면 전용, 포털로 돌아가는 링크. "문서 헤더"(로고 밴드)와는
+       다른 개념입니다 — shared/README.md 참고. -->
+  <div id="siteHeader" class="no-print"></div>
 
   <div class="toolbar no-print">
     <div class="toolbar-card">
       <h1>다이즈하이미디어 공문 템플릿 — 직접 입력판</h1>
       <p>점선 테두리가 있는 <b>문서번호 · 제목 · 수신처 · 본문</b> 영역은 브라우저에서 바로 클릭해서 입력할 수 있습니다. 대괄호([ ])로 된 안내 문구는 클릭하면 자동으로 전체 선택되어 바로 타이핑하면 덮어써집니다. 시행일자는 오늘 날짜로 자동 채워집니다.</p>
-      <p>글꼴은 한글 Asta Sans / 영문·숫자 Open Sans 조합이 입력 영역에도 그대로 적용됩니다. 본문이 길어지면 표(table) 구조의 머리글/바닥글(thead/tfoot)을 이용해 페이지마다 헤더·푸터가 자동 반복되도록 만들었습니다 — 화면에서는 빨간 점선으로 예상 페이지 구분을 미리 볼 수 있습니다. 아래 서식 도구모음으로 굵게·기울임·밑줄과 서체·글자 크기도 바꿀 수 있습니다(먼저 글자를 드래그로 선택). 로고는 아직 자리표시자입니다.</p>
+      <p>글꼴은 한글 Asta Sans / 영문·숫자 Open Sans 조합이 입력 영역에도 그대로 적용됩니다. 본문이 길어지면 표(table) 구조의 머리글/바닥글(thead/tfoot)을 이용해 페이지마다 헤더·푸터가 자동 반복되도록 만들었습니다 — 화면에서는 빨간 점선으로 예상 페이지 구분을 미리 볼 수 있습니다. 아래 서식 도구모음으로 굵게·기울임·밑줄과 서체·글자 크기도 바꿀 수 있습니다(먼저 글자를 드래그로 선택).</p>
       <div class="legend">
         <span><i class="swatch kr"></i>한글 = Asta Sans</span>
         <span><i class="swatch en"></i>영문/숫자 = Open Sans</span>
@@ -63,16 +68,16 @@
     <div class="sheet" id="sheet">
       <table class="sheet-table">
 
-        <!-- 헤더 밴드(로고+회사명)는 여기서 직접 타이핑하지 않고,
-             shared/scripts/components.js의 renderHeader()가 채워 넣습니다.
-             (아래 <script> 부분 참고) -->
+        <!-- 문서 헤더(로고+회사명) — 실제 종이(레터헤드)의 일부, 인쇄됩니다.
+             여기서 직접 타이핑하지 않고 shared/scripts/components.js의
+             renderDocHeader()가 채워 넣습니다. (아래 <script> 부분 참고) -->
         <thead>
-          <tr><td class="cell-head" id="siteHeader"></td></tr>
+          <tr><td class="cell-head" id="docHeader"></td></tr>
         </thead>
 
-        <!-- 푸터 밴드(주소·연락처)도 마찬가지로 renderFooter()가 채웁니다. -->
+        <!-- 문서 푸터(주소·연락처) — 마찬가지로 renderDocFooter()가 채웁니다. -->
         <tfoot>
-          <tr><td class="cell-foot" id="siteFooter"></td></tr>
+          <tr><td class="cell-foot" id="docFooter"></td></tr>
         </tfoot>
 
         <tbody id="contentFlow">
@@ -120,7 +125,9 @@
         </tbody>
       </table>
     </div>
-    <p class="fill-tag no-print" style="text-align:center;margin-top:10px;">다이즈하이미디어 공식 문서 시스템 · 공문 템플릿</p>
+    <!-- 사이트 푸터: 화면 전용 캡션. "문서 푸터"(주소 밴드)와는 다른
+         개념입니다 — shared/README.md 참고. -->
+    <div id="siteFooter" class="no-print"></div>
   </div>
 
   <!-- 공용 스크립트 — 새 문서 템플릿을 만들 때도 이 순서 그대로 복사해서
@@ -128,9 +135,13 @@
   <script src="../../shared/scripts/company-info.js"></script>
   <script src="../../shared/scripts/components.js"></script>
   <script>
-    // 이 문서만의 설정: 헤더 밴드에 표시할 문서 종류 태그
-    DISE.components.renderHeader({ docTypeTag: '공식 공문' });
-    DISE.components.renderFooter();
+    // 이 문서만의 설정: 사이트 헤더/푸터 + 이 문서가 어느 계열사·어떤
+    // 종류의 문서인지. portalHref는 이 파일 기준 index.html까지의
+    // 상대 경로(폴더 깊이에 맞게 조정)입니다.
+    DISE.components.renderSiteHeader({ portalHref: '../../index.html' });
+    DISE.components.renderSiteFooter({ text: '다이즈하이미디어 공식 문서 시스템 · 공문 템플릿' });
+    DISE.components.renderDocHeader({ company: 'disehimedia', docTypeTag: '공식 공문' });
+    DISE.components.renderDocFooter({ company: 'disehimedia' });
   </script>
   <script src="../../shared/scripts/editor.js"></script>
   <script src="../../shared/scripts/pagination.js"></script>

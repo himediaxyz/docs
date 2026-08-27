@@ -4,11 +4,11 @@
    맞추고, 화면에서만 보이는 "예상 페이지 구분선"을 그려줍니다.
 
    이 스크립트가 찾는 요소(관례상 아래 id/class를 그대로 써야 동작합니다):
-     #sheet         전체 종이 컨테이너
-     #contentFlow   본문 tbody (여기 min-height를 계산해서 채워 넣음)
-     .band          헤더 밴드
-     .footer-band   푸터 밴드
-     .editable      입력 필드 (입력할 때마다 다시 계산하기 위해 감지)
+     #sheet          전체 종이 컨테이너
+     #contentFlow    본문 tbody (여기 min-height를 계산해서 채워 넣음)
+     .doc-header-band 문서 헤더 밴드 (로고)
+     .doc-footer-band 문서 푸터 밴드 (주소·연락처)
+     .editable       입력 필드 (입력할 때마다 다시 계산하기 위해 감지)
 
    이 파일을 쓰는 곳: A4 인쇄 문서 템플릿
      <script src="../../shared/scripts/pagination.js"></script>
@@ -21,8 +21,8 @@
   // 가득 채우도록 최소 높이를 계산합니다 (짧은 문서에서 서명 아래
   // 배경색이 중간에 끊기는 문제 방지).
   function syncPageMetrics() {
-    var band = document.querySelector('.band');
-    var footer = document.querySelector('.footer-band');
+    var band = document.querySelector('.doc-header-band');
+    var footer = document.querySelector('.doc-footer-band');
     var contentFlow = document.getElementById('contentFlow');
     var hdrH = band ? band.getBoundingClientRect().height : 176;
     var ftrH = footer ? footer.getBoundingClientRect().height : 62;

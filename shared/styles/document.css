@@ -31,25 +31,30 @@
 .sheet-table td{margin:0;border:0;vertical-align:top;}
 .cell-head,.cell-foot{padding:0;}
 
-/* ---------- 헤더 밴드 (로고 + 회사명) ----------
-   실제 마크업은 shared/scripts/components.js의 renderHeader()가
-   #siteHeader 자리에 채워 넣습니다 — 새 템플릿에서도 이 CSS 클래스만
+/* ---------- 문서 헤더 밴드 (로고 + 회사명) ----------
+   "문서" 레벨 — 실제 종이(레터헤드)의 일부이며 인쇄됩니다. 계열사마다
+   로고·이름이 다릅니다 (사이트 레벨과의 구분은 shared/README.md 참고).
+   실제 마크업은 shared/scripts/components.js의 renderDocHeader()가
+   #docHeader 자리에 채워 넣습니다 — 새 템플릿에서도 이 CSS 클래스만
    그대로 쓰면 됩니다. */
-.band{
+.doc-header-band{
   background:var(--navy);color:#fff;
-  position:relative;padding:40px 50px 34px;
+  display:flex;align-items:center;gap:24px;
+  padding:40px 50px 34px;
   min-height:176px;
 }
-.logo-chip{
-  position:absolute;top:40px;left:50px;
-  width:110px;height:64px;background:#fff;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-en);font-weight:700;letter-spacing:-0.5px;
+/* 로고는 <img>가 아니라 CSS mask로 그려집니다(색을 배경에 맞춰 흰색으로
+   바꾸기 위함) — 실제 너비/높이는 components.js가 계열사별 로고 비율
+   (logoRatio)에 맞춰 인라인 style로 계산해 넣습니다. flex-shrink:0으로
+   회사명 텍스트가 길어져도 로고가 찌그러지지 않게 합니다. */
+.doc-logo{
+  flex:0 0 auto;
+  background-color:#fff;   /* 네이비 배경 위 흰색 로고가 기본값 */
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-size:contain;mask-size:contain;
 }
-.logo-chip .mark{
-  font-size:15px;color:var(--navy);line-height:1.05;text-align:center;
-}
-.band-text{padding-left:178px;}
+.doc-header-text{flex:1 1 auto;min-width:0;}
 .brand-kr{
   font-family:var(--font-kr);font-weight:700;font-size:26px;color:#e7ebf3;letter-spacing:-0.5px;
 }
@@ -113,20 +118,17 @@
 .sign-left .title{font-family:var(--font-kr);font-size:13.5px;color:#444;margin-top:2px;}
 .sign-right{text-align:right;font-family:var(--font-en);font-size:13px;color:#333;line-height:1.7;}
 
-/* ---------- 푸터 밴드 (주소·연락처) ----------
-   실제 마크업은 shared/scripts/components.js의 renderFooter()가
-   #siteFooter 자리에 채워 넣습니다. */
-.footer-band{
+/* ---------- 문서 푸터 밴드 (주소·연락처) ----------
+   "문서" 레벨 — 실제 종이(레터헤드)의 일부이며 인쇄됩니다.
+   실제 마크업은 shared/scripts/components.js의 renderDocFooter()가
+   #docFooter 자리에 채워 넣습니다. */
+.doc-footer-band{
   background:var(--navy);color:#fff;
   padding:14px 40px;text-align:center;
 }
-.footer-band .l1{
+.doc-footer-band .l1{
   font-family:var(--font-kr);font-size:11.5px;letter-spacing:0.2px;margin-bottom:4px;
 }
-.footer-band .l2{
+.doc-footer-band .l2{
   font-family:var(--font-en);font-size:11px;color:#cfd7e8;letter-spacing:0.2px;
-}
-
-.fill-tag{
-  font-family:var(--font-en);font-size:10.5px;color:#8b93a8;
 }
