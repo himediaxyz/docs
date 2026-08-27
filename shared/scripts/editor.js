@@ -373,15 +373,28 @@
     if (!insertNodeAtSavedOrEnd(null, fallbackContainer)) return false;
     var sel = window.getSelection();
     var anchor = null;
+    var appendInto = null;
     if (sel.rangeCount) {
       var block = getBlockElement(sel.getRangeAt(0).commonAncestorContainer);
-      if (block && block.tagName === 'LI') {
+      if (block && block.classList && block.classList.contains('editable')) {
+        // getBlockElement는 P/LI/DIV/H1-6/BLOCKQUOTE를 찾아 올라가는데,
+        // .flow-items 컨테이너 자신도 DIV라서 "그 안에 특정 문단이 아니라
+        // 편집 영역 자체"에 커서가 있는 경우(예: 문서를 열자마자 문단을
+        // 한 번도 클릭하지 않고 바로 삽입 버튼을 누른 경우) 컨테이너
+        // 자기 자신이 반환됩니다. 이때 "형제로 끼워넣기"를 하면
+        // 컨테이너 바깥(.page-body)으로 빠져나가 페이지 재배치 대상에서
+        // 아예 빠지게 되므로, 이 경우만 예외로 컨테이너 맨 끝에 바로
+        // 붙입니다.
+        appendInto = block;
+      } else if (block && block.tagName === 'LI') {
         anchor = (block.closest && block.closest('ol,ul')) || block;
       } else {
         anchor = block;
       }
     }
-    if (anchor && anchor.parentNode) {
+    if (appendInto) {
+      appendInto.appendChild(newEl);
+    } else if (anchor && anchor.parentNode) {
       anchor.parentNode.insertBefore(newEl, anchor.nextSibling);
     } else if (fallbackContainer) {
       fallbackContainer.appendChild(newEl);
@@ -593,15 +606,69 @@
     wireDropdown(insertTableBtn, tableGridPicker);
   }
 
-  // ---- 표 설정 팝업 ----
+  // ---- 표 설정 플로팅 아이콘 + 팝업 ----
+  // 예전에는 도구모음에 "표 설정" 버튼이 항상 떠 있고, 표 밖에서 누르면
+  // 안내창(alert)만 뜨는 방식이었습니다. 지금은 그림을 클릭했을 때
+  // 뜨는 이미지 툴바와 같은 방식으로 바꿨습니다 — 커서가 표 안에 있는
+  // 동안에만 그 표 오른쪽 위에 톱니바퀴 아이콘이 뜨고, 표 밖으로
+  // 나가면 사라집니다. 버튼 자체가 "표 안에 있을 때만" 보이므로 안내창이
+  // 필요 없어졌습니다.
+  var tableToolbar = document.getElementById('tableToolbar');
   var tableSettingsBtn = document.getElementById('tableSettingsBtn');
   var tableSettingsPopover = document.getElementById('tableSettingsPopover');
-  var activeTable = null;
+  var activeTable = null; // 설정 팝업이 실제로 적용될 표(아이콘이 떠 있는 동안 계속 갱신됨)
   var TS_PROP_MAP = {
     'border-width': '--tbl-border-w',
     'border-style': '--tbl-border-style',
     'pad': '--tbl-pad'
   };
+
+  function positionTableToolbar() {
+    if (!activeTable || !tableToolbar) return;
+    var r = activeTable.getBoundingClientRect();
+    // 표의 오른쪽 위 모서리에 아이콘 오른쪽 끝이 맞춰지도록.
+    var tw = tableToolbar.offsetWidth || 36;
+    tableToolbar.style.left = Math.max(8, r.right - tw) + 'px';
+    tableToolbar.style.top = Math.max(8, r.top - 38) + 'px';
+  }
+  function positionTableSettingsPopover() {
+    if (!tableToolbar || !tableSettingsPopover) return;
+    var r = tableToolbar.getBoundingClientRect();
+    tableSettingsPopover.style.left = Math.max(8, r.right - tableSettingsPopover.offsetWidth) + 'px';
+    tableSettingsPopover.style.top = (r.bottom + 6) + 'px';
+  }
+  function showTableToolbarFor(table) {
+    activeTable = table;
+    if (tableToolbar) tableToolbar.hidden = false;
+    positionTableToolbar();
+  }
+  function hideTableToolbar() {
+    activeTable = null;
+    if (tableToolbar) tableToolbar.hidden = true;
+    if (tableSettingsPopover) tableSettingsPopover.hidden = true;
+  }
+  // 문서 안에서 선택(커서)이 바뀔 때마다 지금 표 안에 있는지 검사합니다.
+  // 도구모음 버튼을 누르는 등 선택이 편집 영역 "바깥"으로 잠깐 나가는
+  // 경우는 무시해서(직전 상태 유지), 아이콘을 누르러 가는 동안 아이콘이
+  // 먼저 사라져버리는 일이 없게 합니다 — 실제로 사라지는 시점은 아래
+  // "바깥 클릭" 리스너가 담당합니다.
+  document.addEventListener('selectionchange', function () {
+    var sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    if (!isInsideEditable(range.commonAncestorContainer)) return;
+    var table = getTableElement(range.commonAncestorContainer);
+    if (table) showTableToolbarFor(table); else hideTableToolbar();
+  });
+  document.addEventListener('click', function (e) {
+    if (activeTable && tableToolbar && tableSettingsPopover &&
+        !tableToolbar.contains(e.target) && !tableSettingsPopover.contains(e.target) &&
+        !activeTable.contains(e.target)) {
+      hideTableToolbar();
+    }
+  });
+  window.addEventListener('scroll', function () { if (activeTable) { positionTableToolbar(); if (tableSettingsPopover && !tableSettingsPopover.hidden) positionTableSettingsPopover(); } }, true);
+  window.addEventListener('resize', function () { if (activeTable) { positionTableToolbar(); if (tableSettingsPopover && !tableSettingsPopover.hidden) positionTableSettingsPopover(); } });
 
   function syncTableSettingsUI() {
     if (!activeTable || !tableSettingsPopover) return;
@@ -617,23 +684,11 @@
   if (tableSettingsBtn && tableSettingsPopover) {
     tableSettingsBtn.addEventListener('mousedown', function (e) { e.preventDefault(); });
     tableSettingsBtn.addEventListener('click', function () {
-      // restoreSelection()으로 "커서가 마지막으로 있던 자리"를 되살려,
-      // 표 바깥의 다른 버튼을 누른 뒤에도 마지막으로 커서가 있던 표를
-      // 기준으로 설정 팝업이 열리게 합니다.
-      restoreSelection();
-      var sel = window.getSelection();
-      activeTable = sel.rangeCount ? getTableElement(sel.getRangeAt(0).commonAncestorContainer) : null;
-      if (!activeTable) {
-        tableSettingsPopover.hidden = true;
-        window.alert('표 설정을 사용하려면 먼저 표 안을 클릭해 커서를 놓아주세요.');
-        return;
-      }
+      if (!activeTable) return; // 아이콘이 떠 있다는 것 자체가 activeTable이 있다는 뜻이지만 방어적으로 확인
       tableSettingsPopover.hidden = !tableSettingsPopover.hidden;
-      if (!tableSettingsPopover.hidden) syncTableSettingsUI();
-    });
-    document.addEventListener('click', function (e) {
-      if (!tableSettingsPopover.hidden && !tableSettingsPopover.contains(e.target) && !tableSettingsBtn.contains(e.target)) {
-        tableSettingsPopover.hidden = true;
+      if (!tableSettingsPopover.hidden) {
+        positionTableSettingsPopover();
+        syncTableSettingsUI();
       }
     });
     tableSettingsPopover.querySelectorAll('.ts-row[data-ts-prop]').forEach(function (row) {
