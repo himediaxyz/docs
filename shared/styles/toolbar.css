@@ -75,20 +75,34 @@
 }
 .help-modal-close:hover{background:#f1f4fa;border-color:var(--navy);color:var(--navy);}
 
-/* ---------- 서식 도구모음 ---------- */
-.fmt-toolbar{
+/* ---------- 도구모음 카드 (서식 + 컴포넌트) ----------
+   서식 도구모음(.fmt-toolbar)과 컴포넌트 도구모음(.component-toolbar,
+   그림/표)을 예전에는 테두리가 각자 있는 두 개의 박스로 나눠뒀는데,
+   지금은 .editor-toolbar 하나가 테두리·둥근 모서리를 통째로 감싸고,
+   두 줄 사이는 .fmt-toolbar의 아래쪽 테두리선(border-bottom) 하나로만
+   구분합니다 — "박스 두 개"가 아니라 "위 칸 / 아래 칸이 있는 카드
+   하나"로 보이게 하기 위함입니다. 버튼 스타일(.fmt-toolbar button,
+   .component-toolbar button)도 아래에서 한 규칙으로 같이 묶어서, 두
+   줄의 버튼이 배경색·테두리색·굵기 모두 항상 똑같이 보이도록
+   합니다. */
+.editor-toolbar{
   max-width:900px;margin:10px auto 0;
   background:#ffffff;border:1px solid #d8dee8;border-radius:10px;
-  padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  font-family:var(--font-en);position:relative;
+  font-family:var(--font-en);
 }
-.fmt-toolbar button{
+.fmt-toolbar{
+  padding:14px 14px 12px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  position:relative;
+  border-bottom:1px solid #eef1f6;
+}
+.fmt-toolbar button,.component-toolbar button{
   width:30px;height:30px;border:1px solid #d0d6e2;background:#fff;border-radius:6px;
   cursor:pointer;font-size:13px;color:var(--ink);
   display:flex;align-items:center;justify-content:center;
 }
-.fmt-toolbar button:hover{background:#f1f4fa;border-color:var(--navy);color:var(--navy);}
-.fmt-toolbar button.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+.fmt-toolbar button:hover,.component-toolbar button:hover{background:#f1f4fa;border-color:var(--navy);color:var(--navy);}
+.fmt-toolbar button.active,.component-toolbar button.active{background:var(--navy);border-color:var(--navy);color:#fff;}
 
 /* ---------- 서식 버튼 아이콘 ----------
    <img> 대신 로고와 같은 CSS mask 기법을 씁니다: background-color를
@@ -177,20 +191,13 @@
 
 /* ---------- 컴포넌트 도구모음 (그림 / 표) ----------
    서식(굵게/정렬/목록 등)과는 성격이 달라서 fmt-toolbar와 같은 줄에
-   흘려보내지 않고, 아래에 별도의 줄로 분리했습니다 — 앞으로 여기에
-   컴포넌트가 늘어나도 서식 도구모음 레이아웃에 영향을 주지 않습니다.
-   위쪽 구분선(border-top)으로 "다른 종류의 도구"라는 걸 은은하게
-   표시합니다. */
+   흘려보내지 않고, .editor-toolbar 카드 안에서 아래 줄로 분리했습니다
+   — 앞으로 여기에 컴포넌트가 늘어나도 서식 도구모음 레이아웃에 영향을
+   주지 않습니다. 위 칸과의 구분선은 .fmt-toolbar의 border-bottom이
+   이미 그려주므로 여기서는 따로 테두리를 두지 않습니다. */
 .component-toolbar{
-  max-width:900px;margin:0 auto 0;
-  background:#ffffff;border:1px solid #d8dee8;border-top:none;
-  border-radius:0 0 10px 10px;
-  padding:8px 14px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:10px 14px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   font-family:var(--font-en);position:relative;
-}
-.component-toolbar::before{
-  content:'';display:block;width:100%;height:1px;background:#eef1f6;
-  margin:0 0 8px;order:-1;
 }
 .component-toolbar .fmt-hint{margin-left:0;}
 

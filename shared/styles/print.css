@@ -4,17 +4,26 @@
    UI 숨김, 페이지마다 헤더/푸터 반복, 문단이 페이지 경계에서 어색하게
    잘리는 것 방지.
 
-   헤더/푸터 반복 방식(중요): 예전에는 표(thead/tfoot)가 인쇄 시 자동
-   반복되는 브라우저 기능을 썼습니다. 그런데 본문 전체가 표 안의 거대한
-   셀(td) 하나에 다 들어있다 보니, 그 행(tr) 자체가 통째로는 페이지
-   경계에서 깔끔하게 나뉘지 않아 — 내용이 길어지면 푸터가 페이지 중간에
-   걸쳐 찍히는 문제가 있었습니다. 그래서 지금은 #docHeader/#docFooter를
-   표 바깥의 일반 div로 두고, 인쇄할 때만 position:fixed로 모든 페이지의
-   정해진 위치에 반복시키는 방식으로 바꿨습니다. 그 자리를 본문이
-   침범하지 않도록 @page 여백을 헤더/푸터의 실제 높이에 맞춰 매번 다시
-   계산해서 넣습니다(shared/scripts/pagination.js의 applyPrintPageMargins
-   — <head>에 <style id="dynamicPageMargin">로 삽입되어 아래 정적
-   @page 규칙을 덮어씁니다).
+   헤더/푸터 반복 방식(중요, 두 번째 개정): 처음에는 표(thead/tfoot)의
+   인쇄 자동 반복 기능을 썼다가, 본문 전체가 표 안의 거대한 셀(td)
+   하나에 들어있어 행(tr) 단위로 페이지가 깔끔히 안 나뉘는 문제로
+   #docHeader/#docFooter를 position:fixed로 바꿨습니다. 그런데 이 방식은
+   자동 스크립트 검증(헤드리스 PDF 렌더링)에서는 정상으로 보였지만,
+   실제 브라우저의 인쇄 대화상자에서는 헤더가 한참 아래로 밀려 본문을
+   가리고 푸터가 페이지 하단에서 뜨는 등 결과가 달랐습니다 —
+   position:fixed가 인쇄 컨텍스트에서 브라우저마다(그리고 같은 브라우저
+   안에서도 헤드리스와 실제 인쇄 사이에) 다르게 처리되는 것으로 보이는,
+   알려진 종류의 비일관성입니다.
+
+   그래서 지금은 position:fixed를 완전히 버리고, shared/scripts/
+   pagination.js가 화면에서부터 이미 A4 크기(210mm×297mm)로 고정된
+   .page 박스를 필요한 만큼 만들어 쌓아두는 방식으로 바꿨습니다. 각
+   .page 안에는 자신만의 .page-header/.page-body/.page-footer가 이미
+   정확한 위치(document.css 참고)에 들어있으므로, 인쇄 시에는 그냥
+   "박스 하나 = 종이 한 장"이 되도록 @page 여백을 0으로 두고
+   break-after:page로 각 .page 뒤에서 페이지를 넘기기만 하면 됩니다.
+   break-after는 position:fixed-in-print보다 브라우저 간 지원과 동작이
+   훨씬 안정적입니다.
 
    이 파일을 쓰는 곳: 모든 문서 템플릿 (항상 마지막에 링크 — 다른
    shared CSS 규칙을 인쇄 시점에 덮어써야 하므로)
@@ -25,26 +34,32 @@
   .toolbar,.no-print{display:none !important;}
   html,body{background:#fff;}
   .sheet-wrap{margin:0;padding:0;max-width:none;}
-  .sheet{box-shadow:none;width:210mm;}
   .editable{outline:none !important;background:transparent !important;}
 
-  /* 문서 헤더/푸터를 모든 인쇄 페이지에 고정 위치로 반복 (위 설명 참고).
-     화면(screen media)에서는 이 규칙이 전혀 적용되지 않으므로 평소
-     보이는 모습(문서 맨 위/아래에 한 번)은 그대로입니다. */
-  #docHeader{position:fixed;top:0;left:0;right:0;}
-  #docFooter{position:fixed;bottom:0;left:0;right:0;}
+  /* 화면에서는 페이지 사이 간격(24px)과 그림자를 두지만, 인쇄에서는
+     종이 한 장 = .page 하나이므로 필요 없습니다. */
+  .page{
+    margin:0;box-shadow:none;
+    break-inside:avoid;page-break-inside:avoid;
+    break-after:page;page-break-after:always;
+  }
+  .page:last-child{break-after:auto;page-break-after:auto;}
 
   /* 문단·목록·서명란·그림·표가 페이지 경계에서 어색하게 잘리는 것을
-     최대한 방지. 새 템플릿에서 "절대 페이지 중간에 잘리면 안 되는"
-     블록을 추가할 때는 이 선택자 목록에 클래스를 더해주면 됩니다. */
+     막는 마지막 안전장치입니다(본문은 이미 pagination.js가 페이지
+     크기에 맞춰 항목 단위로 나눠 넣으므로 평소에는 여기 걸릴 일이
+     거의 없지만, 소수점 반올림 등 경계값 오차에 대비해 남겨둡니다).
+     새 템플릿에서 "절대 페이지 중간에 잘리면 안 되는" 블록을 추가할
+     때는 이 선택자 목록에 클래스를 더해주면 됩니다. */
   .guide p,.guide li,.sign-block,.title-placeholder,.to-line,
   .img-wrap,.doc-table,.doc-table tr{
     break-inside:avoid;page-break-inside:avoid;
   }
   .guide p,.guide li{orphans:3;widows:3;}
 
-  /* 아래 margin 값은 헤더/푸터가 아직 실측되지 않은 경우(예: 스크립트
-     오류)를 위한 대략적인 기본값입니다 — 실제 값은 자바스크립트가
-     매번 정확히 계산해서 이 규칙을 덮어씁니다. */
-  @page{ size:A4; margin:47mm 0 17mm 0; }
+  /* 페이지 자체가 이미 210mm×297mm로 고정되어 있으므로 인쇄 여백은
+     0으로 둡니다 — 여백이 남아있으면 .page 하나가 인쇄 용지 한 장에
+     정확히 맞지 않아 내용이 밀리거나 다음 장으로 잘려 넘어갈 수
+     있습니다. */
+  @page{ size:A4; margin:0; }
 }

@@ -335,6 +335,16 @@
   var imageToolbar = document.getElementById('imageToolbar');
   var selectedImg = null;
 
+  // 그림/표를 넣을 때 커서 위치가 하나도 저장되어 있지 않으면(사용자가
+  // 아직 본문을 한 번도 클릭한 적이 없는 등) 문서 맨 끝, 즉 마지막
+  // 페이지의 흐름 영역(.flow-items) 끝에 붙입니다. 페이지가 여러 장일
+  // 수 있으므로 항상 1페이지의 #docBody가 아니라 "지금 존재하는
+  // .flow-items 중 마지막 것"을 찾아야 합니다.
+  function getLastFlowContainer() {
+    var flows = document.querySelectorAll('.flow-items');
+    return flows.length ? flows[flows.length - 1] : document.getElementById('docBody');
+  }
+
   function insertNodeAtSavedOrEnd(node, fallbackContainer) {
     // restoreSelection()으로 되살아나는 위치가 없으면(사용자가 아직
     // 편집 영역을 한 번도 클릭한 적이 없는 등) 지정한 컨테이너의 맨
@@ -454,7 +464,7 @@
         var img = document.createElement('img');
         img.src = reader.result;
         wrap.appendChild(img);
-        insertBlockAsSibling(wrap, document.getElementById('docBody'));
+        insertBlockAsSibling(wrap, getLastFlowContainer());
         wireImage(img);
       };
       reader.readAsDataURL(file);
@@ -543,7 +553,7 @@
     }
     // 표도 그림과 같은 규칙으로, 커서가 있던 문단 "다음 줄"에 통째로
     // 끼워 넣습니다(insertBlockAsSibling — 섹션 9 참고).
-    insertBlockAsSibling(table, document.getElementById('docBody'));
+    insertBlockAsSibling(table, getLastFlowContainer());
   }
 
   if (insertTableBtn && tableGridPicker && gridPickerGrid) {

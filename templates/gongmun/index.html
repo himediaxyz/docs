@@ -52,127 +52,136 @@
       </div>
     </div>
 
-    <div class="fmt-toolbar" id="fmtToolbar">
-      <button type="button" data-cmd="bold" title="굵게" aria-label="굵게"><span class="btn-icon icon-bold"></span></button>
-      <button type="button" data-cmd="italic" title="기울임" aria-label="기울임"><span class="btn-icon icon-italic"></span></button>
-      <button type="button" data-cmd="underline" title="밑줄" aria-label="밑줄"><span class="btn-icon icon-underline"></span></button>
-      <span class="fmt-sep"></span>
-      <select id="fmtFont" title="서체">
-        <option value="'Asta Sans', 'Open Sans', sans-serif">Asta Sans (한글 기본)</option>
-        <option value="'Open Sans', 'Asta Sans', sans-serif">Open Sans (영문/숫자)</option>
-      </select>
-      <select id="fmtSize" title="글자 크기">
-        <option value="11">11px</option>
-        <option value="12">12px</option>
-        <option value="13">13px</option>
-        <option value="14" selected>14px</option>
-        <option value="15">15px</option>
-        <option value="16">16px</option>
-        <option value="18">18px</option>
-        <option value="20">20px</option>
-        <option value="24">24px</option>
-        <option value="28">28px</option>
-      </select>
-      <span class="fmt-sep"></span>
-      <span class="dropdown-anchor">
-        <button type="button" class="color-btn" id="colorBtn" title="글자색" aria-label="글자색">
-          <span class="swatch-current"></span>
-        </button>
-        <div class="color-popover" id="colorPopover" hidden></div>
-      </span>
-      <span class="fmt-sep"></span>
-      <button type="button" data-cmd="justifyLeft" title="왼쪽 정렬" aria-label="왼쪽 정렬"><span class="btn-icon icon-align-left"></span></button>
-      <button type="button" data-cmd="justifyCenter" title="가운데 정렬" aria-label="가운데 정렬"><span class="btn-icon icon-align-center"></span></button>
-      <button type="button" data-cmd="justifyRight" title="오른쪽 정렬" aria-label="오른쪽 정렬"><span class="btn-icon icon-align-right"></span></button>
-      <button type="button" data-cmd="justifyFull" title="양쪽 정렬" aria-label="양쪽 정렬"><span class="btn-icon icon-align-justify"></span></button>
-      <span class="fmt-sep"></span>
-      <!-- 점 목록: 버튼을 누르면 모양(채운 원/빈 원/사각형)을 고르는
-           팝업이 열립니다. 항목을 고르면 목록 생성 + 모양 적용이 한
-           번에 처리됩니다 (shared/scripts/editor.js 섹션 5). -->
-      <span class="dropdown-anchor">
-        <button type="button" id="bulletListBtn" title="점 목록 — 눌러서 모양 선택" aria-label="점 목록"><span class="btn-icon icon-list-bullet"></span></button>
-        <div class="list-popover" id="bulletStylePopover" hidden>
-          <button type="button" data-list-style="disc">● 채운 원</button>
-          <button type="button" data-list-style="circle">○ 빈 원</button>
-          <button type="button" data-list-style="square">■ 사각형</button>
-        </div>
-      </span>
-      <!-- 번호 목록: 위와 같은 방식, 모양은 1,2,3 / 원문자 / a,b,c / 로마자. -->
-      <span class="dropdown-anchor">
-        <button type="button" id="numberListBtn" title="번호 목록 — 눌러서 모양 선택" aria-label="번호 목록"><span class="btn-icon icon-list-numbered"></span></button>
-        <div class="list-popover" id="numberStylePopover" hidden>
-          <button type="button" data-list-style="decimal">1, 2, 3</button>
-          <button type="button" data-list-style="circled-decimal">①, ②, ③</button>
-          <button type="button" data-list-style="lower-alpha">a, b, c</button>
-          <button type="button" data-list-style="upper-roman">I, II, III</button>
-        </div>
-      </span>
-      <span class="fmt-sep"></span>
-      <button type="button" id="outdentBtn" title="내어쓰기" aria-label="내어쓰기"><span class="btn-icon icon-outdent"></span></button>
-      <button type="button" id="indentBtn" title="들여쓰기" aria-label="들여쓰기"><span class="btn-icon icon-indent"></span></button>
-      <span class="fmt-hint">서식을 적용할 글자를 먼저 드래그로 선택한 뒤 버튼을 눌러주세요</span>
-    </div>
+    <!-- 서식 도구모음 + 컴포넌트 도구모음(그림/표)을 하나의 카드로
+         묶었습니다 — 가운데 가로 구분선(.fmt-toolbar의 border-bottom)만
+         남기고 테두리는 하나만 둘러서, 서로 다른 두 개의 박스가 아니라
+         "위 칸 / 아래 칸"이 있는 한 장의 도구모음으로 보이게 했습니다.
+         버튼 스타일도 toolbar.css에서 .fmt-toolbar button과
+         .component-toolbar button을 한 규칙으로 묶어 항상 똑같이
+         맞춥니다. -->
+    <div class="editor-toolbar">
+      <div class="fmt-toolbar" id="fmtToolbar">
+        <button type="button" data-cmd="bold" title="굵게" aria-label="굵게"><span class="btn-icon icon-bold"></span></button>
+        <button type="button" data-cmd="italic" title="기울임" aria-label="기울임"><span class="btn-icon icon-italic"></span></button>
+        <button type="button" data-cmd="underline" title="밑줄" aria-label="밑줄"><span class="btn-icon icon-underline"></span></button>
+        <span class="fmt-sep"></span>
+        <select id="fmtFont" title="서체">
+          <option value="'Asta Sans', 'Open Sans', sans-serif">Asta Sans (한글 기본)</option>
+          <option value="'Open Sans', 'Asta Sans', sans-serif">Open Sans (영문/숫자)</option>
+        </select>
+        <select id="fmtSize" title="글자 크기">
+          <option value="11">11px</option>
+          <option value="12">12px</option>
+          <option value="13">13px</option>
+          <option value="14" selected>14px</option>
+          <option value="15">15px</option>
+          <option value="16">16px</option>
+          <option value="18">18px</option>
+          <option value="20">20px</option>
+          <option value="24">24px</option>
+          <option value="28">28px</option>
+        </select>
+        <span class="fmt-sep"></span>
+        <span class="dropdown-anchor">
+          <button type="button" class="color-btn" id="colorBtn" title="글자색" aria-label="글자색">
+            <span class="swatch-current"></span>
+          </button>
+          <div class="color-popover" id="colorPopover" hidden></div>
+        </span>
+        <span class="fmt-sep"></span>
+        <button type="button" data-cmd="justifyLeft" title="왼쪽 정렬" aria-label="왼쪽 정렬"><span class="btn-icon icon-align-left"></span></button>
+        <button type="button" data-cmd="justifyCenter" title="가운데 정렬" aria-label="가운데 정렬"><span class="btn-icon icon-align-center"></span></button>
+        <button type="button" data-cmd="justifyRight" title="오른쪽 정렬" aria-label="오른쪽 정렬"><span class="btn-icon icon-align-right"></span></button>
+        <button type="button" data-cmd="justifyFull" title="양쪽 정렬" aria-label="양쪽 정렬"><span class="btn-icon icon-align-justify"></span></button>
+        <span class="fmt-sep"></span>
+        <!-- 점 목록: 버튼을 누르면 모양(채운 원/빈 원/사각형)을 고르는
+             팝업이 열립니다. 항목을 고르면 목록 생성 + 모양 적용이 한
+             번에 처리됩니다 (shared/scripts/editor.js 섹션 5). -->
+        <span class="dropdown-anchor">
+          <button type="button" id="bulletListBtn" title="점 목록 — 눌러서 모양 선택" aria-label="점 목록"><span class="btn-icon icon-list-bullet"></span></button>
+          <div class="list-popover" id="bulletStylePopover" hidden>
+            <button type="button" data-list-style="disc">● 채운 원</button>
+            <button type="button" data-list-style="circle">○ 빈 원</button>
+            <button type="button" data-list-style="square">■ 사각형</button>
+          </div>
+        </span>
+        <!-- 번호 목록: 위와 같은 방식, 모양은 1,2,3 / 원문자 / a,b,c / 로마자. -->
+        <span class="dropdown-anchor">
+          <button type="button" id="numberListBtn" title="번호 목록 — 눌러서 모양 선택" aria-label="번호 목록"><span class="btn-icon icon-list-numbered"></span></button>
+          <div class="list-popover" id="numberStylePopover" hidden>
+            <button type="button" data-list-style="decimal">1, 2, 3</button>
+            <button type="button" data-list-style="circled-decimal">①, ②, ③</button>
+            <button type="button" data-list-style="lower-alpha">a, b, c</button>
+            <button type="button" data-list-style="upper-roman">I, II, III</button>
+          </div>
+        </span>
+        <span class="fmt-sep"></span>
+        <button type="button" id="outdentBtn" title="내어쓰기" aria-label="내어쓰기"><span class="btn-icon icon-outdent"></span></button>
+        <button type="button" id="indentBtn" title="들여쓰기" aria-label="들여쓰기"><span class="btn-icon icon-indent"></span></button>
+        <span class="fmt-hint">서식을 적용할 글자를 먼저 드래그로 선택한 뒤 버튼을 눌러주세요</span>
+      </div>
 
-    <!-- 컴포넌트 도구모음(그림/표) — 서식 도구모음과 줄을 분리했습니다.
-         앞으로 컴포넌트가 늘어나도 여기에만 추가하면 됩니다. -->
-    <div class="component-toolbar" id="componentToolbar">
-      <button type="button" id="insertImageBtn" title="그림 삽입" aria-label="그림 삽입"><span class="btn-icon icon-image"></span></button>
-      <input type="file" id="imageFileInput" accept="image/*" hidden>
+      <!-- 컴포넌트 도구모음(그림/표) — 서식 도구모음과 줄을 분리했습니다.
+           앞으로 컴포넌트가 늘어나도 여기에만 추가하면 됩니다. -->
+      <div class="component-toolbar" id="componentToolbar">
+        <button type="button" id="insertImageBtn" title="그림 삽입" aria-label="그림 삽입"><span class="btn-icon icon-image"></span></button>
+        <input type="file" id="imageFileInput" accept="image/*" hidden>
 
-      <span class="fmt-sep"></span>
+        <span class="fmt-sep"></span>
 
-      <!-- 표 삽입: 버튼을 누르면 몇×몇 표를 넣을지 격자에서 마우스로
-           미리보고 클릭합니다(구글독스 방식). -->
-      <span class="dropdown-anchor">
-        <button type="button" id="insertTableBtn" title="표 삽입" aria-label="표 삽입"><span class="btn-icon icon-table"></span></button>
-        <div class="grid-picker" id="tableGridPicker" hidden>
-          <p class="grid-picker-label" id="gridPickerLabel">표 크기 선택</p>
-          <div class="grid-picker-grid" id="gridPickerGrid"></div>
-        </div>
-      </span>
+        <!-- 표 삽입: 버튼을 누르면 몇×몇 표를 넣을지 격자에서 마우스로
+             미리보고 클릭합니다(구글독스 방식). -->
+        <span class="dropdown-anchor">
+          <button type="button" id="insertTableBtn" title="표 삽입" aria-label="표 삽입"><span class="btn-icon icon-table"></span></button>
+          <div class="grid-picker" id="tableGridPicker" hidden>
+            <p class="grid-picker-label" id="gridPickerLabel">표 크기 선택</p>
+            <div class="grid-picker-grid" id="gridPickerGrid"></div>
+          </div>
+        </span>
 
-      <!-- 표 설정: 커서가 표 안에 있을 때만 의미가 있습니다. 테두리
-           두께/종류, 셀 여백, 행·열 추가/삭제를 한 팝업에 모았습니다. -->
-      <span class="dropdown-anchor">
-        <button type="button" id="tableSettingsBtn" title="표 설정 (커서가 표 안에 있을 때)" aria-label="표 설정"><span class="btn-icon icon-table-settings"></span></button>
-        <div class="table-settings-popover" id="tableSettingsPopover" hidden>
-          <div class="ts-group">
-            <p class="ts-group-label">테두리 두께</p>
-            <div class="ts-row" data-ts-prop="border-width">
-              <button type="button" data-value="1px">얇게</button>
-              <button type="button" data-value="1.5px">보통</button>
-              <button type="button" data-value="2.5px">굵게</button>
+        <!-- 표 설정: 커서가 표 안에 있을 때만 의미가 있습니다. 테두리
+             두께/종류, 셀 여백, 행·열 추가/삭제를 한 팝업에 모았습니다. -->
+        <span class="dropdown-anchor">
+          <button type="button" id="tableSettingsBtn" title="표 설정 (커서가 표 안에 있을 때)" aria-label="표 설정"><span class="btn-icon icon-table-settings"></span></button>
+          <div class="table-settings-popover" id="tableSettingsPopover" hidden>
+            <div class="ts-group">
+              <p class="ts-group-label">테두리 두께</p>
+              <div class="ts-row" data-ts-prop="border-width">
+                <button type="button" data-value="1px">얇게</button>
+                <button type="button" data-value="1.5px">보통</button>
+                <button type="button" data-value="2.5px">굵게</button>
+              </div>
+            </div>
+            <div class="ts-group">
+              <p class="ts-group-label">테두리 종류</p>
+              <div class="ts-row" data-ts-prop="border-style">
+                <button type="button" data-value="solid">실선</button>
+                <button type="button" data-value="dashed">점선</button>
+                <button type="button" data-value="double">이중선</button>
+              </div>
+            </div>
+            <div class="ts-group">
+              <p class="ts-group-label">셀 여백</p>
+              <div class="ts-row" data-ts-prop="pad">
+                <button type="button" data-value="4px">좁게</button>
+                <button type="button" data-value="8px">보통</button>
+                <button type="button" data-value="14px">넓게</button>
+              </div>
+            </div>
+            <div class="ts-group">
+              <p class="ts-group-label">행 / 열</p>
+              <div class="ts-row">
+                <button type="button" id="tsAddRow">행 추가</button>
+                <button type="button" id="tsDelRow" class="danger">행 삭제</button>
+                <button type="button" id="tsAddCol">열 추가</button>
+                <button type="button" id="tsDelCol" class="danger">열 삭제</button>
+              </div>
             </div>
           </div>
-          <div class="ts-group">
-            <p class="ts-group-label">테두리 종류</p>
-            <div class="ts-row" data-ts-prop="border-style">
-              <button type="button" data-value="solid">실선</button>
-              <button type="button" data-value="dashed">점선</button>
-              <button type="button" data-value="double">이중선</button>
-            </div>
-          </div>
-          <div class="ts-group">
-            <p class="ts-group-label">셀 여백</p>
-            <div class="ts-row" data-ts-prop="pad">
-              <button type="button" data-value="4px">좁게</button>
-              <button type="button" data-value="8px">보통</button>
-              <button type="button" data-value="14px">넓게</button>
-            </div>
-          </div>
-          <div class="ts-group">
-            <p class="ts-group-label">행 / 열</p>
-            <div class="ts-row">
-              <button type="button" id="tsAddRow">행 추가</button>
-              <button type="button" id="tsDelRow" class="danger">행 삭제</button>
-              <button type="button" id="tsAddCol">열 추가</button>
-              <button type="button" id="tsDelCol" class="danger">열 삭제</button>
-            </div>
-          </div>
-        </div>
-      </span>
+        </span>
 
-      <span class="fmt-hint">이미지·표를 넣고 싶은 위치에 커서를 두고 버튼을 눌러주세요</span>
+        <span class="fmt-hint">이미지·표를 넣고 싶은 위치에 커서를 두고 버튼을 눌러주세요</span>
+      </div>
     </div>
   </div>
 
@@ -192,49 +201,69 @@
   </div>
 
   <div class="sheet-wrap">
-    <div class="sheet" id="sheet">
+    <!-- .pages: 실제 A4 페이지(.page)들을 담는 컨테이너. 처음에는 1페이지만
+         정적으로 존재하고, shared/scripts/pagination.js의 repaginate()가
+         본문 길이에 따라 필요한 만큼 .page를 자동으로 더 만들거나
+         지웁니다 — 화면에서도 인쇄 미리보기처럼 진짜 페이지 박스가
+         차곡차곡 보이고(워드처럼), 각 페이지의 헤더·푸터·본문 영역
+         크기는 언제나 A4 규격으로 고정입니다(shared/README.md,
+         document.css .page 규칙, print.css 상단 주석 참고). -->
+    <div class="pages" id="pages">
+      <div class="page" data-page-index="0">
 
-      <!-- 문서 헤더(로고+회사명) — 실제 종이(레터헤드)의 일부, 인쇄됩니다.
-           여기서 직접 타이핑하지 않고 shared/scripts/components.js의
-           renderDocHeader()가 채워 넣습니다. (아래 <script> 부분 참고)
-           화면에서는 그냥 맨 위에 한 번 나오고, 인쇄할 때만 모든
-           페이지 상단에 고정 반복됩니다(print.css의 position:fixed —
-           표 thead가 아니라 이 방식을 쓰는 이유는 shared/README.md 및
-           print.css 상단 주석 참고). -->
-      <div id="docHeader"></div>
+        <!-- 문서 헤더(로고+회사명) — 실제 종이(레터헤드)의 일부, 인쇄됩니다.
+             여기서 직접 타이핑하지 않고 shared/scripts/components.js의
+             renderDocHeader()가 채워 넣습니다(아래 <script> 참고). 이
+             1페이지의 헤더 마크업을 pagination.js가 그대로 복제해서
+             2페이지 이후의 헤더에도 씁니다 — 그래서 id="docHeader"는
+             1페이지에만 있습니다. -->
+        <div class="page-header" id="docHeader"></div>
 
-      <table class="sheet-table">
-        <tbody id="contentFlow">
-          <tr><td class="cell-meta">
-            <div class="meta-line">
-              <b>문서번호</b>: <span class="editable force-kr-font" id="docNo" contenteditable="true" spellcheck="false">다이즈-2026-001</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>시행일자</b>: <span id="effDate"></span>
+        <div class="page-body">
+          <!-- 문서번호·제목·수신처·안내문 — 페이지가 늘어나도 절대
+               다음 페이지로 넘어가지 않는 고정 영역입니다(항상 1페이지
+               맨 위에만 존재). 그 아래 본문(.flow-items)만 페이지가
+               넘치면 다음 페이지로 이어집니다. -->
+          <div class="page-body-fixed">
+            <div class="cell-meta">
+              <div class="meta-line">
+                <b>문서번호</b>: <span class="editable force-kr-font" id="docNo" contenteditable="true" spellcheck="false">다이즈-2026-001</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>시행일자</b>: <span id="effDate"></span>
+              </div>
             </div>
-          </td></tr>
-          <tr><td class="cell-title">
-            <p class="title-placeholder editable" id="docTitle" contenteditable="true" spellcheck="false">[문서 제목을 입력하세요]</p>
-          </td></tr>
-          <tr><td class="cell-to">
-            <p class="to-line">수신: <span class="en editable force-kr-font" id="docTo" contenteditable="true" spellcheck="false">[수신처를 입력하세요]</span> 귀중</p>
-          </td></tr>
-          <tr><td class="cell-note no-print">
-            <p class="note-line">(본 문서는 다이즈하이미디어의 공식 대외 발송용 공문 템플릿입니다. 아래 파란 점선 영역을 클릭해 내용을 입력하세요.)</p>
-          </td></tr>
-          <tr><td class="cell-guide">
-            <div class="guide editable editable-block" id="docBody" contenteditable="true" spellcheck="false">
-              <p>안녕하십니까. 다이즈하이미디어(<span style="font-family:var(--font-en)">DISEHIMEDIA</span>)입니다.</p>
-              <p>본 문서는 다이즈하이미디어의 공식 대외 발송용 공문 범용 템플릿입니다. 아래 안내에 따라 필요한 내용을 수정하신 후 사용해 주시기 바랍니다.</p>
-              <ol>
-                <li>상단 문서번호는 발송하는 문서마다 고유 일련번호(다이즈-연도-순번)로 교체하여 관리해 주십시오.</li>
-                <li>제목과 수신란은 실제 발송 목적과 수신처에 맞게 입력해 주십시오.</li>
-                <li>이 안내 문단은 삭제하고 실제 전달하실 본문 내용으로 교체해 주십시오.</li>
-                <li>본문 한글은 Asta Sans, 영문/숫자는 Open Sans로 구성되어 있습니다.</li>
-                <li>하단 발신인 정보는 담당자에 맞게 수정하여 사용하실 수 있습니다.</li>
-              </ol>
-              <p>문의사항이 있으시면 하단 연락처로 연락 주시기 바랍니다.</p>
+            <div class="cell-title">
+              <p class="title-placeholder editable" id="docTitle" contenteditable="true" spellcheck="false">[문서 제목을 입력하세요]</p>
             </div>
-          </td></tr>
-          <tr><td class="cell-sign">
-            <div class="sign-block">
+            <div class="cell-to">
+              <p class="to-line">수신: <span class="en editable force-kr-font" id="docTo" contenteditable="true" spellcheck="false">[수신처를 입력하세요]</span> 귀중</p>
+            </div>
+            <div class="cell-note no-print">
+              <p class="note-line">(본 문서는 다이즈하이미디어의 공식 대외 발송용 공문 템플릿입니다. 아래 파란 점선 영역을 클릭해 내용을 입력하세요.)</p>
+            </div>
+          </div>
+
+          <!-- 본문 — "흐름 항목"(문단/목록/표/그림/서명란)이 실제로 담기는
+               곳. 이 div 자체가 contenteditable이며, 내용이 이 페이지의
+               남은 세로 공간을 넘으면 pagination.js가 넘치는 항목을
+               통째로 다음 페이지의 같은 클래스(.flow-items) div로
+               옮깁니다 — 문단 중간이 아니라 항상 항목 단위로 옮기므로
+               글자가 잘리지 않습니다. -->
+          <div class="cell-guide flow-items editable editable-block" id="docBody" contenteditable="true" spellcheck="false">
+            <p>안녕하십니까. 다이즈하이미디어(<span style="font-family:var(--font-en)">DISEHIMEDIA</span>)입니다.</p>
+            <p>본 문서는 다이즈하이미디어의 공식 대외 발송용 공문 범용 템플릿입니다. 아래 안내에 따라 필요한 내용을 수정하신 후 사용해 주시기 바랍니다.</p>
+            <ol>
+              <li>상단 문서번호는 발송하는 문서마다 고유 일련번호(다이즈-연도-순번)로 교체하여 관리해 주십시오.</li>
+              <li>제목과 수신란은 실제 발송 목적과 수신처에 맞게 입력해 주십시오.</li>
+              <li>이 안내 문단은 삭제하고 실제 전달하실 본문 내용으로 교체해 주십시오.</li>
+              <li>본문 한글은 Asta Sans, 영문/숫자는 Open Sans로 구성되어 있습니다.</li>
+              <li>하단 발신인 정보는 담당자에 맞게 수정하여 사용하실 수 있습니다.</li>
+            </ol>
+            <p>문의사항이 있으시면 하단 연락처로 연락 주시기 바랍니다.</p>
+            <!-- 서명란도 본문의 마지막 "흐름 항목"입니다 — 본문이 길어져
+                 서명란이 페이지 하단을 넘으면 서명란째로 다음 페이지로
+                 넘어갑니다. contenteditable="false"로 이 블록 안쪽은
+                 타이핑으로 고칠 수 없게 막아둡니다(기존과 동일하게
+                 담당자 정보는 이 파일을 직접 수정해서 바꿉니다). -->
+            <div class="sign-block" contenteditable="false">
               <div class="sign-left">
                 <div class="role">발신</div>
                 <div class="name">유정우 <span class="en">(You, Jeong-woo | Ryan)</span></div>
@@ -245,13 +274,14 @@
                 ryan@disehimedia.com
               </div>
             </div>
-          </td></tr>
-        </tbody>
-      </table>
+          </div>
+        </div>
 
-      <!-- 문서 푸터(주소·연락처) — 마찬가지로 renderDocFooter()가
-           채우고, 인쇄 시 모든 페이지 하단에 고정 반복됩니다. -->
-      <div id="docFooter"></div>
+        <!-- 문서 푸터(주소·연락처) — 마찬가지로 renderDocFooter()가
+             채우고, pagination.js가 이 마크업을 복제해 모든 페이지
+             하단에 반복합니다. -->
+        <div class="page-footer" id="docFooter"></div>
+      </div>
     </div>
     <!-- 사이트 푸터: 화면 전용 캡션. "문서 푸터"(주소 밴드)와는 다른
          개념입니다 — shared/README.md 참고. -->

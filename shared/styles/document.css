@@ -15,20 +15,44 @@
 .sheet-wrap{
   max-width:900px;margin:20px auto 60px;padding:0 20px;
 }
-.sheet{
-  width:210mm;
-  margin:0 auto;background:#ffffff;
-  box-shadow:0 4px 24px rgba(20,30,60,0.18);
-  position:relative;
+.pages{
+  /* .page들을 세로로 쌓아두는 자리 — 페이지 개수는 pagination.js가
+     본문 길이에 맞춰 자동으로 늘리거나 줄입니다. */
 }
 
-/* thead/tfoot를 쓰는 이유: 표(table)의 머리글/바닥글은 브라우저가
-   인쇄 시 페이지마다 자동으로 반복해줘서, 여러 페이지짜리 문서에서도
-   헤더/푸터가 안정적으로 나옵니다 (position:fixed 방식보다 안전). */
-.sheet-table{
-  width:100%;border-collapse:collapse;table-layout:fixed;background:#ffffff;
+/* ---------- 낱장 페이지 (A4 고정 규격) ----------
+   예전에는 표(table)의 thead/tfoot 반복 기능에 기대어 헤더/푸터를
+   여러 페이지에 반복시켰는데, 본문 전체가 표 안의 셀 하나에 다
+   들어있다 보니 그 행(tr) 자체가 페이지 경계에서 깔끔하게 나뉘지
+   않는 문제가 있었습니다(자세한 사정은 print.css 상단 주석 참고).
+   지금은 그 대신 "화면에서도 실제 A4 낱장처럼 보이는 .page 박스"를
+   JS(shared/scripts/pagination.js)가 필요한 만큼 만들어 쌓는 방식을
+   씁니다 — 각 .page는 폭·높이가 항상 210mm × 297mm로 고정이고, 그
+   안의 헤더(.page-header)·본문(.page-body)·푸터(.page-footer) 위치도
+   항상 같은 자리에 고정됩니다. 본문 내용이 그 페이지의 남은 공간을
+   넘으면 pagination.js가 넘치는 부분을 통째로 다음 .page로 옮기고,
+   필요하면 새 .page를 만듭니다 — 그래서 헤더/푸터가 문서 중간에
+   걸치는 일이 구조적으로 생길 수 없습니다. 인쇄할 때도 이 고정 크기를
+   그대로 살려서(print.css: @page{margin:0}) 한 .page = 인쇄 용지
+   한 장이 되도록 만듭니다. */
+.page{
+  width:210mm;height:297mm;
+  margin:0 auto 24px;background:#ffffff;
+  box-shadow:0 4px 24px rgba(20,30,60,0.18);
+  position:relative;overflow:hidden;
 }
-.sheet-table td{margin:0;border:0;vertical-align:top;}
+.page-header{position:absolute;top:0;left:0;right:0;}
+.page-footer{position:absolute;bottom:0;left:0;right:0;}
+/* 본문 영역 — 위/아래는 헤더·푸터의 실제 높이만큼 비워둡니다. 두 값
+   (--hdr-h/--ftr-h)은 pagination.js가 1페이지 헤더/푸터를 실측해서
+   .pages 요소에 한 번 넣어두고, 모든 페이지가 상속해서 같이 씁니다
+   (계열사마다 로고 비율·주소 유무가 달라 헤더/푸터 높이가 문서마다
+   조금씩 다르기 때문에 고정 px 대신 실측값을 씁니다). */
+.page-body{
+  position:absolute;left:0;right:0;
+  top:var(--hdr-h,176px);bottom:var(--ftr-h,62px);
+  overflow:hidden;
+}
 
 /* ---------- 문서 헤더 밴드 (로고 + 회사명) ----------
    "문서" 레벨 — 실제 종이(레터헤드)의 일부이며 인쇄됩니다. 계열사마다
@@ -75,8 +99,9 @@
 .cell-title{padding:26px 50px 0;}
 .cell-to{padding:0 50px;}
 .cell-note{padding:0 50px;}
+/* .cell-guide는 이제 셀(td)이 아니라 흐름 본문(.flow-items) 자신에게
+   바로 붙는 클래스입니다 — 좌우 여백만 필요합니다. */
 .cell-guide{padding:0 50px;}
-.cell-sign{padding:20px 50px 28px;}
 
 .title-placeholder{
   font-family:var(--font-kr);font-weight:700;font-size:24px;color:var(--navy);
@@ -153,9 +178,14 @@
    붙이면 됩니다. */
 .force-kr-font{font-family:var(--font-kr);}
 
-/* ---------- 서명(발신) 블록 ---------- */
+/* ---------- 서명(발신) 블록 ----------
+   본문(.flow-items)의 마지막 "흐름 항목"으로 함께 있으므로(예전처럼
+   별도 td.cell-sign로 감싸지 않음) 위아래 여백을 이 블록 자신에게
+   직접 줍니다 — 좌우 여백은 부모(.cell-guide)의 0 50px을 그대로
+   씁니다. */
 .sign-block{
   display:flex;justify-content:space-between;align-items:flex-end;
+  padding:20px 0 28px;
 }
 .sign-left .role{font-family:var(--font-kr);font-size:13px;color:#666;margin-bottom:6px;}
 .sign-left .name{font-family:var(--font-kr);font-size:15.5px;font-weight:600;color:var(--ink);}

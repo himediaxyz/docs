@@ -20,12 +20,13 @@
        ...
        <div id="siteFooter" class="no-print"></div>
 
-     문서(종이) 자리 — 표 바깥의 일반 div. 화면에서는 한 번만 보이고,
-     인쇄할 때만 print.css가 position:fixed로 모든 페이지에 반복시킵니다
-     (표 thead/tfoot을 안 쓰는 이유: print.css 상단 주석 참고):
-       <div id="docHeader"></div>
-       ...(본문 표)...
-       <div id="docFooter"></div>
+     문서(종이) 자리 — 1페이지(.page)의 .page-header/.page-footer 자리에
+     한 번만 채워 넣으면, shared/scripts/pagination.js가 그 마크업을
+     그대로 복제해 2페이지 이후의 헤더/푸터에도 반복해서 씁니다(자세한
+     구조는 print.css, document.css .page 규칙 상단 주석 참고):
+       <div class="page-header" id="docHeader"></div>
+       ...(본문)...
+       <div class="page-footer" id="docFooter"></div>
 
      스크립트:
        <script src="../../shared/scripts/company-info.js"></script>
