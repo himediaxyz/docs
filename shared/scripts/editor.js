@@ -111,7 +111,29 @@
     wrapSelectionWithStyle('fontSize', fmtSize.value + 'px');
   });
 
-  /* ---------- 3) 글자 색상 ----------
+  /* ---------- 3) 팝업형 드롭다운 공통 처리 ----------
+     버튼을 누르면 바로 옆에 작은 팝업이 열리고, 팝업 안의 항목을 고르면
+     적용 후 자동으로 닫힙니다. 글자색 팝업과 점/번호 목록의 모양 팝업이
+     이 방식을 함께 씁니다.
+     버튼을 아이콘(<span class="btn-icon">)이 채우고 있어서, 사용자가
+     버튼 "안의 아이콘"을 클릭하면 클릭 이벤트의 target은 버튼이 아니라
+     그 아이콘 span이 됩니다 — 그래서 바깥 클릭 판정은 꼭 btn.contains()
+     로 검사해야 합니다(단순히 e.target !== btn으로 비교하면 아이콘을
+     클릭하는 순간 "바깥 클릭"으로 오인해서 열자마자 다시 닫혀버립니다). */
+  function wireDropdown(btn, popover) {
+    if (!btn || !popover) return;
+    btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    btn.addEventListener('click', function () {
+      popover.hidden = !popover.hidden;
+    });
+    document.addEventListener('click', function (e) {
+      if (!popover.hidden && !popover.contains(e.target) && !btn.contains(e.target)) {
+        popover.hidden = true;
+      }
+    });
+  }
+
+  /* ---------- 4) 글자 색상 ----------
      원색을 피한 모노톤 8색. 색상을 바꾸거나 추가/삭제하려면 이 배열만
      고치면 팝업 버튼이 자동으로 다시 그려집니다. 색약 사용자를 위해
      색상만으로 구분하지 않도록 각 버튼에 이름을 title(마우스 오버 시
@@ -142,21 +164,19 @@
       });
       colorPopover.appendChild(swatch);
     });
-    colorBtn.addEventListener('mousedown', function (e) { e.preventDefault(); });
-    colorBtn.addEventListener('click', function () {
-      colorPopover.hidden = !colorPopover.hidden;
-    });
-    document.addEventListener('click', function (e) {
-      if (!colorPopover.hidden && e.target !== colorBtn && !colorPopover.contains(e.target)) {
-        colorPopover.hidden = true;
-      }
-    });
+    wireDropdown(colorBtn, colorPopover);
   }
 
-  /* ---------- 4) 목록 모양 선택 ----------
-     굵게/기울임과 달리 목록은 execCommand(insertUnorderedList/
-     insertOrderedList)로 만든 뒤, 그 목록의 list-style-type을 별도
-     셀렉트로 바꾸는 2단계 방식입니다. */
+  /* ---------- 5) 목록 모양 ----------
+     이전에는 목록 버튼 옆에 모양을 고르는 <select>가 항상 붙어있었지만,
+     지금은 버튼을 누르면 모양 팝업이 열리는 방식으로 바꿨습니다(글자색과
+     동일한 UX). 아래 칸(둘째 줄)을 그림·표 같은 다른 컴포넌트를 위해
+     비워두기 위함입니다.
+     팝업의 모양 항목을 클릭하면 한 번에 두 가지가 일어납니다:
+       (1) 선택 영역이 아직 이 종류의 목록이 아니면 execCommand로 목록을
+           먼저 만들고(다른 종류의 목록이었다면 브라우저가 알아서
+           변환합니다),
+       (2) 그 목록에 고른 모양을 적용합니다. */
   function getListElement(node) {
     var el = node && node.nodeType === 3 ? node.parentElement : node;
     while (el && el.nodeType === 1 && el.tagName !== 'UL' && el.tagName !== 'OL') {
@@ -165,28 +185,50 @@
     }
     return el;
   }
-  function applyListStyle(select) {
-    if (!restoreSelection()) return;
-    var sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    var list = getListElement(sel.getRangeAt(0).commonAncestorContainer);
-    if (!list) return;
-    if (select.value === 'circled-decimal') {
+  function setListStyle(list, styleValue) {
+    if (styleValue === 'circled-decimal') {
       // 원문자(①②③...)는 CSS 표준 키워드가 없어서 document.css에 정의된
       // 커스텀 @counter-style(.list-circled)을 대신 사용합니다.
       list.style.listStyleType = '';
       list.classList.add('list-circled');
     } else {
       list.classList.remove('list-circled');
-      list.style.listStyleType = select.value;
+      list.style.listStyleType = styleValue;
     }
   }
-  var bulletStyle = document.getElementById('bulletStyleSelect');
-  if (bulletStyle) bulletStyle.addEventListener('change', function () { applyListStyle(bulletStyle); });
-  var numberStyle = document.getElementById('numberStyleSelect');
-  if (numberStyle) numberStyle.addEventListener('change', function () { applyListStyle(numberStyle); });
+  function wireListPopover(btn, popover, insertCmd) {
+    if (!btn || !popover) return;
+    wireDropdown(btn, popover);
+    popover.querySelectorAll('button[data-list-style]').forEach(function (opt) {
+      opt.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      opt.addEventListener('click', function () {
+        if (!restoreSelection()) { popover.hidden = true; return; }
+        var sel = window.getSelection();
+        if (!sel.rangeCount) { popover.hidden = true; return; }
+        var wantUL = insertCmd === 'insertUnorderedList';
+        var list = getListElement(sel.getRangeAt(0).commonAncestorContainer);
+        if (!list || (list.tagName === 'UL') !== wantUL) {
+          document.execCommand(insertCmd, false, null);
+          sel = window.getSelection();
+          list = sel.rangeCount ? getListElement(sel.getRangeAt(0).commonAncestorContainer) : null;
+        }
+        if (list) setListStyle(list, opt.getAttribute('data-list-style'));
+        popover.hidden = true;
+      });
+    });
+  }
+  wireListPopover(
+    document.getElementById('bulletListBtn'),
+    document.getElementById('bulletStylePopover'),
+    'insertUnorderedList'
+  );
+  wireListPopover(
+    document.getElementById('numberListBtn'),
+    document.getElementById('numberStylePopover'),
+    'insertOrderedList'
+  );
 
-  /* ---------- 5) 들여쓰기 / 내어쓰기 ----------
+  /* ---------- 6) 들여쓰기 / 내어쓰기 ----------
      브라우저 기본 execCommand('indent')는 구현마다 동작이 달라 예측이
      어려워서, 선택 영역이 속한 블록 요소의 margin-left를 직접 조절하는
      방식으로 만듭니다. */
@@ -219,7 +261,7 @@
     outdentBtn.addEventListener('click', function () { adjustIndent(-INDENT_STEP_PX); });
   }
 
-  /* ---------- 6) 도움말(?) 팝업 ----------
+  /* ---------- 7) 도움말(?) 팝업 ----------
      내용(문단)은 각 템플릿의 #helpModal 안에 그대로 두고, 여기서는
      여닫기 동작만 처리합니다. */
   var helpBtn = document.getElementById('helpBtn');
@@ -237,7 +279,7 @@
     });
   }
 
-  /* ---------- 7) 사이트 헤더 "문서 설정" 메뉴 ----------
+  /* ---------- 8) 사이트 헤더 "문서 설정" 메뉴 ----------
      새 메뉴 항목을 components.js의 renderSiteHeader()에 추가하면
      여기에도 그 항목의 동작을 추가해야 합니다. */
   var siteMenuBtn = document.getElementById('siteMenuBtn');

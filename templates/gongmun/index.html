@@ -53,9 +53,9 @@
     </div>
 
     <div class="fmt-toolbar" id="fmtToolbar">
-      <button type="button" data-cmd="bold" title="굵게"><b>B</b></button>
-      <button type="button" data-cmd="italic" title="기울임"><i>I</i></button>
-      <button type="button" data-cmd="underline" title="밑줄"><u>U</u></button>
+      <button type="button" data-cmd="bold" title="굵게" aria-label="굵게"><span class="btn-icon icon-bold"></span></button>
+      <button type="button" data-cmd="italic" title="기울임" aria-label="기울임"><span class="btn-icon icon-italic"></span></button>
+      <button type="button" data-cmd="underline" title="밑줄" aria-label="밑줄"><span class="btn-icon icon-underline"></span></button>
       <span class="fmt-sep"></span>
       <select id="fmtFont" title="서체">
         <option value="'Asta Sans', 'Open Sans', sans-serif">Asta Sans (한글 기본)</option>
@@ -74,32 +74,42 @@
         <option value="28">28px</option>
       </select>
       <span class="fmt-sep"></span>
-      <button type="button" class="color-btn" id="colorBtn" title="글자색">
-        <span class="swatch-current"></span>
-      </button>
-      <div class="color-popover" id="colorPopover" hidden></div>
+      <span class="dropdown-anchor">
+        <button type="button" class="color-btn" id="colorBtn" title="글자색" aria-label="글자색">
+          <span class="swatch-current"></span>
+        </button>
+        <div class="color-popover" id="colorPopover" hidden></div>
+      </span>
       <span class="fmt-sep"></span>
-      <button type="button" data-cmd="justifyLeft" title="왼쪽 정렬">왼</button>
-      <button type="button" data-cmd="justifyCenter" title="가운데 정렬">중</button>
-      <button type="button" data-cmd="justifyRight" title="오른쪽 정렬">우</button>
-      <button type="button" data-cmd="justifyFull" title="양쪽 정렬">양</button>
+      <button type="button" data-cmd="justifyLeft" title="왼쪽 정렬" aria-label="왼쪽 정렬"><span class="btn-icon icon-align-left"></span></button>
+      <button type="button" data-cmd="justifyCenter" title="가운데 정렬" aria-label="가운데 정렬"><span class="btn-icon icon-align-center"></span></button>
+      <button type="button" data-cmd="justifyRight" title="오른쪽 정렬" aria-label="오른쪽 정렬"><span class="btn-icon icon-align-right"></span></button>
+      <button type="button" data-cmd="justifyFull" title="양쪽 정렬" aria-label="양쪽 정렬"><span class="btn-icon icon-align-justify"></span></button>
       <span class="fmt-sep"></span>
-      <button type="button" data-cmd="insertUnorderedList" title="점 목록">&bull;</button>
-      <select id="bulletStyleSelect" class="list-style-select" title="점 목록 모양">
-        <option value="disc">● 채운 원</option>
-        <option value="circle">○ 빈 원</option>
-        <option value="square">■ 사각형</option>
-      </select>
-      <button type="button" data-cmd="insertOrderedList" title="번호 목록">1.</button>
-      <select id="numberStyleSelect" class="list-style-select" title="번호 목록 모양">
-        <option value="decimal">1, 2, 3</option>
-        <option value="circled-decimal">①, ②, ③</option>
-        <option value="lower-alpha">a, b, c</option>
-        <option value="upper-roman">I, II, III</option>
-      </select>
+      <!-- 점 목록: 버튼을 누르면 모양(채운 원/빈 원/사각형)을 고르는
+           팝업이 열립니다. 항목을 고르면 목록 생성 + 모양 적용이 한
+           번에 처리됩니다 (shared/scripts/editor.js 섹션 5). -->
+      <span class="dropdown-anchor">
+        <button type="button" id="bulletListBtn" title="점 목록 — 눌러서 모양 선택" aria-label="점 목록"><span class="btn-icon icon-list-bullet"></span></button>
+        <div class="list-popover" id="bulletStylePopover" hidden>
+          <button type="button" data-list-style="disc">● 채운 원</button>
+          <button type="button" data-list-style="circle">○ 빈 원</button>
+          <button type="button" data-list-style="square">■ 사각형</button>
+        </div>
+      </span>
+      <!-- 번호 목록: 위와 같은 방식, 모양은 1,2,3 / 원문자 / a,b,c / 로마자. -->
+      <span class="dropdown-anchor">
+        <button type="button" id="numberListBtn" title="번호 목록 — 눌러서 모양 선택" aria-label="번호 목록"><span class="btn-icon icon-list-numbered"></span></button>
+        <div class="list-popover" id="numberStylePopover" hidden>
+          <button type="button" data-list-style="decimal">1, 2, 3</button>
+          <button type="button" data-list-style="circled-decimal">①, ②, ③</button>
+          <button type="button" data-list-style="lower-alpha">a, b, c</button>
+          <button type="button" data-list-style="upper-roman">I, II, III</button>
+        </div>
+      </span>
       <span class="fmt-sep"></span>
-      <button type="button" id="outdentBtn" title="내어쓰기">&larr;</button>
-      <button type="button" id="indentBtn" title="들여쓰기">&rarr;</button>
+      <button type="button" id="outdentBtn" title="내어쓰기" aria-label="내어쓰기"><span class="btn-icon icon-outdent"></span></button>
+      <button type="button" id="indentBtn" title="들여쓰기" aria-label="들여쓰기"><span class="btn-icon icon-indent"></span></button>
       <span class="fmt-hint">서식을 적용할 글자를 먼저 드래그로 선택한 뒤 버튼을 눌러주세요</span>
     </div>
   </div>
