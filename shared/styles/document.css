@@ -102,6 +102,26 @@
 }
 .guide li{margin-bottom:4px;}
 
+/* 사용자가 서식 도구모음에서 목록을 새로 넣을 때도(.editable 안) 같은
+   본문 스타일이 적용되도록 .guide 바깥에서도 재사용 가능한 규칙 */
+.editable ul,.editable ol{
+  font-family:var(--font-kr);font-size:14px;line-height:1.75;color:#2a2a2a;
+  margin:0 0 14px;padding-left:20px;
+}
+.editable li{margin-bottom:4px;}
+
+/* 원문자 번호 목록(①②③...) — CSS 표준 list-style-type에 없는 모양이라
+   커스텀 카운터 스타일로 정의합니다. 20개까지 지원하고, 그 이상은
+   자동으로 일반 숫자로 대체됩니다(system:fixed의 표준 동작). 서식
+   도구모음의 "번호 목록 모양"에서 "원문자"를 고르면 이 클래스가
+   붙습니다 (shared/scripts/editor.js 참고). */
+@counter-style circled-decimal{
+  system:fixed;
+  symbols:"①" "②" "③" "④" "⑤" "⑥" "⑦" "⑧" "⑨" "⑩" "⑪" "⑫" "⑬" "⑭" "⑮" "⑯" "⑰" "⑱" "⑲" "⑳";
+  suffix:" ";
+}
+.list-circled{list-style:circled-decimal;}
+
 /* 한글이 섞이는 입력 필드(문서번호, 수신처 등)에 공통으로 붙이는 유틸리티
    클래스 — Open Sans는 한글을 지원하지 않으므로 강제로 Asta Sans 계열로
    고정합니다. 새 템플릿에서 한글 섞인 입력칸을 추가할 때도 이 클래스를

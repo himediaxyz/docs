@@ -1,7 +1,8 @@
 /* ============================================================
    toolbar.css
-   화면에서만 보이는 UI 껍데기 — 상단 안내 카드 + 서식(굵게/기울임/
-   밑줄/서체/크기) 도구모음. 인쇄에는 전혀 나오지 않습니다
+   화면에서만 보이는 UI 껍데기 — 사용법 도움말(?) 버튼과 팝업,
+   서식(굵게/기울임/밑줄/서체/크기/색상/정렬/목록/들여쓰기) 도구모음,
+   사이트 헤더의 "문서 설정" 메뉴. 인쇄에는 전혀 나오지 않습니다
    (print.css에서 .toolbar, .no-print를 통째로 숨김).
 
    실제 버튼 동작 로직은 shared/scripts/editor.js 참고.
@@ -16,36 +17,70 @@
 .toolbar-card{
   background:#ffffff;border:1px solid #d8dee8;border-radius:10px;
   padding:16px 20px;font-family:var(--font-en);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.toolbar-card-title{
+  display:flex;align-items:center;gap:8px;
 }
 .toolbar-card h1{
   font-family:var(--font-kr);
-  font-size:15px;margin:0 0 8px;color:var(--navy);font-weight:700;
+  font-size:15px;margin:0;color:var(--navy);font-weight:700;
 }
-.toolbar-card p{
-  font-size:13px;line-height:1.6;color:var(--sub);margin:0 0 6px;
-}
-.legend{
-  display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;
-}
-.legend span{
-  display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);
-}
-.swatch{width:10px;height:10px;border-radius:3px;display:inline-block;}
-.swatch.kr{background:var(--navy);}
-.swatch.en{background:#c98a1c;}
 .print-btn{
-  margin-top:12px;border:1px solid var(--navy);background:var(--navy);color:#fff;
+  border:1px solid var(--navy);background:var(--navy);color:#fff;
   font-family:var(--font-en);font-size:13px;font-weight:600;
-  padding:8px 16px;border-radius:6px;cursor:pointer;
+  padding:8px 16px;border-radius:6px;cursor:pointer;white-space:nowrap;
 }
 .print-btn:hover{opacity:0.9;}
 
-/* ---------- 서식 도구모음 (굵게/기울임/밑줄/서체/크기) ---------- */
+/* ---------- 도움말(?) 버튼 + 팝업 ----------
+   사용법 안내는 상시 노출하지 않고, 궁금할 때만 이 버튼으로 열어봅니다.
+   내용(문단)은 각 템플릿의 HTML에 그대로 두고, 여닫는 동작만 공용으로
+   처리합니다(editor.js). */
+.help-btn{
+  width:26px;height:26px;border-radius:50%;
+  border:1px solid #d0d6e2;background:#fff;color:var(--sub);
+  font-family:var(--font-en);font-weight:700;font-size:13px;
+  cursor:pointer;flex:0 0 auto;
+}
+.help-btn:hover{background:#f1f4fa;border-color:var(--navy);color:var(--navy);}
+
+.help-modal{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(20,30,60,0.35);
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:80px 20px;
+}
+.help-modal[hidden]{display:none;}
+.help-modal-card{
+  background:#fff;border-radius:12px;max-width:640px;width:100%;
+  max-height:80vh;overflow-y:auto;
+  padding:24px 28px;box-shadow:0 12px 40px rgba(20,30,60,0.28);
+  font-family:var(--font-en);position:relative;
+}
+.help-modal-card h2{
+  font-family:var(--font-kr);font-size:16px;color:var(--navy);margin:0 0 12px;
+}
+.help-modal-card p{font-size:13px;line-height:1.7;color:var(--sub);margin:0 0 10px;}
+.help-modal-card .legend{display:flex;gap:16px;margin:10px 0;flex-wrap:wrap;}
+.help-modal-card .legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);}
+.swatch{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.swatch.kr{background:var(--navy);}
+.swatch.en{background:#c98a1c;}
+.help-modal-close{
+  position:absolute;top:16px;right:16px;
+  width:26px;height:26px;border-radius:50%;
+  border:1px solid #d0d6e2;background:#fff;color:var(--sub);
+  cursor:pointer;font-size:13px;
+}
+.help-modal-close:hover{background:#f1f4fa;border-color:var(--navy);color:var(--navy);}
+
+/* ---------- 서식 도구모음 ---------- */
 .fmt-toolbar{
   max-width:900px;margin:10px auto 0;
   background:#ffffff;border:1px solid #d8dee8;border-radius:10px;
   padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  font-family:var(--font-en);
+  font-family:var(--font-en);position:relative;
 }
 .fmt-toolbar button{
   width:30px;height:30px;border:1px solid #d0d6e2;background:#fff;border-radius:6px;
@@ -59,3 +94,29 @@
   background:#fff;cursor:pointer;
 }
 .fmt-hint{font-size:11.5px;color:#8b93a8;margin-left:4px;}
+
+/* ---------- 글자 색상 ---------- */
+.color-btn{
+  display:flex;align-items:center;justify-content:center;
+}
+.color-btn .swatch-current{
+  width:14px;height:14px;border-radius:3px;background:var(--ink);
+  border:1px solid rgba(0,0,0,0.15);
+}
+.color-popover{
+  position:absolute;top:38px;left:0;z-index:20;
+  background:#fff;border:1px solid #d8dee8;border-radius:8px;
+  padding:8px;box-shadow:0 8px 24px rgba(20,30,60,0.18);
+  display:grid;grid-template-columns:repeat(4,24px);gap:8px;
+}
+.color-popover[hidden]{display:none;}
+.color-popover button{
+  width:24px;height:24px;border-radius:5px;border:1px solid rgba(0,0,0,0.12);
+  cursor:pointer;padding:0;
+}
+.color-popover button:hover{outline:2px solid var(--navy);outline-offset:1px;}
+
+/* ---------- 목록 모양 선택 ---------- */
+.fmt-toolbar select.list-style-select{
+  max-width:118px;
+}

@@ -1,16 +1,19 @@
 /* ============================================================
    editor.js
-   contenteditable 입력 필드(.editable)용 공통 편집 기능:
+   contenteditable 입력 필드(.editable)용 공통 편집 기능 + 화면 UI
+   여닫기 동작 전반을 담당합니다:
      1) 대괄호([ ]) 안내 문구 placeholder — 클릭하면 전체 선택되어
         바로 타이핑으로 덮어쓸 수 있음
-     2) 서식 도구모음(#fmtToolbar) — 굵게/기울임/밑줄 + 서체/크기 변경
+     2) 서식 도구모음(#fmtToolbar) — 굵게/기울임/밑줄/서체/크기/
+        글자색/정렬/목록 모양/들여쓰기-내어쓰기
+     3) 도움말(?) 팝업 여닫기 (#helpBtn / #helpModal)
+     4) 사이트 헤더의 "문서 설정" 메뉴 여닫기 + 초기화 (#siteMenuBtn 등)
 
    새 템플릿에서 그대로 재사용하려면: .editable 클래스가 붙은
-   contenteditable 요소들과, data-cmd 버튼(bold/italic/underline) +
-   #fmtFont + #fmtSize 셀렉트가 담긴 #fmtToolbar만 마크업에 넣으면
-   이 스크립트가 자동으로 연결합니다. 직접 수정할 일은 거의 없습니다 —
-   서체 선택지를 늘리고 싶으면 각 템플릿의 <select id="fmtFont"> 안의
-   <option>만 추가하면 됩니다.
+   contenteditable 요소들과, 아래 id/data-cmd를 그대로 쓴 버튼·셀렉트를
+   마크업에 넣으면 이 스크립트가 자동으로 연결합니다. 정확한 마크업
+   예시는 templates/gongmun/index.html을 그대로 복사하는 게 가장
+   빠릅니다.
 
    이 파일을 쓰는 곳: 사용자가 직접 입력하는 문서 템플릿
      <script src="../../shared/scripts/editor.js"></script>
@@ -107,5 +110,158 @@
   if (fmtSize) fmtSize.addEventListener('change', function () {
     wrapSelectionWithStyle('fontSize', fmtSize.value + 'px');
   });
+
+  /* ---------- 3) 글자 색상 ----------
+     원색을 피한 모노톤 8색. 색상을 바꾸거나 추가/삭제하려면 이 배열만
+     고치면 팝업 버튼이 자동으로 다시 그려집니다. 색약 사용자를 위해
+     색상만으로 구분하지 않도록 각 버튼에 이름을 title(마우스 오버 시
+     표시)로 붙입니다. */
+  var COLOR_PALETTE = [
+    { name: '잉크 블랙', hex: '#1a1a1a' },
+    { name: '다이즈 네이비', hex: '#0b234f' },
+    { name: '슬레이트 그레이', hex: '#4a5568' },
+    { name: '웜 그레이', hex: '#6b6355' },
+    { name: '딥 버건디', hex: '#6b2c3e' },
+    { name: '포레스트 그린', hex: '#2f4a3e' },
+    { name: '딥 틸', hex: '#1f3a3a' },
+    { name: '브론즈', hex: '#5c4a2e' }
+  ];
+  var colorBtn = document.getElementById('colorBtn');
+  var colorPopover = document.getElementById('colorPopover');
+  if (colorBtn && colorPopover) {
+    COLOR_PALETTE.forEach(function (c) {
+      var swatch = document.createElement('button');
+      swatch.type = 'button';
+      swatch.style.background = c.hex;
+      swatch.title = c.name;
+      swatch.setAttribute('aria-label', c.name);
+      swatch.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      swatch.addEventListener('click', function () {
+        wrapSelectionWithStyle('color', c.hex);
+        colorPopover.hidden = true;
+      });
+      colorPopover.appendChild(swatch);
+    });
+    colorBtn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    colorBtn.addEventListener('click', function () {
+      colorPopover.hidden = !colorPopover.hidden;
+    });
+    document.addEventListener('click', function (e) {
+      if (!colorPopover.hidden && e.target !== colorBtn && !colorPopover.contains(e.target)) {
+        colorPopover.hidden = true;
+      }
+    });
+  }
+
+  /* ---------- 4) 목록 모양 선택 ----------
+     굵게/기울임과 달리 목록은 execCommand(insertUnorderedList/
+     insertOrderedList)로 만든 뒤, 그 목록의 list-style-type을 별도
+     셀렉트로 바꾸는 2단계 방식입니다. */
+  function getListElement(node) {
+    var el = node && node.nodeType === 3 ? node.parentElement : node;
+    while (el && el.nodeType === 1 && el.tagName !== 'UL' && el.tagName !== 'OL') {
+      if (el.classList && el.classList.contains('editable')) return null;
+      el = el.parentElement;
+    }
+    return el;
+  }
+  function applyListStyle(select) {
+    if (!restoreSelection()) return;
+    var sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    var list = getListElement(sel.getRangeAt(0).commonAncestorContainer);
+    if (!list) return;
+    if (select.value === 'circled-decimal') {
+      // 원문자(①②③...)는 CSS 표준 키워드가 없어서 document.css에 정의된
+      // 커스텀 @counter-style(.list-circled)을 대신 사용합니다.
+      list.style.listStyleType = '';
+      list.classList.add('list-circled');
+    } else {
+      list.classList.remove('list-circled');
+      list.style.listStyleType = select.value;
+    }
+  }
+  var bulletStyle = document.getElementById('bulletStyleSelect');
+  if (bulletStyle) bulletStyle.addEventListener('change', function () { applyListStyle(bulletStyle); });
+  var numberStyle = document.getElementById('numberStyleSelect');
+  if (numberStyle) numberStyle.addEventListener('change', function () { applyListStyle(numberStyle); });
+
+  /* ---------- 5) 들여쓰기 / 내어쓰기 ----------
+     브라우저 기본 execCommand('indent')는 구현마다 동작이 달라 예측이
+     어려워서, 선택 영역이 속한 블록 요소의 margin-left를 직접 조절하는
+     방식으로 만듭니다. */
+  var INDENT_STEP_PX = 24;
+  function getBlockElement(node) {
+    var el = node && node.nodeType === 3 ? node.parentElement : node;
+    while (el && el.nodeType === 1 && !/^(P|LI|DIV|H[1-6]|BLOCKQUOTE)$/.test(el.tagName)) {
+      if (el.classList && el.classList.contains('editable')) return el;
+      el = el.parentElement;
+    }
+    return el;
+  }
+  function adjustIndent(stepPx) {
+    if (!restoreSelection()) return;
+    var sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    var block = getBlockElement(sel.getRangeAt(0).commonAncestorContainer);
+    if (!block) return;
+    var current = parseInt(block.style.marginLeft || '0', 10);
+    block.style.marginLeft = Math.max(0, current + stepPx) + 'px';
+  }
+  var indentBtn = document.getElementById('indentBtn');
+  if (indentBtn) {
+    indentBtn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    indentBtn.addEventListener('click', function () { adjustIndent(INDENT_STEP_PX); });
+  }
+  var outdentBtn = document.getElementById('outdentBtn');
+  if (outdentBtn) {
+    outdentBtn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    outdentBtn.addEventListener('click', function () { adjustIndent(-INDENT_STEP_PX); });
+  }
+
+  /* ---------- 6) 도움말(?) 팝업 ----------
+     내용(문단)은 각 템플릿의 #helpModal 안에 그대로 두고, 여기서는
+     여닫기 동작만 처리합니다. */
+  var helpBtn = document.getElementById('helpBtn');
+  var helpModal = document.getElementById('helpModal');
+  if (helpBtn && helpModal) {
+    helpBtn.addEventListener('click', function () { helpModal.hidden = false; });
+    var helpCloseBtn = helpModal.querySelector('.help-modal-close');
+    if (helpCloseBtn) helpCloseBtn.addEventListener('click', function () { helpModal.hidden = true; });
+    // 배경(카드 바깥) 클릭 시 닫기
+    helpModal.addEventListener('click', function (e) {
+      if (e.target === helpModal) helpModal.hidden = true;
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !helpModal.hidden) helpModal.hidden = true;
+    });
+  }
+
+  /* ---------- 7) 사이트 헤더 "문서 설정" 메뉴 ----------
+     새 메뉴 항목을 components.js의 renderSiteHeader()에 추가하면
+     여기에도 그 항목의 동작을 추가해야 합니다. */
+  var siteMenuBtn = document.getElementById('siteMenuBtn');
+  var siteMenuList = document.getElementById('siteMenuList');
+  if (siteMenuBtn && siteMenuList) {
+    siteMenuBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      siteMenuList.hidden = !siteMenuList.hidden;
+    });
+    document.addEventListener('click', function (e) {
+      if (!siteMenuList.hidden && e.target !== siteMenuBtn && !siteMenuList.contains(e.target)) {
+        siteMenuList.hidden = true;
+      }
+    });
+  }
+  var resetDocBtn = document.getElementById('resetDocBtn');
+  if (resetDocBtn) {
+    resetDocBtn.addEventListener('click', function () {
+      // 이 도구는 서버에 아무것도 저장하지 않으므로, 페이지를 새로
+      // 불러오는 것 자체가 "초기화"입니다.
+      if (window.confirm('작성 중인 내용이 모두 사라지고 빈 템플릿으로 초기화됩니다. 계속할까요?')) {
+        window.location.reload();
+      }
+    });
+  }
 
 })();

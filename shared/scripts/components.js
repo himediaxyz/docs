@@ -55,7 +55,11 @@ DISE.components = {
   /* ============ 사이트 레벨 (화면 전용, 인쇄 안 됨) ============ */
 
   /**
-   * 화면 상단의 "사이트 헤더" — 포털로 돌아가는 링크 + 도구 이름.
+   * 화면 상단의 "사이트 헤더" — 포털로 돌아가는 링크 + "문서 설정" 메뉴.
+   * 메뉴 자체는 여기서 마크업만 그리고, 여닫기·클릭 동작은
+   * shared/scripts/editor.js가 처리합니다(버튼 id: siteMenuBtn/siteMenuList,
+   * 항목 id: resetDocBtn 등 — 새 항목을 추가하면 editor.js에도 wiring을
+   * 추가해야 합니다).
    * @param {Object} [opts]
    * @param {string} [opts.portalHref] - 포털(index.html)까지의 상대 경로.
    *   템플릿이 저장소 루트에서 몇 단계 깊이에 있느냐에 따라 다르므로
@@ -68,10 +72,18 @@ DISE.components = {
     var portalHref = opts.portalHref || 'index.html';
 
     target.innerHTML =
-      '<a class="site-header-bar" href="' + portalHref + '">' +
-        '<span class="site-header-arrow">&larr;</span>' +
-        '<span class="site-header-name">' + DISE.site.nameKr + '</span>' +
-      '</a>';
+      '<div class="site-header-bar">' +
+        '<a class="site-header-link" href="' + portalHref + '">' +
+          '<span class="site-header-arrow">&larr;</span>' +
+          '<span class="site-header-name">' + DISE.site.nameKr + '</span>' +
+        '</a>' +
+        '<div class="site-menu">' +
+          '<button type="button" class="site-menu-btn" id="siteMenuBtn">문서 설정 <span aria-hidden="true">&#9662;</span></button>' +
+          '<div class="site-menu-list" id="siteMenuList" hidden>' +
+            '<button type="button" id="resetDocBtn">새 문서로 초기화</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
   },
 
   /**
