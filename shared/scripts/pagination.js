@@ -131,6 +131,19 @@
   // DOM 이동을 합니다 — 그래야 페이지를 만들고 지우는 도중에 순서가
   // 꼬이지 않습니다.
   function repaginate() {
+    if (composing) return; // 조합 중에는 compositionend가 다시 불러줍니다.
+    try {
+      repaginateInner();
+    } catch (e) {
+      // 페이지 재배치 도중 예외가 나면 화면이 "아무 일도 안 일어난 것
+      // 처럼" 조용히 멈출 수 있습니다(디버그하기 가장 어려운 상태) —
+      // 그래서 콘솔에 반드시 남겨서, 문제가 생기면 F12 콘솔에서 바로
+      // 원인을 확인할 수 있게 합니다.
+      console.error('[pagination] repaginate() 실패:', e);
+    }
+  }
+
+  function repaginateInner() {
     var pagesRoot = document.getElementById('pages');
     var firstPage = pagesRoot && pagesRoot.querySelector('.page');
     if (!pagesRoot || !firstPage) return;
@@ -142,8 +155,6 @@
 
     var headerHTML = firstPage.querySelector('.page-header').innerHTML;
     var footerHTML = firstPage.querySelector('.page-footer').innerHTML;
-
-    var savedSel = captureSelection();
 
     // 아직 아무것도 옮기기 전, 지금 DOM에 있는 순서 그대로 전체 흐름
     // 항목을 모읍니다 — 여러 페이지에 걸쳐 있어도 페이지 순서대로
@@ -166,28 +177,46 @@
     });
     var pageCount = pageIndex + 1;
 
-    // 페이지가 모자라면 필요한 만큼 새로 만듭니다.
+    // 페이지가 모자라면 필요한 만큼 새로 만듭니다(새 페이지는 항상
+    // 비어있는 상태로 시작하므로 이 단계는 커서/IME와 무관하게 안전).
     for (var i = pagesRoot.children.length; i < pageCount; i++) {
       pagesRoot.appendChild(buildPage(headerHTML, footerHTML));
     }
-
-    // 각 페이지의 .flow-items를 미리 찾아두고, 계산된 배정대로
-    // appendChild — 페이지 순서 → 항목 순서로 처리하므로 결과적으로
-    // 전체 문서 순서가 그대로 유지됩니다.
     var flowByPage = [];
     for (var p = 0; p < pageCount; p++) {
       flowByPage[p] = pagesRoot.children[p].querySelector('.flow-items');
     }
+
+    // 실제로 자리를 옮겨야 하는 항목만 골라서 옮깁니다 — 타이핑 중
+    // 대부분의 재계산은 "지금 페이지에 이미 다 들어간다"는 결론으로
+    // 끝나므로, 그런 경우는 DOM을 전혀 건드리지 않습니다. 이게 중요한
+    // 이유: 이동이 필요 없는데도 습관적으로 모든 항목을 appendChild하면
+    // — 결과 위치는 같아도 — 지금 한글 입력기(IME)로 글자를 조합 중인
+    // 문단까지 매번 떼었다 붙이게 되어, 조합이 깨지면서 자음이 중복
+    // 입력되는 등 오타가 생깁니다(사용자가 실제로 겪은 증상). 그래서
+    // "현재 위치가 이미 맞는지" 먼저 확인하고, 정말 다른 위치로 가야
+    // 하는 항목만 그때그때 옮기면서 다음 항목의 "맞는 위치"를 다시
+    // 계산합니다(한 번 옮기고 나면 그다음 항목의 기준점도 바뀌므로,
+    // 전부 미리 계산해두지 않고 옮길 때마다 다시 확인합니다).
+    var cursorByPage = {};
+    var savedSel = null;
+    var movedAny = false;
     assignment.forEach(function (a) {
-      flowByPage[a.pageIndex].appendChild(a.item);
+      var container = flowByPage[a.pageIndex];
+      var prevNode = cursorByPage.hasOwnProperty(a.pageIndex) ? cursorByPage[a.pageIndex] : null;
+      var insertionPoint = prevNode ? prevNode.nextSibling : container.firstChild;
+      if (a.item !== insertionPoint) {
+        if (!movedAny) { savedSel = captureSelection(); movedAny = true; }
+        container.insertBefore(a.item, insertionPoint);
+      }
+      cursorByPage[a.pageIndex] = a.item;
     });
+    if (movedAny) restoreSelection(savedSel);
 
     // 더는 쓰지 않는 뒤쪽 페이지 정리(최소 1페이지는 항상 유지).
     for (var r = pagesRoot.children.length - 1; r >= Math.max(pageCount, 1); r--) {
       pagesRoot.removeChild(pagesRoot.children[r]);
     }
-
-    restoreSelection(savedSel);
   }
 
   function debounce(fn, wait) {
@@ -196,10 +225,32 @@
   }
   var debouncedRepaginate = debounce(repaginate, 200);
 
+  // ---- 한글 등 IME 조합 중에는 재배치를 미룹니다 ----
+  // 위에서 "실제로 옮길 항목만 옮기도록" 최소화했지만, 그래도 조합 중인
+  // 문단 자체가 페이지 경계를 넘어가야 하는 경우(드물지만 가능)라면
+  // 그 문단을 옮기는 순간 조합이 깨질 수 있습니다. 한글은 자음+모음을
+  // 조합해서 한 글자를 완성하는 동안(compositionstart~compositionend)
+  // 브라우저가 그 글자를 임시 상태로 들고 있는데, 이 사이에 DOM을
+  // 건드리면(같은 자리로 다시 넣어도) 조합이 취소되면서 방금 친 자음이
+  // 한 번 더 입력되는 등의 오타가 생깁니다. 그래서 조합이 진행 중인
+  // 동안은 재배치를 아예 미뤘다가, 조합이 끝나는 순간(글자가 확정되는
+  // 순간) 한 번 더 계산합니다.
+  var composing = false;
+  document.addEventListener('compositionstart', function (e) {
+    if (e.target && e.target.closest && e.target.closest('.flow-items')) composing = true;
+  });
+  document.addEventListener('compositionend', function (e) {
+    if (e.target && e.target.closest && e.target.closest('.flow-items')) {
+      composing = false;
+      debouncedRepaginate();
+    }
+  });
+
   // .flow-items 요소 하나하나에 리스너를 미리 붙이는 대신 document에서
   // 위임(delegation)으로 감지합니다 — 페이지가 늘어나며 새로 생기는
   // .flow-items도 별도로 챙기지 않아도 똑같이 잡힙니다.
   document.addEventListener('input', function (e) {
+    if (composing) return; // 조합 중에는 compositionend에서 한 번만 처리
     if (e.target && e.target.closest && e.target.closest('.flow-items')) {
       debouncedRepaginate();
     }
