@@ -1,0 +1,76 @@
+/* ============================================================
+   pagination.js
+   A4 문서가 화면/인쇄에서 항상 페이지를 가득 채워 보이도록 높이를
+   맞추고, 화면에서만 보이는 "예상 페이지 구분선"을 그려줍니다.
+
+   이 스크립트가 찾는 요소(관례상 아래 id/class를 그대로 써야 동작합니다):
+     #sheet         전체 종이 컨테이너
+     #contentFlow   본문 tbody (여기 min-height를 계산해서 채워 넣음)
+     .band          헤더 밴드
+     .footer-band   푸터 밴드
+     .editable      입력 필드 (입력할 때마다 다시 계산하기 위해 감지)
+
+   이 파일을 쓰는 곳: A4 인쇄 문서 템플릿
+     <script src="../../shared/scripts/pagination.js"></script>
+   ============================================================ */
+
+(function () {
+  var MM_TO_PX = 96 / 25.4;
+
+  // 헤더/푸터 높이를 실측해서, 본문이 짧을 때도 문서 전체가 A4 한 페이지를
+  // 가득 채우도록 최소 높이를 계산합니다 (짧은 문서에서 서명 아래
+  // 배경색이 중간에 끊기는 문제 방지).
+  function syncPageMetrics() {
+    var band = document.querySelector('.band');
+    var footer = document.querySelector('.footer-band');
+    var contentFlow = document.getElementById('contentFlow');
+    var hdrH = band ? band.getBoundingClientRect().height : 176;
+    var ftrH = footer ? footer.getBoundingClientRect().height : 62;
+    var pageH = 297 * MM_TO_PX;
+    var minBody = Math.max(pageH - hdrH - ftrH, 0);
+    if (contentFlow) contentFlow.style.minHeight = minBody + 'px';
+  }
+
+  // 화면에서 실제 인쇄 시 페이지가 나뉘는 지점을 대략적으로 미리 보여주는
+  // 안내선 (297mm 단위 — 실제 브라우저 인쇄 엔진 결과와 몇 px 차이가 날
+  // 수 있는 근사치입니다).
+  function renderPageGuides() {
+    var sheet = document.getElementById('sheet');
+    if (!sheet) return;
+    sheet.querySelectorAll('.page-guide').forEach(function (el) { el.remove(); });
+    var pageHeightPx = 297 * MM_TO_PX;
+    var totalHeight = sheet.scrollHeight;
+    var n = 1;
+    while (n * pageHeightPx < totalHeight - 4) {
+      var guide = document.createElement('div');
+      guide.className = 'page-guide no-print';
+      guide.style.top = (n * pageHeightPx) + 'px';
+      var tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = (n + 1) + '페이지 시작 (예상)';
+      guide.appendChild(tag);
+      sheet.appendChild(guide);
+      n++;
+    }
+  }
+
+  function debounce(fn, wait) {
+    var t;
+    return function () { clearTimeout(t); t = setTimeout(fn, wait); };
+  }
+  var debouncedRefresh = debounce(function () { syncPageMetrics(); renderPageGuides(); }, 200);
+
+  document.querySelectorAll('.editable').forEach(function (el) {
+    el.addEventListener('input', debouncedRefresh);
+  });
+
+  window.addEventListener('load', function () { syncPageMetrics(); renderPageGuides(); });
+  window.addEventListener('resize', debouncedRefresh);
+  window.addEventListener('beforeprint', syncPageMetrics);
+
+  // 웹폰트가 늦게 로드되면 글자 크기가 바뀌면서 실제 높이가 달라지므로,
+  // 폰트 로딩이 끝난 뒤 한 번 더 계산합니다.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { syncPageMetrics(); renderPageGuides(); });
+  }
+})();

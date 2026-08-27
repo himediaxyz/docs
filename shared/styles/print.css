@@ -1,0 +1,32 @@
+/* ============================================================
+   print.css
+   인쇄(및 "PDF로 저장") 전용 규칙 — A4 페이지 크기 고정, 화면 전용
+   UI 숨김, 페이지마다 헤더/푸터 반복, 문단이 페이지 경계에서 어색하게
+   잘리는 것 방지.
+
+   이 파일을 쓰는 곳: 모든 문서 템플릿 (항상 마지막에 링크 — 다른
+   shared CSS 규칙을 인쇄 시점에 덮어써야 하므로)
+     <link rel="stylesheet" href="../../shared/styles/print.css">
+   ============================================================ */
+
+@media print{
+  .toolbar,.no-print{display:none !important;}
+  html,body{background:#fff;}
+  .sheet-wrap{margin:0;padding:0;max-width:none;}
+  .sheet{box-shadow:none;width:210mm;}
+  .editable{outline:none !important;background:transparent !important;}
+
+  /* thead/tfoot는 표 인쇄 시 브라우저가 페이지마다 자동으로 반복해 준다 */
+  thead{display:table-header-group;}
+  tfoot{display:table-footer-group;}
+
+  /* 문단·목록·서명란이 페이지 경계에서 어색하게 잘리는 것을 최대한 방지.
+     새 템플릿에서 "절대 페이지 중간에 잘리면 안 되는" 블록을 추가할 때는
+     이 선택자 목록에 클래스를 더해주면 됩니다. */
+  .guide p,.guide li,.sign-block,.title-placeholder,.to-line{
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  .guide p,.guide li{orphans:3;widows:3;}
+
+  @page{ size:A4; margin:0; }
+}

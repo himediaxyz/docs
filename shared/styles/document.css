@@ -1,0 +1,132 @@
+/* ============================================================
+   document.css
+   A4 문서 본문 레이아웃 — 종이(.sheet), 표 구조, 헤더/푸터 밴드,
+   제목·수신처·본문·서명란 등 "문서다운" 부분을 담당합니다.
+
+   화면 전용 UI(안내 카드, 서식 도구모음)는 toolbar.css,
+   contenteditable 입력 필드 스타일은 editable.css,
+   인쇄 전용 규칙은 print.css에 각각 분리되어 있습니다.
+
+   이 파일을 쓰는 곳: 모든 문서 템플릿
+     <link rel="stylesheet" href="../../shared/styles/document.css">
+   ============================================================ */
+
+/* ---------- 종이(A4) 컨테이너 ---------- */
+.sheet-wrap{
+  max-width:900px;margin:20px auto 60px;padding:0 20px;
+}
+.sheet{
+  width:210mm;
+  margin:0 auto;background:#ffffff;
+  box-shadow:0 4px 24px rgba(20,30,60,0.18);
+  position:relative;
+}
+
+/* thead/tfoot를 쓰는 이유: 표(table)의 머리글/바닥글은 브라우저가
+   인쇄 시 페이지마다 자동으로 반복해줘서, 여러 페이지짜리 문서에서도
+   헤더/푸터가 안정적으로 나옵니다 (position:fixed 방식보다 안전). */
+.sheet-table{
+  width:100%;border-collapse:collapse;table-layout:fixed;background:#ffffff;
+}
+.sheet-table td{margin:0;border:0;vertical-align:top;}
+.cell-head,.cell-foot{padding:0;}
+
+/* ---------- 헤더 밴드 (로고 + 회사명) ----------
+   실제 마크업은 shared/scripts/components.js의 renderHeader()가
+   #siteHeader 자리에 채워 넣습니다 — 새 템플릿에서도 이 CSS 클래스만
+   그대로 쓰면 됩니다. */
+.band{
+  background:var(--navy);color:#fff;
+  position:relative;padding:40px 50px 34px;
+  min-height:176px;
+}
+.logo-chip{
+  position:absolute;top:40px;left:50px;
+  width:110px;height:64px;background:#fff;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-en);font-weight:700;letter-spacing:-0.5px;
+}
+.logo-chip .mark{
+  font-size:15px;color:var(--navy);line-height:1.05;text-align:center;
+}
+.band-text{padding-left:178px;}
+.brand-kr{
+  font-family:var(--font-kr);font-weight:700;font-size:26px;color:#e7ebf3;letter-spacing:-0.5px;
+}
+.brand-en{
+  font-family:var(--font-en);font-size:12px;color:#aebbd6;letter-spacing:2px;margin-top:2px;
+}
+.brand-tag{
+  font-family:var(--font-kr);font-size:13px;color:#c3cee3;margin-top:10px;
+}
+
+/* ---------- 본문 셀 여백 ---------- */
+.cell-meta{padding:16px 50px 0;}
+.meta-line{
+  font-family:var(--font-en);font-size:12.5px;color:var(--sub);
+  letter-spacing:0.2px;
+}
+.meta-line b{font-family:var(--font-kr);font-weight:600;color:var(--ink);}
+
+.cell-title{padding:26px 50px 0;}
+.cell-to{padding:0 50px;}
+.cell-note{padding:0 50px;}
+.cell-guide{padding:0 50px;}
+.cell-sign{padding:20px 50px 28px;}
+
+.title-placeholder{
+  font-family:var(--font-kr);font-weight:700;font-size:24px;color:var(--navy);
+  margin:0 0 16px;
+}
+.to-line{
+  font-family:var(--font-kr);font-size:15px;color:var(--ink);margin:0 0 6px;
+}
+.to-line .en{font-family:var(--font-en);}
+.note-line{
+  font-family:var(--font-kr);font-style:italic;font-size:12.5px;color:#777;margin:0 0 18px;
+}
+.guide{
+  font-family:var(--font-kr);font-size:14px;line-height:1.75;color:#2a2a2a;
+}
+.guide p{
+  font-family:var(--font-kr);font-size:14px;line-height:1.75;color:#2a2a2a;margin:0 0 12px;
+}
+.guide ol{
+  font-family:var(--font-kr);font-size:14px;line-height:1.75;color:#2a2a2a;
+  margin:0 0 14px;padding-left:20px;
+}
+.guide li{margin-bottom:4px;}
+
+/* 한글이 섞이는 입력 필드(문서번호, 수신처 등)에 공통으로 붙이는 유틸리티
+   클래스 — Open Sans는 한글을 지원하지 않으므로 강제로 Asta Sans 계열로
+   고정합니다. 새 템플릿에서 한글 섞인 입력칸을 추가할 때도 이 클래스를
+   붙이면 됩니다. */
+.force-kr-font{font-family:var(--font-kr);}
+
+/* ---------- 서명(발신) 블록 ---------- */
+.sign-block{
+  display:flex;justify-content:space-between;align-items:flex-end;
+}
+.sign-left .role{font-family:var(--font-kr);font-size:13px;color:#666;margin-bottom:6px;}
+.sign-left .name{font-family:var(--font-kr);font-size:15.5px;font-weight:600;color:var(--ink);}
+.sign-left .name .en{font-family:var(--font-en);font-weight:600;}
+.sign-left .title{font-family:var(--font-kr);font-size:13.5px;color:#444;margin-top:2px;}
+.sign-right{text-align:right;font-family:var(--font-en);font-size:13px;color:#333;line-height:1.7;}
+
+/* ---------- 푸터 밴드 (주소·연락처) ----------
+   실제 마크업은 shared/scripts/components.js의 renderFooter()가
+   #siteFooter 자리에 채워 넣습니다. */
+.footer-band{
+  background:var(--navy);color:#fff;
+  padding:14px 40px;text-align:center;
+}
+.footer-band .l1{
+  font-family:var(--font-kr);font-size:11.5px;letter-spacing:0.2px;margin-bottom:4px;
+}
+.footer-band .l2{
+  font-family:var(--font-en);font-size:11px;color:#cfd7e8;letter-spacing:0.2px;
+}
+
+.fill-tag{
+  font-family:var(--font-en);font-size:10.5px;color:#8b93a8;
+}

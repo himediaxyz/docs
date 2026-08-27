@@ -1,0 +1,61 @@
+/* ============================================================
+   toolbar.css
+   화면에서만 보이는 UI 껍데기 — 상단 안내 카드 + 서식(굵게/기울임/
+   밑줄/서체/크기) 도구모음. 인쇄에는 전혀 나오지 않습니다
+   (print.css에서 .toolbar, .no-print를 통째로 숨김).
+
+   실제 버튼 동작 로직은 shared/scripts/editor.js 참고.
+
+   이 파일을 쓰는 곳: 사용자가 직접 입력하는 문서 템플릿
+     <link rel="stylesheet" href="../../shared/styles/toolbar.css">
+   ============================================================ */
+
+.toolbar{
+  max-width:900px;margin:0 auto;padding:18px 20px 0;
+}
+.toolbar-card{
+  background:#ffffff;border:1px solid #d8dee8;border-radius:10px;
+  padding:16px 20px;font-family:var(--font-en);
+}
+.toolbar-card h1{
+  font-family:var(--font-kr);
+  font-size:15px;margin:0 0 8px;color:var(--navy);font-weight:700;
+}
+.toolbar-card p{
+  font-size:13px;line-height:1.6;color:var(--sub);margin:0 0 6px;
+}
+.legend{
+  display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;
+}
+.legend span{
+  display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);
+}
+.swatch{width:10px;height:10px;border-radius:3px;display:inline-block;}
+.swatch.kr{background:var(--navy);}
+.swatch.en{background:#c98a1c;}
+.print-btn{
+  margin-top:12px;border:1px solid var(--navy);background:var(--navy);color:#fff;
+  font-family:var(--font-en);font-size:13px;font-weight:600;
+  padding:8px 16px;border-radius:6px;cursor:pointer;
+}
+.print-btn:hover{opacity:0.9;}
+
+/* ---------- 서식 도구모음 (굵게/기울임/밑줄/서체/크기) ---------- */
+.fmt-toolbar{
+  max-width:900px;margin:10px auto 0;
+  background:#ffffff;border:1px solid #d8dee8;border-radius:10px;
+  padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  font-family:var(--font-en);
+}
+.fmt-toolbar button{
+  width:30px;height:30px;border:1px solid #d0d6e2;background:#fff;border-radius:6px;
+  cursor:pointer;font-size:13px;color:var(--ink);
+}
+.fmt-toolbar button:hover{background:#f1f4fa;border-color:var(--navy);}
+.fmt-toolbar button.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+.fmt-sep{width:1px;height:22px;background:#e0e4ec;margin:0 2px;}
+.fmt-toolbar select{
+  border:1px solid #d0d6e2;border-radius:6px;padding:5px 8px;font-size:12.5px;color:var(--ink);
+  background:#fff;cursor:pointer;
+}
+.fmt-hint{font-size:11.5px;color:#8b93a8;margin-left:4px;}
