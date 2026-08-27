@@ -10,6 +10,11 @@
      .doc-footer-band 문서 푸터 밴드 (주소·연락처)
      .editable       입력 필드 (입력할 때마다 다시 계산하기 위해 감지)
 
+   window.DISE.pagination.refresh()로 바깥(예: editor.js의 그림/표
+   삽입·삭제·크기 변경)에서도 다시 계산을 요청할 수 있습니다 — 타이핑이
+   아닌 버튼 클릭으로 문서 길이가 바뀌는 경우는 'input' 이벤트가 발생하지
+   않아서 따로 불러줘야 합니다.
+
    이 파일을 쓰는 곳: A4 인쇄 문서 템플릿
      <script src="../../shared/scripts/pagination.js"></script>
    ============================================================ */
@@ -60,9 +65,20 @@
   }
   var debouncedRefresh = debounce(function () { syncPageMetrics(); renderPageGuides(); }, 200);
 
-  document.querySelectorAll('.editable').forEach(function (el) {
-    el.addEventListener('input', debouncedRefresh);
+  // .editable 요소 하나하나에 리스너를 미리 붙이는 대신 document에서
+  // 위임(delegation)으로 감지합니다 — 그림/표를 넣으면서 새로 생기는
+  // .editable(예: 표 셀)도 페이지 로드 이후에 만들어지지만 이 방식이면
+  // 별도로 챙기지 않아도 똑같이 잡힙니다.
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.closest && e.target.closest('.editable')) {
+      debouncedRefresh();
+    }
   });
+
+  // 타이핑이 아니라 버튼 클릭(그림 삽입/삭제/크기, 표 삽입/행렬 추가삭제
+  // 등)으로 문서 길이가 바뀌는 경우를 위해 외부에서 부를 수 있게 공개.
+  window.DISE = window.DISE || {};
+  window.DISE.pagination = { refresh: debouncedRefresh };
 
   window.addEventListener('load', function () { syncPageMetrics(); renderPageGuides(); });
   window.addEventListener('resize', debouncedRefresh);

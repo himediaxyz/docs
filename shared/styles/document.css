@@ -122,6 +122,32 @@
 }
 .list-circled{list-style:circled-decimal;}
 
+/* ---------- 사용자가 삽입한 표 ----------
+   서식 도구모음의 "표 설정" 팝업(테두리 두께/종류, 셀 여백)은 이
+   CSS 변수(--tbl-*)를 통해 표에 바로 적용됩니다 — 나중에 옵션을
+   추가해도 JS는 table.style.setProperty(...) 한 줄이면 되고, 이
+   규칙만 그 변수를 읽으면 됩니다(shared/scripts/editor.js 섹션 10).
+   기본값은 얇은 실선 + 보통 여백입니다. */
+.doc-table{
+  border-collapse:collapse;margin:4px 0 16px;
+  font-family:var(--font-kr);font-size:14px;color:#2a2a2a;
+  --tbl-border-w:1px;--tbl-border-style:solid;--tbl-border-color:#b9c2d6;--tbl-pad:8px;
+}
+.doc-table td,.doc-table th{
+  border:var(--tbl-border-w) var(--tbl-border-style) var(--tbl-border-color);
+  padding:var(--tbl-pad) 10px;vertical-align:top;min-width:90px;
+}
+.doc-table th{background:#f3f5fa;font-weight:600;text-align:left;}
+
+/* 본문에 삽입된 그림 — 인쇄/화면 모두 문서 폭을 넘지 않도록 고정.
+   구체적인 폭(25/50/75/100%)은 사용자가 이미지를 클릭해 여는 작은
+   툴바에서 고르며, 인라인 style.width로 저장됩니다. */
+.editable img{display:inline-block;max-width:100%;height:auto;margin:2px 0;}
+/* 그림을 감싸는 문단(shared/scripts/editor.js 섹션 9) — line-height:0으로
+   inline-block 이미지 아래 생기는 여분의 줄간격 틈을 없앱니다. 정렬은
+   text-align(좌/중/우 버튼)으로 바뀝니다. */
+.img-wrap{line-height:0;}
+
 /* 한글이 섞이는 입력 필드(문서번호, 수신처 등)에 공통으로 붙이는 유틸리티
    클래스 — Open Sans는 한글을 지원하지 않으므로 강제로 Asta Sans 계열로
    고정합니다. 새 템플릿에서 한글 섞인 입력칸을 추가할 때도 이 클래스를

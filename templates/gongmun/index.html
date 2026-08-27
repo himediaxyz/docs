@@ -112,6 +112,83 @@
       <button type="button" id="indentBtn" title="들여쓰기" aria-label="들여쓰기"><span class="btn-icon icon-indent"></span></button>
       <span class="fmt-hint">서식을 적용할 글자를 먼저 드래그로 선택한 뒤 버튼을 눌러주세요</span>
     </div>
+
+    <!-- 컴포넌트 도구모음(그림/표) — 서식 도구모음과 줄을 분리했습니다.
+         앞으로 컴포넌트가 늘어나도 여기에만 추가하면 됩니다. -->
+    <div class="component-toolbar" id="componentToolbar">
+      <button type="button" id="insertImageBtn" title="그림 삽입" aria-label="그림 삽입"><span class="btn-icon icon-image"></span></button>
+      <input type="file" id="imageFileInput" accept="image/*" hidden>
+
+      <span class="fmt-sep"></span>
+
+      <!-- 표 삽입: 버튼을 누르면 몇×몇 표를 넣을지 격자에서 마우스로
+           미리보고 클릭합니다(구글독스 방식). -->
+      <span class="dropdown-anchor">
+        <button type="button" id="insertTableBtn" title="표 삽입" aria-label="표 삽입"><span class="btn-icon icon-table"></span></button>
+        <div class="grid-picker" id="tableGridPicker" hidden>
+          <p class="grid-picker-label" id="gridPickerLabel">표 크기 선택</p>
+          <div class="grid-picker-grid" id="gridPickerGrid"></div>
+        </div>
+      </span>
+
+      <!-- 표 설정: 커서가 표 안에 있을 때만 의미가 있습니다. 테두리
+           두께/종류, 셀 여백, 행·열 추가/삭제를 한 팝업에 모았습니다. -->
+      <span class="dropdown-anchor">
+        <button type="button" id="tableSettingsBtn" title="표 설정 (커서가 표 안에 있을 때)" aria-label="표 설정"><span class="btn-icon icon-table-settings"></span></button>
+        <div class="table-settings-popover" id="tableSettingsPopover" hidden>
+          <div class="ts-group">
+            <p class="ts-group-label">테두리 두께</p>
+            <div class="ts-row" data-ts-prop="border-width">
+              <button type="button" data-value="1px">얇게</button>
+              <button type="button" data-value="1.5px">보통</button>
+              <button type="button" data-value="2.5px">굵게</button>
+            </div>
+          </div>
+          <div class="ts-group">
+            <p class="ts-group-label">테두리 종류</p>
+            <div class="ts-row" data-ts-prop="border-style">
+              <button type="button" data-value="solid">실선</button>
+              <button type="button" data-value="dashed">점선</button>
+              <button type="button" data-value="double">이중선</button>
+            </div>
+          </div>
+          <div class="ts-group">
+            <p class="ts-group-label">셀 여백</p>
+            <div class="ts-row" data-ts-prop="pad">
+              <button type="button" data-value="4px">좁게</button>
+              <button type="button" data-value="8px">보통</button>
+              <button type="button" data-value="14px">넓게</button>
+            </div>
+          </div>
+          <div class="ts-group">
+            <p class="ts-group-label">행 / 열</p>
+            <div class="ts-row">
+              <button type="button" id="tsAddRow">행 추가</button>
+              <button type="button" id="tsDelRow" class="danger">행 삭제</button>
+              <button type="button" id="tsAddCol">열 추가</button>
+              <button type="button" id="tsDelCol" class="danger">열 삭제</button>
+            </div>
+          </div>
+        </div>
+      </span>
+
+      <span class="fmt-hint">이미지·표를 넣고 싶은 위치에 커서를 두고 버튼을 눌러주세요</span>
+    </div>
+  </div>
+
+  <!-- 본문에 삽입된 이미지를 클릭하면 그 이미지 위에 뜨는 작은 툴바.
+       화면 전용이며 위치는 매번 JS가 클릭된 이미지 좌표로 다시 계산합니다. -->
+  <div class="image-toolbar no-print" id="imageToolbar" hidden>
+    <button type="button" data-img-align="left" title="왼쪽 정렬" aria-label="왼쪽 정렬"><span class="btn-icon icon-align-left"></span></button>
+    <button type="button" data-img-align="center" title="가운데 정렬" aria-label="가운데 정렬"><span class="btn-icon icon-align-center"></span></button>
+    <button type="button" data-img-align="right" title="오른쪽 정렬" aria-label="오른쪽 정렬"><span class="btn-icon icon-align-right"></span></button>
+    <span class="img-sep"></span>
+    <button type="button" data-img-w="25%">25%</button>
+    <button type="button" data-img-w="50%">50%</button>
+    <button type="button" data-img-w="75%">75%</button>
+    <button type="button" data-img-w="100%">100%</button>
+    <span class="img-sep"></span>
+    <button type="button" class="img-delete-btn" id="imgDeleteBtn" title="삭제" aria-label="삭제"><span class="btn-icon icon-delete"></span></button>
   </div>
 
   <div class="sheet-wrap">
