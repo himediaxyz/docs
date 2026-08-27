@@ -193,20 +193,17 @@
 
   <div class="sheet-wrap">
     <div class="sheet" id="sheet">
+
+      <!-- 문서 헤더(로고+회사명) — 실제 종이(레터헤드)의 일부, 인쇄됩니다.
+           여기서 직접 타이핑하지 않고 shared/scripts/components.js의
+           renderDocHeader()가 채워 넣습니다. (아래 <script> 부분 참고)
+           화면에서는 그냥 맨 위에 한 번 나오고, 인쇄할 때만 모든
+           페이지 상단에 고정 반복됩니다(print.css의 position:fixed —
+           표 thead가 아니라 이 방식을 쓰는 이유는 shared/README.md 및
+           print.css 상단 주석 참고). -->
+      <div id="docHeader"></div>
+
       <table class="sheet-table">
-
-        <!-- 문서 헤더(로고+회사명) — 실제 종이(레터헤드)의 일부, 인쇄됩니다.
-             여기서 직접 타이핑하지 않고 shared/scripts/components.js의
-             renderDocHeader()가 채워 넣습니다. (아래 <script> 부분 참고) -->
-        <thead>
-          <tr><td class="cell-head" id="docHeader"></td></tr>
-        </thead>
-
-        <!-- 문서 푸터(주소·연락처) — 마찬가지로 renderDocFooter()가 채웁니다. -->
-        <tfoot>
-          <tr><td class="cell-foot" id="docFooter"></td></tr>
-        </tfoot>
-
         <tbody id="contentFlow">
           <tr><td class="cell-meta">
             <div class="meta-line">
@@ -251,6 +248,10 @@
           </td></tr>
         </tbody>
       </table>
+
+      <!-- 문서 푸터(주소·연락처) — 마찬가지로 renderDocFooter()가
+           채우고, 인쇄 시 모든 페이지 하단에 고정 반복됩니다. -->
+      <div id="docFooter"></div>
     </div>
     <!-- 사이트 푸터: 화면 전용 캡션. "문서 푸터"(주소 밴드)와는 다른
          개념입니다 — shared/README.md 참고. -->

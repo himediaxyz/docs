@@ -6,6 +6,8 @@
    이 스크립트가 찾는 요소(관례상 아래 id/class를 그대로 써야 동작합니다):
      #sheet          전체 종이 컨테이너
      #contentFlow    본문 tbody (여기 min-height를 계산해서 채워 넣음)
+     #docHeader/#docFooter  인쇄 시 position:fixed로 반복(print.css) —
+                     이 스크립트가 그 높이만큼 @page 여백을 계산해 넣음
      .doc-header-band 문서 헤더 밴드 (로고)
      .doc-footer-band 문서 푸터 밴드 (주소·연락처)
      .editable       입력 필드 (입력할 때마다 다시 계산하기 위해 감지)
@@ -21,10 +23,12 @@
 
 (function () {
   var MM_TO_PX = 96 / 25.4;
+  var PX_TO_MM = 25.4 / 96;
 
   // 헤더/푸터 높이를 실측해서, 본문이 짧을 때도 문서 전체가 A4 한 페이지를
   // 가득 채우도록 최소 높이를 계산합니다 (짧은 문서에서 서명 아래
-  // 배경색이 중간에 끊기는 문제 방지).
+  // 배경색이 중간에 끊기는 문제 방지). 같은 실측값을 인쇄용 페이지 여백
+  // 계산(applyPrintPageMargins)에도 그대로 씁니다.
   function syncPageMetrics() {
     var band = document.querySelector('.doc-header-band');
     var footer = document.querySelector('.doc-footer-band');
@@ -34,6 +38,25 @@
     var pageH = 297 * MM_TO_PX;
     var minBody = Math.max(pageH - hdrH - ftrH, 0);
     if (contentFlow) contentFlow.style.minHeight = minBody + 'px';
+    applyPrintPageMargins(hdrH, ftrH);
+  }
+
+  // 인쇄 시 #docHeader/#docFooter는 position:fixed로 모든 페이지에
+  // 반복됩니다(print.css) — 본문이 그 자리를 침범하지 않도록, 실제
+  // 헤더/푸터 높이만큼 @page 여백을 비워줍니다. 계열사마다 로고 비율이나
+  // 주소 유무가 달라 헤더·푸터 높이가 문서마다 조금씩 다르므로, 정적
+  // 값이 아니라 <style id="dynamicPageMargin">를 만들어(또는 갱신해)
+  // print.css의 기본 @page 규칙을 덮어씁니다.
+  function applyPrintPageMargins(hdrH, ftrH) {
+    var styleEl = document.getElementById('dynamicPageMargin');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'dynamicPageMargin';
+      document.head.appendChild(styleEl);
+    }
+    var hdrMm = (hdrH * PX_TO_MM).toFixed(2);
+    var ftrMm = (ftrH * PX_TO_MM).toFixed(2);
+    styleEl.textContent = '@page{ size:A4; margin:' + hdrMm + 'mm 0 ' + ftrMm + 'mm 0; }';
   }
 
   // 화면에서 실제 인쇄 시 페이지가 나뉘는 지점을 대략적으로 미리 보여주는

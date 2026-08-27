@@ -20,9 +20,12 @@
        ...
        <div id="siteFooter" class="no-print"></div>
 
-     문서(종이) 자리 — 표(thead/tfoot)라서 인쇄 시 페이지마다 반복됨:
-       <thead><tr><td class="cell-head" id="docHeader"></td></tr></thead>
-       <tfoot><tr><td class="cell-foot" id="docFooter"></td></tr></tfoot>
+     문서(종이) 자리 — 표 바깥의 일반 div. 화면에서는 한 번만 보이고,
+     인쇄할 때만 print.css가 position:fixed로 모든 페이지에 반복시킵니다
+     (표 thead/tfoot을 안 쓰는 이유: print.css 상단 주석 참고):
+       <div id="docHeader"></div>
+       ...(본문 표)...
+       <div id="docFooter"></div>
 
      스크립트:
        <script src="../../shared/scripts/company-info.js"></script>

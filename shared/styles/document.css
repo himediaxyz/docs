@@ -29,7 +29,6 @@
   width:100%;border-collapse:collapse;table-layout:fixed;background:#ffffff;
 }
 .sheet-table td{margin:0;border:0;vertical-align:top;}
-.cell-head,.cell-foot{padding:0;}
 
 /* ---------- 문서 헤더 밴드 (로고 + 회사명) ----------
    "문서" 레벨 — 실제 종이(레터헤드)의 일부이며 인쇄됩니다. 계열사마다

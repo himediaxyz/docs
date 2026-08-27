@@ -4,6 +4,18 @@
    UI 숨김, 페이지마다 헤더/푸터 반복, 문단이 페이지 경계에서 어색하게
    잘리는 것 방지.
 
+   헤더/푸터 반복 방식(중요): 예전에는 표(thead/tfoot)가 인쇄 시 자동
+   반복되는 브라우저 기능을 썼습니다. 그런데 본문 전체가 표 안의 거대한
+   셀(td) 하나에 다 들어있다 보니, 그 행(tr) 자체가 통째로는 페이지
+   경계에서 깔끔하게 나뉘지 않아 — 내용이 길어지면 푸터가 페이지 중간에
+   걸쳐 찍히는 문제가 있었습니다. 그래서 지금은 #docHeader/#docFooter를
+   표 바깥의 일반 div로 두고, 인쇄할 때만 position:fixed로 모든 페이지의
+   정해진 위치에 반복시키는 방식으로 바꿨습니다. 그 자리를 본문이
+   침범하지 않도록 @page 여백을 헤더/푸터의 실제 높이에 맞춰 매번 다시
+   계산해서 넣습니다(shared/scripts/pagination.js의 applyPrintPageMargins
+   — <head>에 <style id="dynamicPageMargin">로 삽입되어 아래 정적
+   @page 규칙을 덮어씁니다).
+
    이 파일을 쓰는 곳: 모든 문서 템플릿 (항상 마지막에 링크 — 다른
    shared CSS 규칙을 인쇄 시점에 덮어써야 하므로)
      <link rel="stylesheet" href="../../shared/styles/print.css">
@@ -16,17 +28,23 @@
   .sheet{box-shadow:none;width:210mm;}
   .editable{outline:none !important;background:transparent !important;}
 
-  /* thead/tfoot는 표 인쇄 시 브라우저가 페이지마다 자동으로 반복해 준다 */
-  thead{display:table-header-group;}
-  tfoot{display:table-footer-group;}
+  /* 문서 헤더/푸터를 모든 인쇄 페이지에 고정 위치로 반복 (위 설명 참고).
+     화면(screen media)에서는 이 규칙이 전혀 적용되지 않으므로 평소
+     보이는 모습(문서 맨 위/아래에 한 번)은 그대로입니다. */
+  #docHeader{position:fixed;top:0;left:0;right:0;}
+  #docFooter{position:fixed;bottom:0;left:0;right:0;}
 
-  /* 문단·목록·서명란이 페이지 경계에서 어색하게 잘리는 것을 최대한 방지.
-     새 템플릿에서 "절대 페이지 중간에 잘리면 안 되는" 블록을 추가할 때는
-     이 선택자 목록에 클래스를 더해주면 됩니다. */
-  .guide p,.guide li,.sign-block,.title-placeholder,.to-line{
+  /* 문단·목록·서명란·그림·표가 페이지 경계에서 어색하게 잘리는 것을
+     최대한 방지. 새 템플릿에서 "절대 페이지 중간에 잘리면 안 되는"
+     블록을 추가할 때는 이 선택자 목록에 클래스를 더해주면 됩니다. */
+  .guide p,.guide li,.sign-block,.title-placeholder,.to-line,
+  .img-wrap,.doc-table,.doc-table tr{
     break-inside:avoid;page-break-inside:avoid;
   }
   .guide p,.guide li{orphans:3;widows:3;}
 
-  @page{ size:A4; margin:0; }
+  /* 아래 margin 값은 헤더/푸터가 아직 실측되지 않은 경우(예: 스크립트
+     오류)를 위한 대략적인 기본값입니다 — 실제 값은 자바스크립트가
+     매번 정확히 계산해서 이 규칙을 덮어씁니다. */
+  @page{ size:A4; margin:47mm 0 17mm 0; }
 }
