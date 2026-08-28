@@ -43,7 +43,12 @@ DISE.site = {
    문서 헤더에서 로고 높이를 고정하고 이 비율로 너비를 자동 계산하는 데
    씁니다 — 계열사마다 로고 비율이 달라도 시각적 무게감이 맞도록.
    (실제 viewBox 값을 그대로 나눈 값이며, 로고 파일이 바뀌면 같이
-   업데이트해야 합니다.) */
+   업데이트해야 합니다.)
+
+   badgeColor: index.html 포털 페이지의 원형 배지(그룹사 선택 버튼)
+   배경색 — 각 계열사 "메인 컬러"입니다. BIC는 다크/미드/라이트 3단계 중
+   지정이 없어 중간 톤(미드, #428363)을 메인 컬러로 사용했습니다. 다른
+   톤을 메인으로 쓰기로 하면 이 값만 바꾸면 됩니다. */
 DISE.companies = {
 
   disehimedia: {
@@ -51,6 +56,7 @@ DISE.companies = {
     nameEn: 'DISEHIMEDIA',
     logoMark: 'disehimedia/disehimedia-mark.svg',
     logoRatio: 180 / 100,
+    badgeColor: '#212B43',              // 다이즈블루
     addressKr: '인천광역시 부평구 백범로 577번길 20',
     phoneIntl: '+82-32-573-3114',      // 해외에서 걸 때
     phoneDomestic: '032-573-3114',      // 국내에서 걸 때
@@ -59,27 +65,30 @@ DISE.companies = {
   },
 
   r2v: {
-    nameKr: 'R2V',                       // TODO: 정식 한글 표기 확정되면 교체
+    nameKr: '알투뷔',
     nameEn: 'R2V',
     logoMark: 'r2v/r2v-mark.svg',                  // 단색 · mask 기법용
     logoMarkGradient: 'r2v/r2v-mark-gradient.svg', // 그라데이션 원본 · 색 고정 용도
-    logoRatio: 200 / 108
+    logoRatio: 200 / 108,
+    badgeColor: '#DA4F1E'                // R2V오렌지
     // TODO: 주소·전화·이메일 확정되면 disehimedia 항목과 동일한 형식으로 추가
   },
 
   bic: {
-    nameKr: 'BIC',                       // TODO: 정식 한글 표기 확정되면 교체
+    nameKr: '비아이씨',
     nameEn: 'BIC',
     logoMark: 'bic/bic-mark.svg',
-    logoRatio: 200 / 68
+    logoRatio: 200 / 68,
+    badgeColor: '#428363'                // BIC그린 미드(메인 톤으로 사용)
     // TODO: 주소·전화·이메일 확정되면 추가
   },
 
   'axis-one': {
-    nameKr: 'AXIS ONE',                  // TODO: 정식 한글 표기 확정되면 교체
+    nameKr: '엑시스 원',
     nameEn: 'AXIS ONE',
     logoMark: 'axis-one/axis-one-mark.svg',
-    logoRatio: 108 / 108
+    logoRatio: 108 / 108,
+    badgeColor: '#180E1C'                // AXIS다크
     // TODO: 주소·전화·이메일 확정되면 추가
   }
 };
