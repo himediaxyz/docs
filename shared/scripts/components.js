@@ -208,8 +208,20 @@ DISE.components = {
     }
     if (!currentTemplateName && templateList.length) currentTemplateName = templateList[0].nameKr;
 
+    // 발신인 버튼의 처음 라벨 — 배열 순서(드롭다운에 뜨는 순서)가 아니라
+    // isDefault:true로 표시된 사람을 찾습니다(없으면 0번으로 대체).
+    // 배열 0번은 "회사 공식"처럼 드롭다운에서 맨 위에 두고 싶어서일 뿐,
+    // 새 문서를 열었을 때 서명란에 미리 채워져 있는 사람과 꼭 같으란
+    // 법은 없기 때문입니다(어긋나면 문서 상단 버튼과 실제 서명란이
+    // 서로 다른 사람을 가리키는 문제가 생깁니다 — shared/scripts/
+    // sender-info.js의 isDefault 주석 참고).
     var senderList = (window.DISE && DISE.senders && DISE.senders[companyKey]) || [];
-    var defaultSenderName = senderList.length ? senderList[0].nameKr : '(미지정)';
+    var defaultSender = null;
+    for (var si = 0; si < senderList.length; si++) {
+      if (senderList[si].isDefault) { defaultSender = senderList[si]; break; }
+    }
+    if (!defaultSender && senderList.length) defaultSender = senderList[0];
+    var defaultSenderName = defaultSender ? defaultSender.nameKr : '(미지정)';
 
     target.innerHTML =
       '<div class="toolbar no-print">' +
@@ -224,7 +236,7 @@ DISE.components = {
             '</span>' +
             '<span class="dropdown-anchor sender-anchor">' +
               '<button type="button" class="sender-btn" id="senderBtn" aria-haspopup="true" aria-expanded="false">' +
-                '<span id="senderLabel">발신: ' + defaultSenderName + '</span>' +
+                '<span id="senderLabel">발신인: ' + defaultSenderName + '</span>' +
                 '<span class="dd-caret" aria-hidden="true">&#9662;</span>' +
               '</button>' +
               '<div class="sender-popover" id="senderPopover" hidden></div>' +

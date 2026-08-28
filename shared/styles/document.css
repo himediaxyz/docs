@@ -157,9 +157,9 @@
    추가로 불러옵니다)를 그대로 씁니다. 마크업은 shared/scripts/
    components.js의 diseWordmarkHTML()이 만들고, 문서 헤더의 브랜드명
    (.brand-en 안)과 발신인이 "회사 공식"(다이즈하이미디어)일 때의
-   서명란 이름(.sign-block .name .en 안) 두 곳에서 재사용합니다 — 두
-   군데 다 부모 요소가 자기 자신의 font-family/font-weight를 이미
-   갖고 있지만(.brand-en, .sign-left .name .en), 아래 규칙들은 이
+   서명란 영문 표기(.sign-block .name-en 안) 두 곳에서 재사용합니다 —
+   두 군데 다 부모 요소가 자기 자신의 font-family/font-weight를 이미
+   갖고 있지만(.brand-en, .sign-left .name-en), 아래 규칙들은 이
    워드마크 요소 자신에게 직접 붙는 값이라 상속보다 항상 우선합니다. */
 .dise-wordmark{font-family:var(--font-kr);}
 .dise-wordmark .w-dise{font-weight:800;}   /* DISE — 가장 굵게(ExtraBold) */
@@ -265,10 +265,37 @@
   display:flex;justify-content:space-between;align-items:flex-end;
   padding:20px 0 28px;
 }
-.sign-left .role{font-family:var(--font-kr);font-size:13px;color:#666;margin-bottom:6px;}
-.sign-left .name{font-family:var(--font-kr);font-size:15.5px;font-weight:600;color:var(--ink);}
-.sign-left .name .en{font-family:var(--font-en);font-weight:600;}
-.sign-left .title{font-family:var(--font-kr);font-size:13.5px;color:#444;margin-top:2px;}
+/* "발신"이라는 텍스트 대신 얇고 짧은 구분선 하나로 서명란 시작을
+   알립니다(2026-08-28 변경 — 요청: "얇고 고급스러운 구분선을 살짝").
+   마크업은 내용 없는 빈 요소(<div class="role" aria-hidden="true">)이고,
+   선은 ::after로 그립니다 — 스크린리더가 빈 줄을 읽지 않도록
+   aria-hidden을 붙였습니다. */
+.sign-left .role{
+  width:38px;height:1px;margin-bottom:14px;
+  position:relative;
+}
+.sign-left .role::after{
+  content:'';position:absolute;left:0;top:0;width:100%;height:1px;
+  background:linear-gradient(90deg,#9aa4b8,transparent);
+}
+.theme-mono .sign-left .role::after{background:linear-gradient(90deg,#b8b8b8,transparent);}
+
+/* 이름 — 한글은 자간을 넓게 벌리고 굵게(요청: "유  정  우 처럼 두
+   칸씩 띄고 굵은 글씨로"), 영문 표기는 그 아래 줄에 괄호 없이 작고
+   차분하게 둡니다(요청: "영어이름에 ()를 빼주세요"). 회사 자체가
+   발신인일 때(다이즈하이미디어)는 영문 줄에 DISEHIMEDIA 워드마크가
+   그대로 들어갑니다(위 .dise-wordmark 참고 — shared/scripts/editor.js
+   의 applySender가 diseWordmarkHTML()로 채워 넣습니다). */
+.sign-left .name{display:flex;flex-direction:column;gap:5px;}
+.sign-left .name-kr{
+  font-family:var(--font-kr);font-weight:800;font-size:18px;
+  letter-spacing:0.5em;color:var(--ink);
+}
+.sign-left .name-en{
+  font-family:var(--font-en);font-weight:500;font-size:12px;
+  color:#6b7280;letter-spacing:0.2px;
+}
+.sign-left .title{font-family:var(--font-kr);font-size:13.5px;color:#444;margin-top:5px;}
 .sign-right{text-align:right;font-family:var(--font-en);font-size:13px;color:#333;line-height:1.7;}
 
 /* ---------- 문서 푸터 밴드 (주소·연락처) ----------

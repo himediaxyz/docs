@@ -1038,24 +1038,27 @@
   function applySender(sender) {
     var signBlock = document.querySelector('.sign-block');
     if (!signBlock || !sender) return;
-    var nameEl = signBlock.querySelector('.name');
+    var nameKrEl = signBlock.querySelector('.name-kr');
+    var nameEnEl = signBlock.querySelector('.name-en');
     var titleEl = signBlock.querySelector('.title');
     var rightEl = signBlock.querySelector('.sign-right');
-    if (nameEl) {
+    if (nameKrEl) nameKrEl.textContent = sender.nameKr || '';
+    if (nameEnEl) {
       // sender.nameEn이 정확히 'DISEHIMEDIA'면(회사 자체가 발신인인
       // 경우) components.js의 diseWordmarkHTML()이 DISE/HI/MEDIA를
       // 서로 다른 굵기로 나눠 그려줍니다 — 문서 헤더의 브랜드명과 같은
-      // 처리입니다(shared/scripts/sender-info.js 주석 참고).
-      var nameEnHTML = (window.DISE && DISE.components && DISE.components.diseWordmarkHTML) ?
+      // 처리입니다(shared/scripts/sender-info.js 주석 참고). 그 외에는
+      // 원래 문자열을 그대로 반환하므로 항상 innerHTML로 넣어도
+      // 안전합니다. 괄호는 더 이상 안 붙입니다(요청: "영어이름에 ()를
+      // 빼주세요") — 한글 이름 아래 줄에 그대로 둡니다.
+      nameEnEl.innerHTML = (window.DISE && DISE.components && DISE.components.diseWordmarkHTML) ?
         DISE.components.diseWordmarkHTML(sender.nameEn || '') : (sender.nameEn || '');
-      nameEl.innerHTML = sender.nameKr +
-        (sender.nameEn ? ' <span class="en">(' + nameEnHTML + ')</span>' : '');
     }
     if (titleEl) titleEl.textContent = sender.title || '';
     if (rightEl) {
       rightEl.innerHTML = (sender.phone || '') + (sender.phone && sender.email ? '<br>' : '') + (sender.email || '');
     }
-    if (senderLabel) senderLabel.textContent = '발신: ' + sender.nameKr;
+    if (senderLabel) senderLabel.textContent = '발신인: ' + sender.nameKr;
   }
 
   if (senderBtn && senderPopover) {

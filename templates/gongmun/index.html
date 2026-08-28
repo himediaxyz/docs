@@ -104,9 +104,15 @@
                  담당자 정보는 이 파일을 직접 수정해서 바꿉니다). -->
             <div class="sign-block" contenteditable="false">
               <div class="sign-left">
-                <div class="role">발신</div>
-                <div class="name">유정우 <span class="en">(You, Jeong-woo | Ryan)</span></div>
-                <div class="title">대표이사 | 회장 CEO | Chairman</div>
+                <!-- "발신" 텍스트 대신 얇은 구분선 하나만 둡니다(장식용
+                     — shared/styles/document.css의 .sign-left .role
+                     참고). -->
+                <div class="role" aria-hidden="true"></div>
+                <div class="name">
+                  <span class="name-kr">유정우</span>
+                  <span class="name-en">You, Jeong-woo | Ryan</span>
+                </div>
+                <div class="title">대표이사 / 회장 | CEO / Chairman</div>
               </div>
               <div class="sign-right">
                 010-2711-4722<br>

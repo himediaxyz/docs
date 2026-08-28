@@ -37,27 +37,47 @@ DISE.senders = {
       // components.js의 diseWordmarkHTML()이 자동으로 DISE(가장 굵게)
       // /HI(중간 굵기)/MEDIA(얇게) 세 부분으로 나눠서 그려줍니다(문서
       // 헤더 로고 옆 브랜드명과 같은 처리 — shared/styles/document.css의
-      // .dise-wordmark 참고).
+      // .dise-wordmark 참고). title을 비워두지 않고 '회사 공식 발신'을
+      // 넣은 이유 두 가지: (1) 발신인 드롭다운에서 다른 사람 항목들은
+      // 직함이 뱃지로 붙어 한 줄 높이가 더 큰데, 이 항목만 비어있으면
+      // 목록에서 유독 낮아 보여서(요청: "높이를 맞추면 좋겠다") 맞춰주는
+      // 용도. (2) 실제 서명란에도 그대로 찍혀서, 개인 직함 대신 "회사
+      // 명의로 보낸다"는 뜻을 분명히 밝혀줍니다.
       id: 'disehimedia-official',
       nameKr: '다이즈하이미디어',
       nameEn: 'DISEHIMEDIA',
-      title: '',
+      title: '회사 공식 발신',
       phone: '032-573-3114',
       email: 'hidise@disehimedia.com'
     },
     {
+      // title 표기 규칙(2026-08-28): "한글 직함(여러 개면 / 로 구분) |
+      // 영문 직함(여러 개면 / 로 구분)" — 유정우 대표님은 대표이사·회장
+      // 두 직함을 함께 쓰셔서 "대표이사 / 회장 | CEO / Chairman"이
+      // 됩니다.
+      //
+      // isDefault: 새 문서를 처음 열었을 때 서명란/발신인 버튼에 미리
+      // 채워져 있을 발신인을 표시합니다. 배열 순서(드롭다운에 뜨는
+      // 순서 — "회사 공식"을 맨 위에 두고 싶어서 0번)와는 다른
+      // 개념이라 따로 표시합니다 — 이 표시가 없으면
+      // shared/scripts/components.js의 renderEditorUI()가 배열의 0번을
+      // 기본값으로 쓰는데, 그러면 문서 상단 버튼엔 "다이즈하이미디어"가
+      // 뜨면서 정작 서명란(templates/*/index.html에 미리 써둔 초기
+      // 내용)은 유정우로 남아 서로 어긋납니다. 이 표시가 붙은 사람이
+      // 곧 각 템플릿 파일의 서명란 초기 내용과 같아야 합니다.
       id: 'yoo-jeongwoo',
       nameKr: '유정우',
       nameEn: 'You, Jeong-woo | Ryan',
-      title: '대표이사 | 회장 CEO | Chairman',
+      title: '대표이사 / 회장 | CEO / Chairman',
       phone: '010-2711-4722',
-      email: 'ryan@disehimedia.com'
+      email: 'ryan@disehimedia.com',
+      isDefault: true
     },
     {
       id: 'won-jongil',
       nameKr: '원종일',
       nameEn: 'Won, Jong il | Jason',
-      title: '대표이사 CEO',
+      title: '대표이사 | CEO',
       phone: '010-5171-8279',
       email: 'toyawon@disehimedia.com'
     },
@@ -65,7 +85,7 @@ DISE.senders = {
       id: 'lee-sungjin',
       nameKr: '이성진',
       nameEn: 'Lee, Sung jin | Kai',
-      title: '재무 부대표 CFO',
+      title: '재무 부대표 | CFO',
       phone: '010-6208-6717',
       email: 'kai@disehimedia.com'
     }
