@@ -446,15 +446,12 @@
       document.documentElement.setAttribute('data-view', 'print');
     }
     resetPageScale(); // 인쇄물에는 화면용 축소가 절대 들어가면 안 됨
-    // 좁은 화면(모바일)에서 인쇄할 때만 shared/styles/print.css의
-    // html.print-bleed 보정 규칙을 켭니다 — iOS 인쇄 엔진이 @page의
-    // margin:0 지정을 그대로 따르지 않고 사방에 자체적으로 여백을
-    // 남기는 것으로 보이는 현상(데스크톱에서는 나타나지 않음)을 보정
-    //하기 위한 것으로, isNarrowScreen() 조건 덕분에 데스크톱 인쇄에는
-    // 전혀 영향을 주지 않습니다.
-    if (isNarrowScreen()) {
-      document.documentElement.classList.add('print-bleed');
-    }
+    // 모바일 인쇄 시 사방 0.5cm 정도가 잘리는 문제를 보정해보려고
+    // "블리드"(용지보다 살짝 크게 인쇄) 처리를 잠깐 넣었었는데, 실제
+    // 기기(iOS Safari/Chrome)에서 테스트해보니 오히려 페이지가 2장으로
+    // 나뉘고 푸터가 용지 밖으로 밀려나는 등 레이아웃이 더 크게 깨져서
+    // 완전히 되돌렸습니다(2026-08-28). 사방이 살짝 잘리는 지금 쪽이
+    // 훨씬 낫습니다 — print.css 쪽 관련 주석도 같이 참고.
     try {
       repaginateInner();
     } catch (e) {
@@ -462,7 +459,6 @@
     }
   });
   window.addEventListener('afterprint', function () {
-    document.documentElement.classList.remove('print-bleed');
     if (modeBeforePrint === 'mobile') {
       modeBeforePrint = null;
       applyMode('mobile');
