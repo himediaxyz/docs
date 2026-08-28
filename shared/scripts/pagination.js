@@ -346,8 +346,20 @@
     if (!wrapWidth || !naturalWidth) return;
     var scale = Math.min(1, wrapWidth / naturalWidth);
     if (scale >= 0.999) return; // 화면이 충분히 넓으면(데스크톱) 축소 불필요
+    // 기준점(transform-origin)은 반드시 'top left'여야 합니다. #pages
+    // 자신은 부모(wrap) 폭을 그대로 따르는 좁은 박스인 반면(위 주석
+    // 참고), 그 안의 .page는 축소 전 실제 크기(넓은 폭)를 유지한 채
+    // margin:0 auto가 "부모보다 넓은 요소"에는 그냥 0으로 계산되어
+    // 왼쪽(0)부터 시작합니다. 기준점을 'top center'(좁은 wrap 박스의
+    // 가로 중앙)로 두면 축소가 그 중앙을 기준으로 일어나 버려서, 왼쪽
+    // 끝(0)부터 시작하던 .page가 오른쪽으로 밀려나면서 화면 안에 다
+    // 안 들어오고 오른쪽 일부가 wrap의 overflow:hidden에 잘려 안
+    // 보이는 문제가 있었습니다(모바일 "인쇄 레이아웃 보기"에서 페이지가
+    // 우측으로 떨어져 보이던 원인). 'top left'로 두면 축소가 왼쪽
+    // 끝(.page가 실제로 시작하는 지점)을 기준으로 일어나므로, 축소된
+    // 결과가 정확히 wrap의 왼쪽부터 가로 폭에 맞춰 채워집니다.
     pagesRoot.style.transform = 'scale(' + scale + ')';
-    pagesRoot.style.transformOrigin = 'top center';
+    pagesRoot.style.transformOrigin = 'top left';
     wrap.style.height = Math.ceil(naturalHeight * scale) + 'px';
   }
 
@@ -434,6 +446,15 @@
       document.documentElement.setAttribute('data-view', 'print');
     }
     resetPageScale(); // 인쇄물에는 화면용 축소가 절대 들어가면 안 됨
+    // 좁은 화면(모바일)에서 인쇄할 때만 shared/styles/print.css의
+    // html.print-bleed 보정 규칙을 켭니다 — iOS 인쇄 엔진이 @page의
+    // margin:0 지정을 그대로 따르지 않고 사방에 자체적으로 여백을
+    // 남기는 것으로 보이는 현상(데스크톱에서는 나타나지 않음)을 보정
+    //하기 위한 것으로, isNarrowScreen() 조건 덕분에 데스크톱 인쇄에는
+    // 전혀 영향을 주지 않습니다.
+    if (isNarrowScreen()) {
+      document.documentElement.classList.add('print-bleed');
+    }
     try {
       repaginateInner();
     } catch (e) {
@@ -441,6 +462,7 @@
     }
   });
   window.addEventListener('afterprint', function () {
+    document.documentElement.classList.remove('print-bleed');
     if (modeBeforePrint === 'mobile') {
       modeBeforePrint = null;
       applyMode('mobile');
