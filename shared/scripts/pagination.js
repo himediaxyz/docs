@@ -31,6 +31,32 @@
    아닌 버튼 클릭으로 문서 길이가 바뀌는 경우는 'input' 이벤트가 발생하지
    않아서 따로 불러줘야 합니다.
 
+   ---------------------------------------------------------------
+   화면 보기 모드(모바일 보기 / 인쇄 레이아웃 보기)
+
+   좁은 화면(휴대폰)에서는 210mm 고정 폭 페이지가 화면보다 훨씬 넓어서
+   가장자리가 화면 밖으로 잘려 보이는 문제가 있었습니다. 이를 해결하기
+   위해 화면에는 두 가지 "보기 모드"를 둡니다:
+
+     'mobile' — 페이지 경계 없이 메모장처럼 한 흐름으로 죽 이어지는
+                모드. 화면 폭에 맞춰 자연스럽게 줄바꿈되므로 잘리는
+                부분이 없습니다. 내부적으로는 "한 페이지에 들어갈 수
+                있는 높이"를 무한대로 취급해서 절대 페이지를 나누지
+                않는 것뿐이고, 실제 데이터(문단·표·그림 등)는 인쇄
+                모드와 완전히 같습니다.
+     'print'  — 지금까지의 A4 고정 페이지 모드. 화면 폭이 페이지보다
+                좁으면(휴대폰 등) 페이지 전체가 화면에 다 보이도록
+                축소(scale)해서 보여줍니다 — 인쇄/PDF 미리보기 용도.
+
+   좁은 화면에서만 이 둘을 고르는 토글(#viewModeToggle, components.js의
+   renderViewModeToggle()가 그림)이 나타나고, 넓은 화면(데스크톱)에서는
+   토글이 숨겨진 채 항상 'print' 모드로 고정됩니다. 실제 인쇄나
+   PDF 저장 버튼을 누르면(window.print()) 현재 어떤 모드였든 그 순간만
+   강제로 'print' 모드로 계산해서 내보내고, 끝나면 원래 보던 모드로
+   되돌아옵니다 — "모바일 보기로 작성하다가 인쇄해도 결과물은 항상
+   인쇄 레이아웃과 동일해야 한다"는 요구사항이 이렇게 보장됩니다.
+   ---------------------------------------------------------------
+
    이 파일을 쓰는 곳: A4 인쇄 문서 템플릿
      <script src="../../shared/scripts/pagination.js"></script>
    ============================================================ */
@@ -38,6 +64,16 @@
 (function () {
   var MM_TO_PX = 96 / 25.4;
   var A4_HEIGHT_PX = 297 * MM_TO_PX;
+
+  // 이 폭보다 화면이 좁으면 "모바일 보기/인쇄 레이아웃 보기" 토글이
+  // 나타나고, 이보다 넓으면(데스크톱) 토글을 숨기고 항상 인쇄 레이아웃
+  // 모드로 고정합니다. shared/styles/toolbar.css의 .view-mode-toggle
+  // media query와 반드시 같은 값을 써야 합니다.
+  var MOBILE_BREAKPOINT = 860;
+  var VIEW_MODE_STORAGE_KEY = 'dise_view_mode';
+
+  // 'print'(기본값) 또는 'mobile'. 실제 반영은 applyMode()가 담당.
+  var currentMode = 'print';
 
   function heightOf(el) {
     return el ? el.getBoundingClientRect().height : 0;
@@ -149,6 +185,10 @@
   // 꼬이지 않습니다.
   function repaginate() {
     if (composing) return; // 조합 중에는 compositionend가 다시 불러줍니다.
+    // 축소(scale)된 상태로 측정하면 모든 높이 계산이 어긋나므로, 실제
+    // 재배치 계산 전에는 항상 축소를 원상태로 되돌려둡니다(측정은 항상
+    // 등배 1:1 상태에서만 합니다).
+    resetPageScale();
     try {
       repaginateInner();
     } catch (e) {
@@ -158,6 +198,10 @@
       // 원인을 확인할 수 있게 합니다.
       console.error('[pagination] repaginate() 실패:', e);
     }
+    // 계산이 다 끝나 실제 레이아웃이 확정된 뒤에만 축소를 적용합니다
+    // ('print' 모드 + 화면이 페이지보다 좁을 때만 의미가 있고, 그 외에는
+    // 아무 효과가 없습니다).
+    applyPageScaleIfNeeded();
   }
 
   function repaginateInner() {
@@ -166,9 +210,17 @@
     if (!pagesRoot || !firstPage) return;
 
     var metrics = measureHeaderFooter(pagesRoot, firstPage);
-    var bodyBudget = A4_HEIGHT_PX - metrics.hdr - metrics.ftr;
+    // 모바일 보기 모드에서는 "한 페이지에 들어갈 수 있는 높이"를
+    // 무한대로 취급해서 절대 페이지를 나누지 않습니다 — 메모장처럼
+    // 하나의 흐름으로 죽 이어지는 화면이 됩니다(아래 bin-packing
+    // 루프는 그대로 두고 예산값만 무한대로 주면, used+h가 budget을
+    // 절대 못 넘으므로 자연스럽게 1페이지로 수렴합니다 — 이미 여러
+    // 페이지로 나뉘어 있던 내용도 이번 호출에서 그대로 1페이지로
+    // 합쳐지고 남는 빈 페이지는 아래 "안 쓰는 페이지 정리"에서
+    // 자동으로 지워집니다).
+    var bodyBudget = currentMode === 'mobile' ? Infinity : (A4_HEIGHT_PX - metrics.hdr - metrics.ftr);
     var fixedPrefixH = heightOf(firstPage.querySelector('.page-body-fixed'));
-    var firstPageBudget = Math.max(bodyBudget - fixedPrefixH, 0);
+    var firstPageBudget = currentMode === 'mobile' ? Infinity : Math.max(bodyBudget - fixedPrefixH, 0);
 
     var headerHTML = firstPage.querySelector('.page-header').innerHTML;
     var footerHTML = firstPage.querySelector('.page-footer').innerHTML;
@@ -249,11 +301,151 @@
     }
   }
 
+  // ---- 인쇄 레이아웃 보기: 화면이 페이지보다 좁으면 축소해서 보여주기 ----
+  // .page는 항상 210mm(약 794px) 고정 폭이라, 휴대폰처럼 화면이 그보다
+  // 좁으면 그대로는 가로 스크롤 없이 전체가 안 보입니다. #pages를 감싸는
+  // 래퍼(#pagesScaleWrap — 아래 ensureScaleWrap()이 템플릿 마크업 수정
+  // 없이 자동으로 만들어 끼워 넣습니다)에 CSS transform:scale()을 걸어
+  // 화면 폭에 맞게 축소하고, 래퍼의 높이도 축소된 만큼 같이 줄여서
+  // 스크롤 길이가 어긋나지 않게 합니다. 'mobile' 모드에서는 애초에
+  // 페이지 박스 자체를 안 쓰므로 항상 축소를 해제합니다.
+  function ensureScaleWrap(pagesRoot) {
+    if (!pagesRoot) return null;
+    var wrap = pagesRoot.parentNode;
+    if (wrap && wrap.classList && wrap.classList.contains('pages-scale-wrap')) return wrap;
+    wrap = document.createElement('div');
+    wrap.className = 'pages-scale-wrap';
+    pagesRoot.parentNode.insertBefore(wrap, pagesRoot);
+    wrap.appendChild(pagesRoot);
+    return wrap;
+  }
+
+  function resetPageScale() {
+    var pagesRoot = document.getElementById('pages');
+    if (!pagesRoot) return;
+    var wrap = ensureScaleWrap(pagesRoot);
+    pagesRoot.style.transform = '';
+    wrap.style.height = '';
+  }
+
+  function applyPageScaleIfNeeded() {
+    var pagesRoot = document.getElementById('pages');
+    var firstPage = pagesRoot && pagesRoot.querySelector('.page');
+    if (!pagesRoot || !firstPage) return;
+    var wrap = ensureScaleWrap(pagesRoot);
+    if (currentMode !== 'print') return; // 모바일 보기는 항상 등배(축소 없음)
+    var wrapWidth = wrap.clientWidth;
+    // 주의: pagesRoot(#pages) 자신은 일반 block 요소라 "부모(wrap) 폭"을
+    // 그대로 따라가므로(자식이 넘쳐도 자기 자신의 폭은 안 늘어남),
+    // pagesRoot.getBoundingClientRect().width로 재면 항상 wrapWidth와
+    // 거의 같은 값이 나와 "축소가 필요 없다"는 잘못된 결론이 됩니다.
+    // 실제로 화면보다 넓은 건 그 안의 .page(210mm 고정폭)이므로, 반드시
+    // .page 쪽을 재야 합니다.
+    var naturalWidth = firstPage.getBoundingClientRect().width;
+    var naturalHeight = pagesRoot.getBoundingClientRect().height;
+    if (!wrapWidth || !naturalWidth) return;
+    var scale = Math.min(1, wrapWidth / naturalWidth);
+    if (scale >= 0.999) return; // 화면이 충분히 넓으면(데스크톱) 축소 불필요
+    pagesRoot.style.transform = 'scale(' + scale + ')';
+    pagesRoot.style.transformOrigin = 'top center';
+    wrap.style.height = Math.ceil(naturalHeight * scale) + 'px';
+  }
+
   function debounce(fn, wait) {
     var t;
     return function () { clearTimeout(t); t = setTimeout(fn, wait); };
   }
   var debouncedRepaginate = debounce(repaginate, 200);
+
+  // ---- 보기 모드 전환 ----
+  // <html data-view="mobile|print"> 속성으로 CSS(shared/styles/document.css
+  // 의 @media screen 블록)가 갈립니다. 토글 버튼(#viewModeMobileBtn/
+  // #viewModePrintBtn — components.js의 renderViewModeToggle()가 그림)의
+  // 활성 표시도 여기서 같이 맞춰줍니다.
+  function syncToggleButtons() {
+    var mobileBtn = document.getElementById('viewModeMobileBtn');
+    var printBtn = document.getElementById('viewModePrintBtn');
+    if (mobileBtn) mobileBtn.classList.toggle('active', currentMode === 'mobile');
+    if (printBtn) printBtn.classList.toggle('active', currentMode === 'print');
+  }
+
+  function applyMode(mode) {
+    currentMode = mode;
+    document.documentElement.setAttribute('data-view', mode);
+    syncToggleButtons();
+    repaginate();
+  }
+
+  // 화면 폭이 넓어지면(예: 휴대폰 가로모드나 창 크기 조절로 데스크톱
+  // 수준이 되면) 토글 자체가 화면에서 사라지므로, 모바일 보기를 고집할
+  // 이유가 없어 인쇄 레이아웃으로 자동 복귀합니다. 반대로 데스크톱에서
+  // 좁혀도 사용자가 어느 쪽을 볼지는 직접 고르게 두고 자동으로 강제
+  // 전환하지 않습니다(마지막 선택은 localStorage에 남아 있다가 다음에
+  // 좁은 화면으로 열 때 그대로 이어집니다).
+  function setMode(mode, opts) {
+    opts = opts || {};
+    if (mode !== 'mobile' && mode !== 'print') return;
+    applyMode(mode);
+    if (!opts.skipSave) {
+      try { window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode); } catch (e) { /* 저장소를 못 쓰는 환경(사생활 보호 모드 등) — 무시 */ }
+    }
+  }
+
+  function isNarrowScreen() {
+    return window.matchMedia('(max-width: ' + MOBILE_BREAKPOINT + 'px)').matches;
+  }
+
+  function initMode() {
+    if (!isNarrowScreen()) { applyMode('print'); return; }
+    var saved = null;
+    try { saved = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY); } catch (e) { /* 무시 */ }
+    applyMode(saved === 'print' ? 'print' : 'mobile'); // 좁은 화면의 기본값은 모바일 보기
+  }
+
+  var mobileMql = window.matchMedia('(max-width: ' + MOBILE_BREAKPOINT + 'px)');
+  function handleBreakpointChange(e) {
+    if (!e.matches && currentMode === 'mobile') {
+      // 화면이 넓어져 토글이 사라짐 — 인쇄 레이아웃으로 자동 복귀(저장된
+      // 선택은 그대로 두어, 다시 좁아지면 이전 선택이 이어지게 합니다).
+      applyMode('print');
+    }
+  }
+  if (mobileMql.addEventListener) mobileMql.addEventListener('change', handleBreakpointChange);
+  else if (mobileMql.addListener) mobileMql.addListener(handleBreakpointChange); // 구형 Safari
+
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.closest) {
+      if (e.target.closest('#viewModeMobileBtn')) setMode('mobile');
+      else if (e.target.closest('#viewModePrintBtn')) setMode('print');
+    }
+  });
+
+  // ---- 인쇄/PDF 저장은 항상 인쇄 레이아웃으로 ----
+  // 화면에서 모바일 보기 중이었더라도, 실제 인쇄나 PDF 저장 결과물은
+  // 항상 A4 인쇄 레이아웃과 동일해야 합니다. window.print()가 호출되면
+  // beforeprint가 브라우저 인쇄 대화상자보다 먼저 실행되므로, 그 순간
+  // 강제로 인쇄 레이아웃으로 다시 계산해두고(화면 표시 모드는 그대로
+  // 기억해뒀다가) 인쇄가 끝나면(afterprint) 원래 보던 모드로 되돌립니다.
+  var modeBeforePrint = null;
+  window.addEventListener('beforeprint', function () {
+    if (currentMode === 'mobile') {
+      modeBeforePrint = 'mobile';
+      currentMode = 'print';
+      document.documentElement.setAttribute('data-view', 'print');
+    }
+    resetPageScale(); // 인쇄물에는 화면용 축소가 절대 들어가면 안 됨
+    try {
+      repaginateInner();
+    } catch (e) {
+      console.error('[pagination] 인쇄 직전 재배치 실패:', e);
+    }
+  });
+  window.addEventListener('afterprint', function () {
+    if (modeBeforePrint === 'mobile') {
+      modeBeforePrint = null;
+      applyMode('mobile');
+    }
+  });
 
   // ---- .page-body가 몰래 스크롤되는 것 막기 ----
   // .page-body는 overflow:hidden이라 화면에 스크롤바는 안 보이지만,
@@ -313,12 +505,17 @@
 
   // 타이핑이 아니라 버튼 클릭(그림 삽입/삭제/크기, 표 삽입/행렬 추가삭제
   // 등)으로 문서 길이가 바뀌는 경우를 위해 외부에서 부를 수 있게 공개.
+  // setMode/getMode는 토글 버튼 외에 다른 스크립트에서도 보기 모드를
+  // 다뤄야 할 경우를 위해 함께 공개해둡니다.
   window.DISE = window.DISE || {};
-  window.DISE.pagination = { refresh: debouncedRepaginate };
+  window.DISE.pagination = {
+    refresh: debouncedRepaginate,
+    setMode: setMode,
+    getMode: function () { return currentMode; }
+  };
 
-  window.addEventListener('load', repaginate);
+  window.addEventListener('load', initMode);
   window.addEventListener('resize', debouncedRepaginate);
-  window.addEventListener('beforeprint', repaginate);
 
   // 웹폰트가 늦게 로드되면 글자 크기가 바뀌면서 실제 높이가 달라지므로,
   // 폰트 로딩이 끝난 뒤 한 번 더 계산합니다.

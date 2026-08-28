@@ -3,7 +3,7 @@
    화면/문서를 구성하는 4가지 공통 조각을 그려 넣습니다. 용어 정의는
    company-info.js 상단 주석과 shared/README.md를 참고하세요 — 요약:
 
-     renderSiteHeader / renderSiteFooter
+     renderSiteHeader / renderSiteFooter / renderViewModeToggle
        → "사이트" 레벨. 화면 전용, 인쇄 안 됨, 모든 계열사·문서 공통.
      renderDocHeader / renderDocFooter
        → "문서" 레벨. 실제 레터헤드의 일부, 인쇄됨, 계열사별로 다름.
@@ -17,6 +17,7 @@
 
      화면 전용 자리:
        <div id="siteHeader" class="no-print"></div>
+       <div id="viewModeToggle" class="no-print view-mode-toggle"></div>
        ...
        <div id="siteFooter" class="no-print"></div>
 
@@ -33,6 +34,7 @@
        <script src="../../shared/scripts/components.js"></script>
        <script>
          DISE.components.renderSiteHeader({ portalHref: '../../index.html' });
+         DISE.components.renderViewModeToggle();
          DISE.components.renderSiteFooter();
          DISE.components.renderDocHeader({ company: 'disehimedia', docTypeTag: '공식 공문' });
          DISE.components.renderDocFooter({ company: 'disehimedia' });
@@ -101,6 +103,22 @@ DISE.components = {
     if (!target) return;
     var text = opts.text || DISE.site.nameKr;
     target.innerHTML = '<p class="site-footer-text">' + text + '</p>';
+  },
+
+  /**
+   * 좁은 화면(휴대폰)에서만 나타나는 "모바일 보기 / 인쇄 레이아웃 보기"
+   * 토글. 실제 모드 전환·저장·인쇄 시 강제 전환 로직은 모두
+   * shared/scripts/pagination.js가 담당하고(버튼 id를 document 레벨
+   * 클릭 위임으로 찾아서 연결), 여기서는 마크업만 그립니다 — 데스크톱
+   * 에서는 shared/styles/toolbar.css의 media query로 화면에서
+   * 숨겨집니다.
+   */
+  renderViewModeToggle: function () {
+    var target = document.getElementById('viewModeToggle');
+    if (!target) return;
+    target.innerHTML =
+      '<button type="button" id="viewModeMobileBtn">모바일 보기</button>' +
+      '<button type="button" id="viewModePrintBtn">인쇄 레이아웃 보기</button>';
   },
 
   /* ============ 문서 레벨 (인쇄됨, 계열사별로 다름) ============ */

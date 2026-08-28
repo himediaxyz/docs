@@ -54,6 +54,45 @@
   overflow:hidden;
 }
 
+/* ---------- 인쇄 레이아웃 보기: 화면이 페이지보다 좁을 때 축소 ----------
+   pagination.js가 #pages를 이 클래스가 붙은 래퍼로 자동으로 감싸고,
+   화면 폭이 210mm보다 좁으면(휴대폰 등) transform:scale()로 페이지
+   전체가 한눈에 들어오게 축소합니다(가로 스크롤 없이 미리보기 용도).
+   실제 스케일 값과 래퍼 높이는 매번 JS가 계산해 인라인 스타일로
+   넣습니다 — 여기서는 축소 기준점만 고정해둡니다. */
+.pages-scale-wrap{
+  width:100%;overflow:hidden;
+}
+
+/* ---------- 모바일 보기: 페이지 경계 없이 메모장처럼 한 흐름으로 ----------
+   좁은 화면에서 <html data-view="mobile">일 때만 적용됩니다(데스크톱
+   에서는 이 속성 자체가 안 붙으므로 전혀 영향 없음 — pagination.js
+   initMode() 참고). 인쇄에는 절대 영향을 주면 안 되므로 반드시
+   @media screen 안에만 둡니다(인쇄는 print.css의 @media print가 따로
+   담당하며, 인쇄 순간에는 pagination.js가 data-view를 'print'로 잠깐
+   되돌려두기도 합니다 — 이중 안전장치). */
+@media screen {
+  html[data-view="mobile"] .pages-scale-wrap{
+    /* 모바일 보기에서는 축소를 쓰지 않으므로 폭 100%만 유지 */
+  }
+  html[data-view="mobile"] .page{
+    width:100%;height:auto;min-height:0;
+    margin:0;box-shadow:none;border-radius:0;
+    position:static;overflow:visible;
+  }
+  html[data-view="mobile"] .page + .page{
+    border-top:1px solid #e2e6ee;
+    margin-top:18px;padding-top:2px;
+  }
+  html[data-view="mobile"] .page-header,
+  html[data-view="mobile"] .page-footer{
+    position:static;
+  }
+  html[data-view="mobile"] .page-body{
+    position:static;top:auto;bottom:auto;height:auto;overflow:visible;
+  }
+}
+
 /* ---------- 문서 헤더 밴드 (로고 + 회사명) ----------
    "문서" 레벨 — 실제 종이(레터헤드)의 일부이며 인쇄됩니다. 계열사마다
    로고·이름이 다릅니다 (사이트 레벨과의 구분은 shared/README.md 참고).

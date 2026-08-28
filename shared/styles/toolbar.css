@@ -262,6 +262,33 @@
 .editable img{cursor:pointer;outline:2px solid transparent;outline-offset:2px;}
 .editable img:hover{outline-color:#c7d0e4;}
 .editable img.img-selected{outline-color:var(--navy);}
+
+/* ---------- 모바일 보기 / 인쇄 레이아웃 보기 토글 ----------
+   좁은 화면(휴대폰)에서만 나타나는 두 칸짜리 세그먼트 버튼. 데스크톱
+   에서는 A4 고정 페이지가 화면에 그대로 다 들어오므로 이 선택이
+   의미가 없어 숨깁니다 — 아래 media query 폭(860px)은 반드시
+   shared/scripts/pagination.js의 MOBILE_BREAKPOINT 상수와 같아야
+   합니다. 실제 모드 전환/저장 로직은 pagination.js가 담당하고, 여기서는
+   버튼 마크업(components.js의 renderViewModeToggle())과 보이는 모양만
+   맡습니다. */
+.view-mode-toggle{
+  display:none;
+}
+@media (max-width: 860px){
+  .view-mode-toggle{
+    display:flex;gap:8px;
+    max-width:900px;margin:12px auto 0;padding:0 20px;
+  }
+}
+.view-mode-toggle button{
+  flex:1 1 0;
+  border:1px solid #d0d6e2;background:#fff;border-radius:8px;
+  font-family:var(--font-kr);font-size:13px;font-weight:600;color:var(--sub);
+  padding:9px 10px;cursor:pointer;
+}
+.view-mode-toggle button.active{
+  background:var(--navy);border-color:var(--navy);color:#fff;
+}
 .image-toolbar{
   position:fixed;z-index:30;
   background:#fff;border:1px solid #d8dee8;border-radius:8px;

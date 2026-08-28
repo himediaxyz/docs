@@ -36,6 +36,13 @@
       <button class="print-btn" onclick="window.print()">인쇄 / PDF로 저장</button>
     </div>
 
+    <!-- 모바일 보기 / 인쇄 레이아웃 보기 토글 — 좁은 화면(휴대폰)에서만
+         나타납니다(shared/styles/toolbar.css media query). 데스크톱은
+         A4 페이지가 화면에 그대로 다 들어오므로 항상 인쇄 레이아웃
+         고정이라 이 선택 자체가 필요 없습니다. 실제 동작은
+         shared/scripts/pagination.js 참고. -->
+    <div class="view-mode-toggle no-print" id="viewModeToggle"></div>
+
     <!-- 사용법 안내 팝업 — 평소엔 숨겨져 있다가 위 ?버튼을 누르면 열립니다
          (여닫기 동작은 shared/scripts/editor.js). 내용은 이 문서만의
          것이라 템플릿에 직접 둡니다. -->
@@ -45,6 +52,7 @@
         <h2>사용법 안내</h2>
         <p>점선 테두리가 있는 <b>문서번호 · 제목 · 수신처 · 본문</b> 영역은 브라우저에서 바로 클릭해서 입력할 수 있습니다. 대괄호([ ])로 된 안내 문구는 클릭하면 자동으로 전체 선택되어 바로 타이핑하면 덮어써집니다. 시행일자는 오늘 날짜로 자동 채워집니다.</p>
         <p>본문이 길어지면 실제 A4 낱장 모양의 페이지가 화면에도 그대로 쌓여서 늘어나며, 인쇄할 때도 같은 페이지 경계를 그대로 씁니다(워드처럼 헤더·본문·푸터가 항상 같은 자리에 고정). 아래 서식 도구모음으로 굵게·기울임·밑줄, 서체·글자 크기, 글자색, 정렬, 목록, 들여쓰기, 그림·표 삽입까지 바꿀 수 있습니다(먼저 글자를 드래그로 선택한 뒤 버튼을 눌러주세요). 표 안에 커서를 두면 그 표 오른쪽 위에 작은 설정 아이콘이 뜹니다.</p>
+        <p>휴대폰 등 좁은 화면에서는 위에 <b>모바일 보기 / 인쇄 레이아웃 보기</b> 선택 버튼이 나타납니다. 모바일 보기는 페이지 구분 없이 메모장처럼 이어서 편하게 입력하는 모드이고, 인쇄 레이아웃 보기는 실제 A4 페이지 그대로를 화면에 맞춰 축소해 보여주는 미리보기입니다. 어느 쪽을 보고 있든 인쇄·PDF 저장 결과물은 항상 인쇄 레이아웃과 동일하게 나옵니다.</p>
         <div class="legend">
           <span><i class="swatch kr"></i>한글 = Asta Sans</span>
           <span><i class="swatch en"></i>영문/숫자 = Open Sans</span>
@@ -300,6 +308,7 @@
     // 종류의 문서인지. portalHref는 이 파일 기준 index.html까지의
     // 상대 경로(폴더 깊이에 맞게 조정)입니다.
     DISE.components.renderSiteHeader({ portalHref: '../../index.html' });
+    DISE.components.renderViewModeToggle();
     DISE.components.renderSiteFooter({ text: '다이즈하이미디어 그룹 공식 문서 시스템 · 공문 템플릿' });
     DISE.components.renderDocHeader({ company: 'disehimedia', docTypeTag: '공식 공문' });
     DISE.components.renderDocFooter({ company: 'disehimedia' });

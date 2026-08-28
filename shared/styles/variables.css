@@ -35,7 +35,13 @@
   color-adjust:exact;
 }
 
-html,body{margin:0;padding:0;background:#e9edf3;}
+/* overflow-x:hidden — 어딘가에 화면보다 넓은 요소가 있어도(예: 좁은
+   화면에서의 A4 고정폭 .page) 레이아웃 뷰포트 자체가 그 요소만큼
+   부풀어 오르지 않게 막아줍니다. 이게 없으면 일부 모바일 브라우저가
+   전체 페이지를 넓은 콘텐츠에 맞춰 축소해서 보여주면서 안내 배너나
+   헤더/푸터 배경색의 가장자리가 화면 밖으로 살짝 밀려나 잘려 보이는
+   문제가 생깁니다. */
+html,body{margin:0;padding:0;background:#e9edf3;overflow-x:hidden;}
 body{
   font-family:var(--font-kr);
   color:var(--ink);
