@@ -70,6 +70,35 @@ var DISE_SHARED_ROOT = (function () {
 
 DISE.components = {
 
+  /**
+   * "DISEHIMEDIA" 워드마크 전용 도우미(2026-08-28 추가) — 정확히
+   * 'DISEHIMEDIA'라는 문자열일 때만 DISE(가장 굵게)/HI(중간 굵기)/
+   * MEDIA(얇게) 세 부분으로 나눠 각기 다른 굵기의 <span>으로 감싸
+   * 반환합니다(요청: "DISEHIMEDIA는 붙여 쓰되, DISE는 가장 굵은체,
+   * HI는 중간 굵은체, MEDIA는 얇은체로"). 굵기는 shared/styles/
+   * document.css의 .dise-wordmark 규칙이 Asta Sans의 굵기 단계
+   * (ExtraBold/SemiBold/Light)로 정의합니다 — 이 함수는 마크업만
+   * 만들고 실제 색/굵기는 CSS가 담당합니다.
+   *
+   * 그 외 문자열(다른 계열사의 nameEn 등)은 손대지 않고 그대로
+   * 반환합니다 — 다이즈하이미디어 전용 처리이기 때문입니다.
+   *
+   * 쓰는 곳: renderDocHeader(문서 헤더의 brand-en)와 shared/scripts/
+   * editor.js의 applySender(발신인이 "회사 공식"인 경우 서명란 이름).
+   * 두 곳 모두 nameEn 값이 정확히 'DISEHIMEDIA'인 경우에만 걸립니다.
+   *
+   * @param {string} text
+   * @returns {string} HTML 문자열
+   */
+  diseWordmarkHTML: function (text) {
+    if (text !== 'DISEHIMEDIA') return text || '';
+    return '<span class="dise-wordmark">' +
+      '<span class="w-dise">DISE</span>' +
+      '<span class="w-hi">HI</span>' +
+      '<span class="w-media">MEDIA</span>' +
+      '</span>';
+  },
+
   /* ============ 사이트 레벨 (화면 전용, 인쇄 안 됨) ============ */
 
   /**
@@ -392,7 +421,7 @@ DISE.components = {
         '</div>' +
         '<div class="doc-header-text">' +
           '<div class="brand-kr">' + c.nameKr + '</div>' +
-          (c.nameEn && c.nameEn !== c.nameKr ? '<div class="brand-en">' + c.nameEn + '</div>' : '') +
+          (c.nameEn && c.nameEn !== c.nameKr ? '<div class="brand-en">' + DISE.components.diseWordmarkHTML(c.nameEn) + '</div>' : '') +
           (docTypeTag ? '<div class="brand-tag">' + docTypeTag + '</div>' : '') +
         '</div>' +
       '</div>';

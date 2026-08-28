@@ -32,12 +32,42 @@ DISE.senders = {
 
   disehimedia: [
     {
+      // "발신인"이 특정 개인이 아니라 회사 자체인 경우(회사 공식 명의
+      // 발송) — nameEn이 정확히 'DISEHIMEDIA'이면 서명란에 표시될 때
+      // components.js의 diseWordmarkHTML()이 자동으로 DISE(가장 굵게)
+      // /HI(중간 굵기)/MEDIA(얇게) 세 부분으로 나눠서 그려줍니다(문서
+      // 헤더 로고 옆 브랜드명과 같은 처리 — shared/styles/document.css의
+      // .dise-wordmark 참고).
+      id: 'disehimedia-official',
+      nameKr: '다이즈하이미디어',
+      nameEn: 'DISEHIMEDIA',
+      title: '',
+      phone: '032-573-3114',
+      email: 'hidise@disehimedia.com'
+    },
+    {
       id: 'yoo-jeongwoo',
       nameKr: '유정우',
       nameEn: 'You, Jeong-woo | Ryan',
-      title: '대표이사',
-      phone: '032-573-3114',
+      title: '대표이사 | 회장 CEO | Chairman',
+      phone: '010-2711-4722',
       email: 'ryan@disehimedia.com'
+    },
+    {
+      id: 'won-jongil',
+      nameKr: '원종일',
+      nameEn: 'Won, Jong il | Jason',
+      title: '대표이사 CEO',
+      phone: '010-5171-8279',
+      email: 'toyawon@disehimedia.com'
+    },
+    {
+      id: 'lee-sungjin',
+      nameKr: '이성진',
+      nameEn: 'Lee, Sung jin | Kai',
+      title: '재무 부대표 CFO',
+      phone: '010-6208-6717',
+      email: 'kai@disehimedia.com'
     }
     // 담당자가 늘어나면 같은 형식으로 추가
   ]

@@ -149,6 +149,23 @@
   font-family:var(--font-kr);font-size:13px;color:#c3cee3;margin-top:10px;
 }
 
+/* ---------- "DISEHIMEDIA" 워드마크(2026-08-28 추가) ----------
+   요청: "DISEHIMEDIA는 붙여 쓰되, DISE는 가장 굵은체, HI는 중간
+   굵은체, MEDIA는 얇은체로" — 영문·숫자는 원래 Open Sans(--font-en)를
+   쓰지만, 이 워드마크만은 요청대로 Asta Sans(--font-kr)의 굵기 단계
+   (Light 300 / SemiBold 600 / ExtraBold 800 — 각 템플릿 <head>에서
+   추가로 불러옵니다)를 그대로 씁니다. 마크업은 shared/scripts/
+   components.js의 diseWordmarkHTML()이 만들고, 문서 헤더의 브랜드명
+   (.brand-en 안)과 발신인이 "회사 공식"(다이즈하이미디어)일 때의
+   서명란 이름(.sign-block .name .en 안) 두 곳에서 재사용합니다 — 두
+   군데 다 부모 요소가 자기 자신의 font-family/font-weight를 이미
+   갖고 있지만(.brand-en, .sign-left .name .en), 아래 규칙들은 이
+   워드마크 요소 자신에게 직접 붙는 값이라 상속보다 항상 우선합니다. */
+.dise-wordmark{font-family:var(--font-kr);}
+.dise-wordmark .w-dise{font-weight:800;}   /* DISE — 가장 굵게(ExtraBold) */
+.dise-wordmark .w-hi{font-weight:600;}     /* HI — 중간 굵기(SemiBold) */
+.dise-wordmark .w-media{font-weight:300;}  /* MEDIA — 얇게(Light) */
+
 /* ---------- 본문 셀 여백 ---------- */
 .cell-meta{padding:16px 50px 0;}
 .meta-line{
