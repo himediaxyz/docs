@@ -27,16 +27,27 @@
    않는 문제가 있었습니다(자세한 사정은 print.css 상단 주석 참고).
    지금은 그 대신 "화면에서도 실제 A4 낱장처럼 보이는 .page 박스"를
    JS(shared/scripts/pagination.js)가 필요한 만큼 만들어 쌓는 방식을
-   씁니다 — 각 .page는 폭·높이가 항상 210mm × 297mm로 고정이고, 그
-   안의 헤더(.page-header)·본문(.page-body)·푸터(.page-footer) 위치도
-   항상 같은 자리에 고정됩니다. 본문 내용이 그 페이지의 남은 공간을
-   넘으면 pagination.js가 넘치는 부분을 통째로 다음 .page로 옮기고,
-   필요하면 새 .page를 만듭니다 — 그래서 헤더/푸터가 문서 중간에
-   걸치는 일이 구조적으로 생길 수 없습니다. 인쇄할 때도 이 고정 크기를
-   그대로 살려서(print.css: @page{margin:0}) 한 .page = 인쇄 용지
-   한 장이 되도록 만듭니다. */
+   씁니다 — 각 .page는 폭·높이가 항상 고정이고, 그 안의 헤더
+   (.page-header)·본문(.page-body)·푸터(.page-footer) 위치도 항상 같은
+   자리에 고정됩니다. 본문 내용이 그 페이지의 남은 공간을 넘으면
+   pagination.js가 넘치는 부분을 통째로 다음 .page로 옮기고, 필요하면
+   새 .page를 만듭니다 — 그래서 헤더/푸터가 문서 중간에 걸치는 일이
+   구조적으로 생길 수 없습니다. 인쇄할 때도 이 고정 크기를 그대로
+   살려서(print.css: @page{margin:0}) 한 .page = 인쇄 용지 한 장이
+   되도록 만듭니다.
+
+   높이가 297mm(진짜 A4)가 아니라 287mm인 이유(2026-08-28): 모바일
+   인쇄(iOS AirPrint 등)에서 브라우저/OS가 @page{margin:0}을 완전히
+   따르지 않고 아래쪽에 자체적으로 인쇄 여백을 강제로 남겨, 딱 297mm로
+   맞춘 페이지의 아래쪽 끝(푸터)이 다음 물리 페이지로 밀려나는 문제가
+   실기기에서 확인됐습니다. 그래서 실기기가 강제로 먹는 여백만큼(약
+   10mm) 미리 여유를 비워두고, 그 대신 진짜 인쇄 용지(@page{size:A4})
+   맨 아래에는 그만큼 살짝 빈 여백이 남습니다 — 내용이 잘리거나 다음
+   페이지로 넘어가는 것보다 이쪽이 낫다는 판단입니다. 이 값은 반드시
+   shared/scripts/pagination.js의 PAGE_HEIGHT_MM과 같아야 합니다(그
+   파일의 관련 주석 참고). */
 .page{
-  width:210mm;height:297mm;
+  width:210mm;height:287mm;
   margin:0 auto 24px;background:#ffffff;
   box-shadow:0 4px 24px rgba(20,30,60,0.18);
   position:relative;overflow:hidden;
