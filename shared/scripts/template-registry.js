@@ -36,6 +36,11 @@ DISE.templates = [
     key: 'gongmun',
     nameKr: '공문 템플릿 — 직접 입력판',
     path: 'templates/gongmun/'
+  },
+  {
+    key: 'gongmun-premium',
+    nameKr: '공문 템플릿 — 프리미엄 레터헤드',
+    path: 'templates/gongmun-premium/'
   }
   // 새 템플릿(보고서, 기안문 등)이 생기면 여기에 { key, nameKr, path }
   // 형식으로 추가하면 됩니다.
