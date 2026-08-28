@@ -153,19 +153,29 @@
   }
 
   /* ---------- 4) 글자 색상 ----------
-     원색을 피한 모노톤 8색. 색상을 바꾸거나 추가/삭제하려면 이 배열만
-     고치면 팝업 버튼이 자동으로 다시 그려집니다. 색약 사용자를 위해
-     색상만으로 구분하지 않도록 각 버튼에 이름을 title(마우스 오버 시
-     표시)로 붙입니다. */
+     그룹사 4곳(다이즈하이미디어/BIC/R2V/AXIS ONE)의 공식 브랜드 컬러
+     차트(2026-08-28 확정본) 기준 12색. 색상을 바꾸거나 추가/삭제하려면
+     이 배열만 고치면 팝업 버튼이 자동으로 다시 그려집니다. 색약
+     사용자를 위해 색상만으로 구분하지 않도록 각 버튼에 이름을
+     title(마우스 오버 시 표시)로 붙입니다.
+
+     주의: BIC그린(라이트)·R2V옐로우·AXIS라이트·다이즈라이트·R2V오렌지는
+     흰 종이 위 본문 글자색으로 쓰면 명도 대비가 낮아 읽기 어려울 수
+     있습니다(WCAG 기준 대비 미달 또는 근접). 제목·포인트 강조처럼
+     짧고 굵은 글자에만 쓰는 것을 권장합니다. */
   var COLOR_PALETTE = [
-    { name: '잉크 블랙', hex: '#1a1a1a' },
-    { name: '다이즈 네이비', hex: '#0b234f' },
-    { name: '슬레이트 그레이', hex: '#4a5568' },
-    { name: '웜 그레이', hex: '#6b6355' },
-    { name: '딥 버건디', hex: '#6b2c3e' },
-    { name: '포레스트 그린', hex: '#2f4a3e' },
-    { name: '딥 틸', hex: '#1f3a3a' },
-    { name: '브론즈', hex: '#5c4a2e' }
+    { name: '다이즈블랙', hex: '#1D1D1D' },
+    { name: '다이즈블루', hex: '#212B43' },
+    { name: '다이즈라이트', hex: '#6B77A4' },
+    { name: 'BIC그린 다크', hex: '#1B3728' },
+    { name: 'BIC그린 미드', hex: '#428363' },
+    { name: 'BIC그린 라이트', hex: '#74BF96' },
+    { name: 'R2V레드', hex: '#A82B24' },
+    { name: 'R2V오렌지', hex: '#DA4F1E' },
+    { name: 'R2V옐로우', hex: '#EBC11F' },
+    { name: 'AXIS다크', hex: '#180E1C' },
+    { name: 'AXIS퍼플', hex: '#573369' },
+    { name: 'AXIS라이트', hex: '#9F79B4' }
   ];
   var colorBtn = document.getElementById('colorBtn');
   var colorPopover = document.getElementById('colorPopover');
