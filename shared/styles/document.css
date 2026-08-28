@@ -105,16 +105,27 @@
   padding:40px 50px 34px;
   min-height:176px;
 }
-/* 로고는 <img>가 아니라 CSS mask로 그려집니다(색을 배경에 맞춰 흰색으로
-   바꾸기 위함) — 실제 너비/높이는 components.js가 계열사별 로고 비율
-   (logoRatio)에 맞춰 인라인 style로 계산해 넣습니다. flex-shrink:0으로
-   회사명 텍스트가 길어져도 로고가 찌그러지지 않게 합니다. */
+/* 로고는 평범한 <img>이고 색은 CSS filter로 바꿉니다 — 실제 너비/높이는
+   components.js가 계열사별 로고 비율(logoRatio)에 맞춰 인라인 style로
+   계산해 넣습니다. flex-shrink:0으로 회사명 텍스트가 길어져도 로고가
+   찌그러지지 않게 합니다.
+
+   ★ 되돌림 기록(2026-08-28): 원래는 CSS mask(-webkit-mask-image +
+   background-color)로 로고 색을 바꿨었는데, 실제 아이폰에서 인쇄해보니
+   마스크가 적용되지 않고 background-color 사각형이 그대로 다 칠해진
+   채로 나와("로고가 까만 박스 안에 갇힌" 것처럼 보임) 인쇄가 깨졌습니다
+   — 화면에서는 멀쩡해서 자동 테스트로는 못 잡아낸, 모바일 실기기 인쇄
+   렌더링 경로만의 문제였습니다(자세한 내용은 shared/scripts/
+   components.js의 renderDocHeader 주석 참고). 로고 원본 SVG(shared/
+   assets/logos/)가 전부 배경 투명 + 검정 한 가지 색 도형이라, 지금은
+   mask 없이 invert(1) 필터만으로 검정→흰색(알파는 그대로 유지)을
+   만듭니다 — <img> + filter는 인쇄에서 mask보다 훨씬 안정적입니다. */
 .doc-logo{
   flex:0 0 auto;
-  background-color:#fff;   /* 네이비 배경 위 흰색 로고가 기본값 */
-  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  -webkit-mask-position:center;mask-position:center;
-  -webkit-mask-size:contain;mask-size:contain;
+}
+.doc-logo img{
+  display:block;width:100%;height:100%;
+  filter:invert(1);   /* 네이비 배경 위 흰색 로고가 기본값 */
 }
 .doc-header-text{flex:1 1 auto;min-width:0;}
 .brand-kr{

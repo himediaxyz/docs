@@ -73,4 +73,31 @@
      잘리는 지금 쪽이 그 깨짐보다 낫다는 판단입니다. 나중에 다시
      시도한다면 이 자리(및 pagination.js의 beforeprint/afterprint
      핸들러)를 참고하세요. */
+
+  /* ---------- 모바일 "인쇄 레이아웃 보기" 축소 자국 강제 제거 ----------
+     좁은 화면(휴대폰)에서는 pagination.js가 #pages를 .pages-scale-wrap로
+     감싸고 거기에 transform:scale(...)과 그만큼 줄인 높이(둘 다 인라인
+     style)를 걸어 화면에 다 보이게 축소합니다. 원래는 실제 인쇄
+     직전(beforeprint 이벤트)에 그 축소를 원상복구(resetPageScale())
+     하도록 짜여 있었는데, 실제 아이폰(iOS Safari/Chrome, 공유 시트의
+     "프린트")에서 확인해보니 그 JS가 인쇄 렌더링 전에 제때 반영되지
+     않는 경우가 있어, 화면용으로 줄여둔 높이(실제 297mm보다 훨씬 작은
+     값)가 인쇄에도 그대로 남아있는 문제가 있었습니다. 인쇄 엔진은
+     overflow:hidden이어도 넘치는 내용을 그냥 잘라버리지 않고 다음
+     "물리적 용지"로 흘려보내므로, 줄어든 높이만큼 넘친 나머지(푸터
+     포함)가 새로운 페이지 형식이 아니라 다음 인쇄 페이지 위쪽에 걸쳐
+     붙어 나오고, 2페이지짜리 문서가 4페이지(헤더·푸터·헤더·푸터)로
+     찍히는 등 레이아웃이 깨졌습니다(2026-08-28, 실기기 확인).
+     JS 타이밍에 기대는 대신 CSS만으로 인쇄 시에는 항상 축소 자국이
+     안 남게 !important로 강제합니다 — !important가 붙은 스타일시트
+     규칙은 !important 없는 인라인 style보다도 우선 적용되므로,
+     beforeprint가 어떤 이유로든 늦게 실행되거나 아예 실행되지 않아도
+     인쇄 결과는 항상 등배(원래 297mm)로 나옵니다. */
+  .pages-scale-wrap{
+    height:auto !important;
+    overflow:visible !important;
+  }
+  #pages{
+    transform:none !important;
+  }
 }

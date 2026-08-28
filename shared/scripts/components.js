@@ -368,14 +368,28 @@ DISE.components = {
     // 로고 높이를 고정하고, 계열사마다 다른 로고 비율(logoRatio)에 맞춰
     // 너비를 계산합니다 — 로고가 정사각형이든 가로로 넓든 같은 높이로
     // 나란히 보이도록.
+    //
+    // ★ 되돌림 기록(2026-08-28): 원래 로고는 <img>가 아니라 CSS mask(부모
+    // .doc-logo에 -webkit-mask-image/mask-image + background-color)로
+    // 그렸었는데, 실제 아이폰(iOS는 Safari·Chrome 모두 같은 WebKit 엔진)
+    // 에서 인쇄해보니 마스크가 적용되지 않고 background-color 사각형이
+    // 그대로 다 칠해진 채로 나와("로고가 까만 박스 안에 갇힌" 것처럼
+    // 보임) 인쇄가 깨졌습니다. 화면(데스크톱 포함)에서는 멀쩡해서
+    // 자동/헤드리스 테스트로는 못 잡아낸 문제입니다 — 이 프로젝트가 이미
+    // 여러 번 겪은 "화면·헤드리스와 실제 모바일 인쇄 렌더링 경로가
+    // 다르다"는 것과 같은 종류의 버그입니다. 그래서 지금은 mask를 완전히
+    // 버리고 평범한 <img> + CSS filter로 바꿨습니다(색 규칙은
+    // shared/styles/document.css의 .doc-logo img 참고) — <img>와
+    // filter는 인쇄 렌더링에서 훨씬 안정적입니다.
     var logoHeightPx = 56;
     var logoWidthPx = Math.round(logoHeightPx * (c.logoRatio || 1));
     var logoUrl = DISE_SHARED_ROOT + 'assets/logos/' + c.logoMark;
 
     target.innerHTML =
       '<div class="doc-header-band">' +
-        '<div class="doc-logo" style="width:' + logoWidthPx + 'px;height:' + logoHeightPx + 'px;' +
-          '-webkit-mask-image:url(\'' + logoUrl + '\');mask-image:url(\'' + logoUrl + '\');"></div>' +
+        '<div class="doc-logo" style="width:' + logoWidthPx + 'px;height:' + logoHeightPx + 'px;">' +
+          '<img src="' + logoUrl + '" alt="' + c.nameKr + ' 로고">' +
+        '</div>' +
         '<div class="doc-header-text">' +
           '<div class="brand-kr">' + c.nameKr + '</div>' +
           (c.nameEn && c.nameEn !== c.nameKr ? '<div class="brand-en">' + c.nameEn + '</div>' : '') +
