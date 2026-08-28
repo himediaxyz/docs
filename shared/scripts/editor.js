@@ -13,6 +13,10 @@
      6) 실행취소/다시 실행(Ctrl+Z / Ctrl+Shift+Z) — 색상·글자크기·
         들여쓰기·목록 모양·그림·표처럼 브라우저 기본 되돌리기가 못 잡는
         변경까지 포함해 문서 전체를 하나의 흐름으로 되돌립니다
+     7) 상단 도구모음의 "문서 양식" / "발신인" 드롭다운 — 문서 양식은
+        template-registry.js 목록을 읽어 다른 템플릿으로 이동(내용이
+        있으면 확인창), 발신인은 sender-info.js 목록을 읽어 서명란만
+        교체(확인창 없음)
 
    새 템플릿에서 그대로 재사용하려면: .editable 클래스가 붙은
    contenteditable 요소들과, 아래 id/data-cmd를 그대로 쓴 버튼·셀렉트를
@@ -944,5 +948,138 @@
       redo();
     }
   }, true);
+
+  /* ---------- 12) "문서 양식" / "발신인" 드롭다운 ----------
+     상단 도구모음 제목 자리의 두 드롭다운(마크업은 templates/gongmun/
+     index.html의 .toolbar-card-title 참고).
+
+     문서 양식(#docTypeBtn/#docTypePopover): shared/scripts/
+     template-registry.js의 DISE.templates를 읽어 목록을 그리고,
+     고르면 그 템플릿 페이지로 이동합니다. 본문에 이미 입력한 내용이
+     있으면(=페이지를 처음 열었을 때와 달라졌으면) #resetDocBtn과 같은
+     방식(window.confirm)으로 한 번 확인합니다 — "달라졌는지"는 이 위
+     섹션 11의 captureSnapshot()을 그대로 재사용해서 판단합니다.
+
+     "처음 열었을 때" 스냅샷은 window의 load 이벤트 리스너 안에서도
+     setTimeout(...,0)으로 한 번 더 미뤄서 찍습니다 — pagination.js도
+     load 시점에 첫 페이지 분할(repaginate)을 하는데, editor.js가 먼저
+     실행되어 load 리스너를 먼저 등록하므로 그냥 load 안에서 바로
+     찍으면 pagination.js가 아직 손대기 전 상태를 찍어버릴 수 있습니다
+     (실제로는 초기 본문이 한 페이지 안에 다 들어가서 거의 문제가 안
+     되지만, 만에 하나를 대비한 안전장치입니다).
+
+     발신인(#senderBtn/#senderPopover): shared/scripts/sender-info.js의
+     DISE.senders[회사키]를 읽어 목록을 그리고, 고르면 서명란(.sign-block)
+     의 이름/직함/연락처만 바꿉니다. 본문 흐름(.flow-items) 안의 내용이라
+     recordBeforeChange()를 먼저 불러서 Ctrl+Z로도 되돌릴 수 있게 하되,
+     본문 내용 자체를 지우는 게 아니므로 확인창은 없습니다. */
+  var initialDocSnapshot = null;
+  window.addEventListener('load', function () {
+    setTimeout(function () { initialDocSnapshot = captureSnapshot(); }, 0);
+  });
+
+  function isDocModifiedFromInitial() {
+    if (!initialDocSnapshot) return false;
+    var now = captureSnapshot();
+    return now.docNo !== initialDocSnapshot.docNo ||
+      now.docTitle !== initialDocSnapshot.docTitle ||
+      now.docTo !== initialDocSnapshot.docTo ||
+      now.flowHTML !== initialDocSnapshot.flowHTML;
+  }
+
+  // ---- 문서 양식 드롭다운 ----
+  var docTypeBtn = document.getElementById('docTypeBtn');
+  var docTypePopover = document.getElementById('docTypePopover');
+  if (docTypeBtn && docTypePopover && window.DISE && DISE.templates) {
+    var currentTemplateKey = window.DISE_CURRENT_TEMPLATE || '';
+
+    docTypePopover.innerHTML = DISE.templates.map(function (t) {
+      var isCurrent = t.key === currentTemplateKey;
+      return '<button type="button" data-template-key="' + t.key + '"' +
+        (isCurrent ? ' class="current"' : '') + '>' + t.nameKr + '</button>';
+    }).join('');
+
+    docTypeBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      docTypePopover.hidden = !docTypePopover.hidden;
+    });
+    document.addEventListener('click', function (e) {
+      if (!docTypePopover.hidden && e.target !== docTypeBtn &&
+        !docTypePopover.contains(e.target) && !docTypeBtn.contains(e.target)) {
+        docTypePopover.hidden = true;
+      }
+    });
+    docTypePopover.addEventListener('click', function (e) {
+      var optBtn = e.target.closest('[data-template-key]');
+      if (!optBtn) return;
+      var key = optBtn.getAttribute('data-template-key');
+      docTypePopover.hidden = true;
+      if (key === currentTemplateKey) return;
+      var href = DISE.templateHref ? DISE.templateHref(key) : null;
+      if (!href) return;
+      if (isDocModifiedFromInitial() &&
+        !window.confirm('작성 중인 내용이 있습니다. 다른 문서 양식으로 이동하면 지금까지 입력한 내용이 사라집니다. 계속할까요?')) {
+        return;
+      }
+      window.location.href = href;
+    });
+  }
+
+  // ---- 발신인 드롭다운 ----
+  var senderBtn = document.getElementById('senderBtn');
+  var senderPopover = document.getElementById('senderPopover');
+  var senderLabel = document.getElementById('senderLabel');
+
+  function currentSenderList() {
+    var companyKey = window.DISE_CURRENT_COMPANY || 'disehimedia';
+    return (window.DISE && DISE.senders && DISE.senders[companyKey]) || [];
+  }
+
+  function applySender(sender) {
+    var signBlock = document.querySelector('.sign-block');
+    if (!signBlock || !sender) return;
+    var nameEl = signBlock.querySelector('.name');
+    var titleEl = signBlock.querySelector('.title');
+    var rightEl = signBlock.querySelector('.sign-right');
+    if (nameEl) {
+      nameEl.innerHTML = sender.nameKr +
+        (sender.nameEn ? ' <span class="en">(' + sender.nameEn + ')</span>' : '');
+    }
+    if (titleEl) titleEl.textContent = sender.title || '';
+    if (rightEl) {
+      rightEl.innerHTML = (sender.phone || '') + (sender.phone && sender.email ? '<br>' : '') + (sender.email || '');
+    }
+    if (senderLabel) senderLabel.textContent = '발신: ' + sender.nameKr;
+  }
+
+  if (senderBtn && senderPopover) {
+    var senderList = currentSenderList();
+    senderPopover.innerHTML = senderList.map(function (s) {
+      return '<button type="button" data-sender-id="' + s.id + '">' +
+        s.nameKr +
+        (s.title ? '<span class="sp-title">' + s.title + '</span>' : '') +
+        '</button>';
+    }).join('');
+
+    senderBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      senderPopover.hidden = !senderPopover.hidden;
+    });
+    document.addEventListener('click', function (e) {
+      if (!senderPopover.hidden && e.target !== senderBtn &&
+        !senderPopover.contains(e.target) && !senderBtn.contains(e.target)) {
+        senderPopover.hidden = true;
+      }
+    });
+    senderPopover.addEventListener('click', function (e) {
+      var optBtn = e.target.closest('[data-sender-id]');
+      if (!optBtn) return;
+      senderPopover.hidden = true;
+      var sender = senderList.filter(function (s) { return s.id === optBtn.getAttribute('data-sender-id'); })[0];
+      if (!sender) return;
+      recordBeforeChange();
+      applySender(sender);
+    });
+  }
 
 })();

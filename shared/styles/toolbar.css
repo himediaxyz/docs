@@ -18,9 +18,10 @@
   background:#ffffff;border:1px solid #d8dee8;border-radius:10px;
   padding:16px 20px;font-family:var(--font-en);
   display:flex;align-items:center;justify-content:space-between;gap:16px;
+  flex-wrap:wrap;
 }
 .toolbar-card-title{
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
 }
 .toolbar-card h1{
   font-family:var(--font-kr);
@@ -32,6 +33,56 @@
   padding:8px 16px;border-radius:6px;cursor:pointer;white-space:nowrap;
 }
 .print-btn:hover{opacity:0.9;}
+
+/* ---------- 문서 양식 전환 / 발신인 선택 드롭다운 ----------
+   상단 도구모음 제목 자리에 들어가는 두 드롭다운. 여닫기·목록 채우기·
+   이동(확인창 포함)·발신인 교체 동작은 shared/scripts/editor.js
+   섹션 12 참고. 팝업 자체의 생김새는 기존 .list-popover/.site-menu-list
+   와 같은 패턴(흰 카드 + 그림자 + 세로 버튼 목록)을 그대로 따릅니다. */
+.doc-type-btn{
+  display:flex;align-items:center;gap:6px;
+  border:none;background:none;padding:3px 6px;border-radius:6px;margin:-3px -6px;
+  font-family:var(--font-kr);font-size:15px;font-weight:700;color:var(--navy);
+  cursor:pointer;
+}
+.doc-type-btn:hover{background:#f1f4fa;}
+.doc-type-btn .dd-caret{font-size:10px;color:var(--sub);}
+.doc-type-popover{
+  position:absolute;top:34px;left:0;z-index:20;min-width:220px;
+  background:#fff;border:1px solid #d8dee8;border-radius:8px;
+  padding:6px;box-shadow:0 8px 24px rgba(20,30,60,0.18);
+  display:flex;flex-direction:column;gap:2px;
+}
+.doc-type-popover[hidden]{display:none;}
+.doc-type-popover button{
+  display:block;width:100%;text-align:left;border:0;background:none;border-radius:5px;
+  padding:8px 10px;font-family:var(--font-kr);font-size:13px;color:var(--ink);cursor:pointer;
+}
+.doc-type-popover button:hover{background:#f1f4fa;color:var(--navy);}
+.doc-type-popover button.current{color:var(--navy);font-weight:700;}
+
+.sender-btn{
+  display:flex;align-items:center;gap:5px;
+  border:1px solid #d0d6e2;background:#fff;border-radius:6px;
+  padding:5px 10px;font-family:var(--font-kr);font-size:12.5px;color:var(--ink);
+  cursor:pointer;white-space:nowrap;
+}
+.sender-btn:hover{background:#f1f4fa;border-color:var(--navy);}
+.sender-btn .dd-caret{font-size:10px;color:var(--sub);}
+.sender-popover{
+  position:absolute;top:34px;left:0;z-index:20;min-width:200px;
+  background:#fff;border:1px solid #d8dee8;border-radius:8px;
+  padding:6px;box-shadow:0 8px 24px rgba(20,30,60,0.18);
+  display:flex;flex-direction:column;gap:2px;
+}
+.sender-popover[hidden]{display:none;}
+.sender-popover button{
+  display:block;width:100%;text-align:left;border:0;background:none;border-radius:5px;
+  padding:7px 10px;font-family:var(--font-kr);font-size:13px;color:var(--ink);cursor:pointer;
+}
+.sender-popover button:hover{background:#f1f4fa;}
+.sender-popover button.current{background:#eef1f8;}
+.sender-popover .sp-title{display:block;font-size:11.5px;color:var(--sub);margin-top:1px;}
 
 /* ---------- 도움말(?) 버튼 + 팝업 ----------
    사용법 안내는 상시 노출하지 않고, 궁금할 때만 이 버튼으로 열어봅니다.

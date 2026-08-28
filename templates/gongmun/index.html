@@ -30,7 +30,31 @@
   <div class="toolbar no-print">
     <div class="toolbar-card">
       <div class="toolbar-card-title">
-        <h1>다이즈하이미디어 공문 템플릿 — 직접 입력판</h1>
+        <!-- 문서 양식(템플릿) 전환 드롭다운 — 문서를 잘못 열었어도 여기서
+             바로 다른 양식으로 이동할 수 있습니다. 목록은
+             shared/scripts/template-registry.js(DISE.templates)를 그대로
+             읽어서 그리고, 실제 여닫기·이동·확인창 동작은
+             shared/scripts/editor.js 섹션 12에서 처리합니다. 본문에
+             이미 입력한 내용이 있으면 이동 전에 확인창이 뜹니다(내용이
+             없으면 바로 이동). -->
+        <span class="dropdown-anchor doc-type-anchor">
+          <button type="button" class="doc-type-btn" id="docTypeBtn" aria-haspopup="true" aria-expanded="false">
+            <span id="docTypeLabel">공문 템플릿 — 직접 입력판</span>
+            <span class="dd-caret" aria-hidden="true">&#9662;</span>
+          </button>
+          <div class="doc-type-popover" id="docTypePopover" hidden></div>
+        </span>
+        <!-- 발신인 선택 드롭다운 — 하단 서명란(이름·직함·연락처)만
+             바꿉니다. 본문 내용은 그대로라 확인창 없이 바로 바뀝니다.
+             후보 목록은 shared/scripts/sender-info.js(DISE.senders)
+             참고. -->
+        <span class="dropdown-anchor sender-anchor">
+          <button type="button" class="sender-btn" id="senderBtn" aria-haspopup="true" aria-expanded="false">
+            <span id="senderLabel">발신: 유정우</span>
+            <span class="dd-caret" aria-hidden="true">&#9662;</span>
+          </button>
+          <div class="sender-popover" id="senderPopover" hidden></div>
+        </span>
         <button type="button" class="help-btn" id="helpBtn" title="사용법 안내" aria-label="사용법 안내">?</button>
       </div>
       <button class="print-btn" onclick="window.print()">인쇄 / PDF로 저장</button>
@@ -302,16 +326,27 @@
   <!-- 공용 스크립트 — 새 문서 템플릿을 만들 때도 이 순서 그대로 복사해서
        쓰면 됩니다. 각 파일의 역할은 파일 상단 주석 참고. -->
   <script src="../../shared/scripts/company-info.js"></script>
+  <script src="../../shared/scripts/sender-info.js"></script>
+  <script src="../../shared/scripts/template-registry.js"></script>
   <script src="../../shared/scripts/components.js"></script>
   <script>
     // 이 문서만의 설정: 사이트 헤더/푸터 + 이 문서가 어느 계열사·어떤
     // 종류의 문서인지. portalHref는 이 파일 기준 index.html까지의
     // 상대 경로(폴더 깊이에 맞게 조정)입니다.
+    //
+    // DISE_CURRENT_TEMPLATE / DISE_CURRENT_COMPANY: 이 템플릿이
+    // template-registry.js(DISE.templates)·sender-info.js(DISE.senders)
+    // 중 어느 항목에 해당하는지 editor.js(섹션 12: 문서 양식/발신인
+    // 드롭다운)에게 알려주는 값입니다. 새 템플릿을 만들 때도 이 두
+    // 줄만 그 템플릿의 key/company로 바꿔주면 됩니다.
+    window.DISE_CURRENT_TEMPLATE = 'gongmun';
+    window.DISE_CURRENT_COMPANY = 'disehimedia';
+
     DISE.components.renderSiteHeader({ portalHref: '../../index.html' });
     DISE.components.renderViewModeToggle();
     DISE.components.renderSiteFooter({ text: '다이즈하이미디어 그룹 공식 문서 시스템 · 공문 템플릿' });
-    DISE.components.renderDocHeader({ company: 'disehimedia', docTypeTag: '공식 공문' });
-    DISE.components.renderDocFooter({ company: 'disehimedia' });
+    DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, docTypeTag: '공식 공문' });
+    DISE.components.renderDocFooter({ company: DISE_CURRENT_COMPANY });
   </script>
   <script src="../../shared/scripts/editor.js"></script>
   <script src="../../shared/scripts/pagination.js"></script>

@@ -93,16 +93,9 @@ DISE.companies = {
   }
 };
 
-/* 공문 등에서 쓰는 기본 발신인 값(다이즈하이미디어 기준) — 문서마다 다른
-   담당자로 바꿔야 하면 각 템플릿의 서명란 마크업에서 직접 수정하면
-   됩니다(이 값은 "기본값" 참고용입니다). */
-DISE.defaultSender = {
-  nameKr: '유정우',
-  nameEn: 'You, Jeong-woo | Ryan',
-  title: '대표이사',
-  phone: '032-573-3114',
-  email: 'ryan@disehimedia.com'
-};
+/* 회사별 "발신인" 후보 목록(문서 상단 발신인 드롭다운용)은
+   shared/scripts/sender-info.js(DISE.senders)로 옮겼습니다 — 회사마다
+   발신인이 여러 명일 수 있어 이 파일과 분리했습니다. */
 
 /* 문서번호 체계: 다이즈-YYYY-순번 (예: 다이즈-2026-001) */
 DISE.docNumberPrefix = '다이즈';
