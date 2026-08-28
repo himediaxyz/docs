@@ -10,6 +10,9 @@
      4) 사이트 헤더의 "문서 설정" 메뉴 여닫기 + 초기화 (#siteMenuBtn 등)
      5) 컴포넌트 도구모음(#componentToolbar) — 그림 삽입 + 크기 조절,
         표 삽입(격자 피커) + 표 설정(테두리/여백/행·열 추가삭제)
+     6) 실행취소/다시 실행(Ctrl+Z / Ctrl+Shift+Z) — 색상·글자크기·
+        들여쓰기·목록 모양·그림·표처럼 브라우저 기본 되돌리기가 못 잡는
+        변경까지 포함해 문서 전체를 하나의 흐름으로 되돌립니다
 
    새 템플릿에서 그대로 재사용하려면: .editable 클래스가 붙은
    contenteditable 요소들과, 아래 id/data-cmd를 그대로 쓴 버튼·셀렉트를
@@ -91,6 +94,7 @@
     if (!restoreSelection()) return;
     var sel = window.getSelection();
     if (!sel.rangeCount || sel.isCollapsed) return;
+    recordBeforeChange();
     var range = sel.getRangeAt(0);
     var span = document.createElement('span');
     span.style[styleProp] = value;
@@ -116,6 +120,7 @@
     btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
     btn.addEventListener('click', function () {
       if (!restoreSelection()) return;
+      recordBeforeChange();
       document.execCommand(btn.getAttribute('data-cmd'), false, null);
     });
   });
@@ -234,6 +239,7 @@
         if (!restoreSelection()) { popover.hidden = true; return; }
         var sel = window.getSelection();
         if (!sel.rangeCount) { popover.hidden = true; return; }
+        recordBeforeChange();
         var wantUL = insertCmd === 'insertUnorderedList';
         var list = getListElement(sel.getRangeAt(0).commonAncestorContainer);
         if (!list || (list.tagName === 'UL') !== wantUL) {
@@ -276,6 +282,7 @@
     if (!sel.rangeCount) return;
     var block = getBlockElement(sel.getRangeAt(0).commonAncestorContainer);
     if (!block) return;
+    recordBeforeChange();
     var current = parseInt(block.style.marginLeft || '0', 10);
     block.style.marginLeft = Math.max(0, current + stepPx) + 'px';
   }
@@ -478,6 +485,7 @@
       if (!file) return;
       var reader = new FileReader();
       reader.onload = function () {
+        recordBeforeChange();
         // <p class="img-wrap"><img></p> — 문단으로 감싸는 이유는 (1) 문단
         // 자체가 자연스럽게 block이라 이미지가 항상 독립된 줄을 차지하고,
         // (2) 이 문단의 text-align으로 정렬 버튼을 그대로 재사용할 수
@@ -499,6 +507,7 @@
       btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
       btn.addEventListener('click', function () {
         if (!selectedImg) return;
+        recordBeforeChange();
         var wrap = selectedImg.closest('.img-wrap') || selectedImg.parentElement;
         wrap.style.textAlign = btn.getAttribute('data-img-align');
         updateImageToolbarActiveState();
@@ -508,6 +517,7 @@
       btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
       btn.addEventListener('click', function () {
         if (!selectedImg) return;
+        recordBeforeChange();
         selectedImg.style.width = btn.getAttribute('data-img-w');
         selectedImg.style.height = 'auto';
         positionImageToolbar();
@@ -520,6 +530,7 @@
       imgDeleteBtn.addEventListener('mousedown', function (e) { e.preventDefault(); });
       imgDeleteBtn.addEventListener('click', function () {
         if (!selectedImg) return;
+        recordBeforeChange();
         // 이미지를 감싸는 <p class="img-wrap"> 문단째로 지워서 빈 문단이
         // 남지 않게 합니다.
         var wrap = selectedImg.closest('.img-wrap');
@@ -563,6 +574,7 @@
   }
 
   function insertTable(rows, cols) {
+    recordBeforeChange();
     var table = document.createElement('table');
     table.className = 'doc-table';
     for (var r = 0; r < rows; r++) {
@@ -707,6 +719,7 @@
         btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
         btn.addEventListener('click', function () {
           if (!activeTable) return;
+          recordBeforeChange();
           activeTable.style.setProperty(cssVar, btn.getAttribute('data-value'));
           syncTableSettingsUI();
           refreshPagination();
@@ -727,6 +740,7 @@
     tsAddRow.addEventListener('mousedown', function (e) { e.preventDefault(); });
     tsAddRow.addEventListener('click', function () {
       if (!activeTable) return;
+      recordBeforeChange();
       var cols = currentColCount(activeTable);
       var tr = document.createElement('tr');
       for (var i = 0; i < cols; i++) {
@@ -742,6 +756,7 @@
     tsDelRow.addEventListener('mousedown', function (e) { e.preventDefault(); });
     tsDelRow.addEventListener('click', function () {
       if (!activeTable || activeTable.rows.length <= 1) return;
+      recordBeforeChange();
       activeTable.deleteRow(activeTable.rows.length - 1);
       refreshPagination();
     });
@@ -750,6 +765,7 @@
     tsAddCol.addEventListener('mousedown', function (e) { e.preventDefault(); });
     tsAddCol.addEventListener('click', function () {
       if (!activeTable) return;
+      recordBeforeChange();
       Array.prototype.forEach.call(activeTable.rows, function (row, idx) {
         var isHeaderRow = row.cells[0] && row.cells[0].tagName === 'TH';
         var cell = document.createElement(isHeaderRow ? 'th' : 'td');
@@ -763,11 +779,170 @@
     tsDelCol.addEventListener('mousedown', function (e) { e.preventDefault(); });
     tsDelCol.addEventListener('click', function () {
       if (!activeTable || currentColCount(activeTable) <= 1) return;
+      recordBeforeChange();
       Array.prototype.forEach.call(activeTable.rows, function (row) {
         if (row.cells.length) row.removeChild(row.cells[row.cells.length - 1]);
       });
       refreshPagination();
     });
   }
+
+  /* ---------- 11) 실행취소 / 다시 실행 (Ctrl+Z / Ctrl+Shift+Z) ----------
+     색상·글자크기(섹션 4), 목록 모양(섹션 5), 들여쓰기(섹션 6), 그림·표
+     삽입/설정(섹션 9·10)처럼 execCommand를 쓰지 않고 DOM을 직접 조작하는
+     기능들은 브라우저 기본 실행취소 목록에 잡히지 않습니다(굵게/기울임/
+     밑줄/정렬처럼 execCommand로 처리되는 기능과 달리, 이 함수들은 코드가
+     몰래 DOM을 바꿔치기하는 것이라 브라우저가 그 변화를 모릅니다).
+
+     타이핑을 포함해 이 문서의 모든 편집을 하나의 흐름으로 되돌릴 수
+     있도록, 브라우저 기본 실행취소는 완전히 꺼두고(아래 keydown에서
+     가로채 preventDefault) 이 문서 전용 스냅샷 기반 되돌리기 스택을
+     대신 씁니다 — 일반 워드프로세서처럼 Ctrl+Z 한 번에 방금 한 동작이
+     그대로 되돌아갑니다.
+
+     스냅샷 1개 = 문서번호·제목·수신처 3칸 + 본문 전체(흐름 항목)의
+     내용. 본문은 여러 페이지에 나뉘어 있어도 실제로는 한 흐름이므로
+     (pagination.js가 그때그때 몇 페이지로 나눌지 다시 계산하는
+     것뿐이므로), 모든 .flow-items의 내용을 순서대로 이어붙인 문자열
+     하나로 저장합니다. 되돌릴 때는 1페이지 흐름 영역 하나에 그 문자열을
+     통째로 넣고 pagination.js에게 다시 나눠 달라고 요청합니다(주의:
+     내용을 통째로 다시 그리므로 이전 커서가 있던 정확한 위치까지는
+     복원하지 못하고, 대신 본문 맨 끝에 커서를 둡니다).
+
+     기록 시점은 두 가지로 나뉩니다:
+       - 타이핑: 'beforeinput'(변경 직전)에 그 순간 상태를 기억해뒀다가,
+         타이핑이 잠깐(약 0.6초) 멈추면 그제서야 스택에 쌓습니다 — 한
+         글자마다 쌓으면 Ctrl+Z 한 번에 글자 하나씩만 지워져 불편하므로,
+         쉬지 않고 이어 친 구간을 한 덩어리로 묶습니다(일반 워드프로세서
+         동작과 동일).
+       - 버튼 조작(색상/크기/들여쓰기/목록모양/그림/표 등): 각 기능이
+         실제로 DOM을 바꾸기 직전에 이 섹션의 recordBeforeChange()를
+         호출해서(위 섹션 2/4/5/6/9/10 각 함수 첫머리 참고) 그 시점
+         상태를 즉시 스택에 쌓습니다. */
+  var UNDO_LIMIT = 100;
+  var undoStack = [];
+  var redoStack = [];
+  var suppressCapture = false;
+  var pendingBeforeTyping = null;
+  var typingTimer = null;
+  var TYPING_GROUP_MS = 600;
+
+  function captureSnapshot() {
+    var docNoEl = document.getElementById('docNo');
+    var docTitleEl = document.getElementById('docTitle');
+    var docToEl = document.getElementById('docTo');
+    var flows = Array.prototype.slice.call(document.querySelectorAll('.flow-items'));
+    return {
+      docNo: docNoEl ? docNoEl.innerHTML : null,
+      docTitle: docTitleEl ? docTitleEl.innerHTML : null,
+      docTo: docToEl ? docToEl.innerHTML : null,
+      flowHTML: flows.map(function (f) { return f.innerHTML; }).join('')
+    };
+  }
+
+  function flushPendingTyping() {
+    if (pendingBeforeTyping === null) return;
+    clearTimeout(typingTimer);
+    undoStack.push(pendingBeforeTyping);
+    if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+    redoStack.length = 0;
+    pendingBeforeTyping = null;
+  }
+
+  // 버튼으로 서식/구조를 바꾸는 기능들이 실제로 DOM을 건드리기 직전에
+  // 호출합니다.
+  function recordBeforeChange() {
+    flushPendingTyping();
+    var snap = captureSnapshot();
+    undoStack.push(snap);
+    if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+    redoStack.length = 0;
+    // 이 직후 실행되는 execCommand(목록 만들기 등)가 브라우저 자체
+    // 'input' 이벤트를 동시에 일으켜도, 방금 위에서 기록한 스냅샷과
+    // 중복으로 또 쌓이지 않도록 이번 실행 흐름이 끝날 때까지만 잠깐
+    // 캡처를 막아둡니다.
+    suppressCapture = true;
+    setTimeout(function () { suppressCapture = false; }, 0);
+  }
+
+  document.addEventListener('beforeinput', function (e) {
+    if (suppressCapture) return;
+    if (!(e.target && e.target.closest && e.target.closest('.editable'))) return;
+    if (pendingBeforeTyping === null) pendingBeforeTyping = captureSnapshot();
+  }, true);
+  document.addEventListener('input', function (e) {
+    if (suppressCapture) return;
+    if (!(e.target && e.target.closest && e.target.closest('.editable'))) return;
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(flushPendingTyping, TYPING_GROUP_MS);
+  }, true);
+
+  function applySnapshot(snap) {
+    if (!snap) return;
+    suppressCapture = true;
+    var docNoEl = document.getElementById('docNo');
+    var docTitleEl = document.getElementById('docTitle');
+    var docToEl = document.getElementById('docTo');
+    if (docNoEl && snap.docNo !== null) docNoEl.innerHTML = snap.docNo;
+    if (docTitleEl && snap.docTitle !== null) docTitleEl.innerHTML = snap.docTitle;
+    if (docToEl && snap.docTo !== null) docToEl.innerHTML = snap.docTo;
+
+    var pagesRoot = document.getElementById('pages');
+    var firstFlow = null;
+    if (pagesRoot) {
+      var pages = pagesRoot.querySelectorAll('.page');
+      for (var i = pages.length - 1; i >= 1; i--) pages[i].parentNode.removeChild(pages[i]);
+      firstFlow = pagesRoot.querySelector('.flow-items');
+      if (firstFlow) firstFlow.innerHTML = snap.flowHTML;
+    }
+    if (firstFlow) {
+      // innerHTML로 다시 그려진 이미지는 이전에 붙여둔 클릭 리스너가
+      // 사라지므로(섹션 9 wireImage) 다시 연결해줘야 클릭해서 선택할
+      // 수 있습니다.
+      firstFlow.querySelectorAll('img').forEach(function (img) {
+        img.removeAttribute('data-wired');
+        wireImage(img);
+      });
+      var r = document.createRange();
+      r.selectNodeContents(firstFlow);
+      r.collapse(false);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+    refreshPagination();
+    setTimeout(function () { suppressCapture = false; }, 0);
+  }
+
+  function undo() {
+    flushPendingTyping();
+    if (!undoStack.length) return;
+    var current = captureSnapshot();
+    var prev = undoStack.pop();
+    redoStack.push(current);
+    if (redoStack.length > UNDO_LIMIT) redoStack.shift();
+    applySnapshot(prev);
+  }
+  function redo() {
+    if (!redoStack.length) return;
+    var current = captureSnapshot();
+    var next = redoStack.pop();
+    undoStack.push(current);
+    if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+    applySnapshot(next);
+  }
+
+  document.addEventListener('keydown', function (e) {
+    var mod = e.ctrlKey || e.metaKey;
+    if (!mod) return;
+    var key = e.key.toLowerCase();
+    if (key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      undo();
+    } else if (key === 'y' || (key === 'z' && e.shiftKey)) {
+      e.preventDefault();
+      redo();
+    }
+  }, true);
 
 })();
