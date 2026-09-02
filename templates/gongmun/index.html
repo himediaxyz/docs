@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>공문 템플릿 | 다이즈하이미디어 공식 문서 시스템</title>
+<title>레터헤드 (영문) | 다이즈하이미디어 공식 문서 시스템</title>
 
 <!-- 브랜드 웹폰트 (한글 Asta Sans / 영문·숫자 Open Sans). preconnect는
      로딩 속도 때문에 <link>로 직접 두는 게 유리해서 shared CSS로 옮기지
@@ -16,16 +16,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Asta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-<!-- 공용 스타일 — 새 문서 템플릿을 만들 때도 이 5줄을 그대로 복사해서
-     쓰면 됩니다 (순서 중요: variables → document/editable/toolbar → print). -->
+<!-- 공용 스타일 — 새 문서 템플릿을 만들 때도 이 6줄을 그대로 복사해서
+     쓰면 됩니다 (순서 중요: variables → document/theme-mono/editable/
+     toolbar → print). theme-mono.css는 "레터헤드 (국문)"과 똑같이 이
+     템플릿도 네이비 헤더/푸터 밴드 대신 무채색 + 다이즈블랙 로고만
+     남긴 레터헤드 모양으로 만들기 위해 함께 불러옵니다(두 템플릿이
+     같은 레터헤드 포맷의 국문판/영문판이라 헤더·푸터 디자인도 같아야
+     자연스럽습니다). -->
 <link rel="stylesheet" href="../../shared/styles/variables.css">
 <link rel="stylesheet" href="../../shared/styles/document.css">
+<link rel="stylesheet" href="../../shared/styles/theme-mono.css">
 <link rel="stylesheet" href="../../shared/styles/editable.css">
 <link rel="stylesheet" href="../../shared/styles/toolbar.css">
 <link rel="stylesheet" href="../../shared/styles/site.css">
 <link rel="stylesheet" href="../../shared/styles/print.css">
 </head>
-<body>
+<!-- class="lang-en": 이 문서는 "레터헤드 (국문)"과 같은 포맷의 영문판이라
+     본문 곳곳(수신·발신·일자·주소)의 기본 글자체가 한글(Asta Sans) 대신
+     영문(Open Sans)이 되도록 뒤집습니다 — shared/styles/document.css의
+     ".lang-en" 규칙 참고. -->
+<body class="theme-mono lang-en">
 
   <!-- 사이트 헤더: 화면 전용, 포털로 돌아가는 링크. "문서 헤더"(로고 밴드)와는
        다른 개념입니다 — shared/README.md 참고. -->
@@ -33,76 +43,74 @@
 
   <!-- 문서 양식/발신인 드롭다운, 도움말, 인쇄 버튼, 서식 도구모음, 표/
        그림 플로팅 툴바까지 전부 shared/scripts/components.js의
-       renderEditorUI()가 이 자리에 그려 넣습니다(마크업을 템플릿마다
-       복사-붙여넣기 하던 방식은 여러 템플릿에 걸쳐 라벨 문구가
-       어긋나는 사고로 이어져서, 지금은 한 곳(components.js)에서만
-       관리합니다 — 아래 <script>의 renderEditorUI 호출 참고). -->
+       renderEditorUI()가 이 자리에 그려 넣습니다(templates/gongmun-premium과
+       완전히 같은 컴포넌트를 씁니다 — 이 툴바 자체는 한국어 그대로
+       둡니다. 사용하는 사람은 한국어 사용자이고, 영문으로 바뀌는 건
+       실제로 인쇄되는 문서 내용뿐입니다). -->
   <div id="editorUI" class="no-print"></div>
 
   <div class="sheet-wrap">
-    <!-- .pages: 실제 A4 페이지(.page)들을 담는 컨테이너. 처음에는 1페이지만
-         정적으로 존재하고, shared/scripts/pagination.js의 repaginate()가
-         본문 길이에 따라 필요한 만큼 .page를 자동으로 더 만들거나
-         지웁니다 — 화면에서도 인쇄 미리보기처럼 진짜 페이지 박스가
-         차곡차곡 보이고(워드처럼), 각 페이지의 헤더·푸터·본문 영역
-         크기는 언제나 A4 규격으로 고정입니다(shared/README.md,
-         document.css .page 규칙, print.css 상단 주석 참고). -->
+    <!-- .pages: 실제 A4 페이지(.page)들을 담는 컨테이너. -->
     <div class="pages" id="pages">
       <div class="page" data-page-index="0">
 
-        <!-- 문서 헤더(로고+회사명) — 실제 종이(레터헤드)의 일부, 인쇄됩니다.
-             여기서 직접 타이핑하지 않고 shared/scripts/components.js의
-             renderDocHeader()가 채워 넣습니다(아래 <script> 참고). 이
-             1페이지의 헤더 마크업을 pagination.js가 그대로 복제해서
-             2페이지 이후의 헤더에도 씁니다 — 그래서 id="docHeader"는
-             1페이지에만 있습니다. -->
+        <!-- 문서 헤더(로고만) — "레터헤드 (국문)"과 마크업이 완전히
+             동일합니다(renderDocHeader({showCompanyName:false})). -->
         <div class="page-header" id="docHeader"></div>
 
         <div class="page-body">
-          <!-- 문서번호·제목·수신처·안내문 — 페이지가 늘어나도 절대
-               다음 페이지로 넘어가지 않는 고정 영역입니다(항상 1페이지
-               맨 위에만 존재). 그 아래 본문(.flow-items)만 페이지가
-               넘치면 다음 페이지로 이어집니다. -->
           <div class="page-body-fixed">
             <div class="cell-meta">
               <div class="meta-line">
-                <span class="meta-date"><b>일자</b>: <span id="effDate"></span></span>
-                <span id="docNoField" class="meta-docno"><b>문서번호</b>: <span class="editable force-kr-font" id="docNo" contenteditable="true" spellcheck="false">다이즈-2026-001</span></span>
+                <span class="meta-date"><b>Date</b>: <span id="effDate"></span></span>
+                <!-- docNo 기본값도 영문 접두어(DISE)로 바꿨습니다 —
+                     company-info.js의 DISE.docNumberPrefix(국문 "다이즈")는
+                     문서번호 체계가 아직 "보류" 상태라 건드리지 않고,
+                     이 템플릿에 보이는 예시 텍스트만 영문 문서에 맞게
+                     둡니다. force-kr-font 클래스는 뺐습니다 — 내용이
+                     라틴 문자라 강제로 한글 폰트를 쓸 필요가 없습니다. -->
+                <span id="docNoField" class="meta-docno"><b>No.</b>: <span class="editable" id="docNo" contenteditable="true" spellcheck="false">DISE-2026-001</span></span>
               </div>
             </div>
             <div class="cell-title">
-              <p class="title-placeholder editable" id="docTitle" contenteditable="true" spellcheck="false">[문서 제목을 입력하세요]</p>
+              <p class="title-placeholder editable" id="docTitle" contenteditable="true" spellcheck="false">[Enter Document Title]</p>
             </div>
             <div class="cell-to">
-              <p class="to-line">수신: <span class="en editable force-kr-font" id="docTo" contenteditable="true" spellcheck="false">[수신처를 입력하세요]</span> 귀중</p>
+              <!-- "레터헤드 (국문)"의 "수신: ... 귀중"에서 "귀중" 같은
+                   한국어 존칭 표현은 영문 서신에 대응 관용구가 없어
+                   빼고, "To: " 형식만 씁니다. -->
+              <p class="to-line">To: <span class="editable" id="docTo" contenteditable="true" spellcheck="false">[Contact Name | Company Name]</span></p>
+              <!-- 수신처의 회사 주소·이메일 — 둘 다 있으면 있는 대로,
+                   필요 없으면 지워도 되는 선택 항목입니다(레터헤드
+                   (국문)과 동일한 구성 — editor.js 섹션 15의 수신인
+                   드롭다운이 이 두 줄도 함께 채우거나 감춥니다). -->
+              <p class="to-detail-line" id="docToAddressLine"><span class="editable" id="docToAddress" contenteditable="true" spellcheck="false">[Company Address]</span></p>
+              <p class="to-detail-line" id="docToEmailLine"><span class="editable" id="docToEmail" contenteditable="true" spellcheck="false">[Email Address]</span></p>
+              <!-- 로고만 남긴 헤더(showCompanyName:false)라 회사명을 여기
+                   "발신" 줄로 대신 보여줍니다 — onlyEnglish:true라
+                   "다이즈하이미디어 | DISEHIMEDIA"가 아니라 "DISEHIMEDIA"만
+                   나옵니다(components.js의 renderDocFrom 호출부 참고). -->
+              <p class="from-line">From: <span id="docFrom"></span></p>
             </div>
+            <!-- 이 안내문은 화면에만 보이고 인쇄되지 않는(no-print) 사용법
+                 문구라, 실제로 이 도구를 쓰는 한국어 사용자를 위해
+                 한국어 그대로 둡니다. -->
             <div class="cell-note no-print">
-              <p class="note-line">(본 문서는 다이즈하이미디어의 공식 대외 발송용 공문 템플릿입니다. 아래 파란 점선 영역을 클릭해 내용을 입력하세요.)</p>
+              <p class="note-line">(본 문서는 다이즈하이미디어의 공식 대외 발송용 레터헤드 템플릿(영문)입니다. 아래 파란 점선 영역을 클릭해 내용을 입력하세요.)</p>
             </div>
           </div>
 
-          <!-- 본문 — "흐름 항목"(문단/목록/표/그림/서명란)이 실제로 담기는
-               곳. 이 div 자체가 contenteditable이며, 내용이 이 페이지의
-               남은 세로 공간을 넘으면 pagination.js가 넘치는 항목을
-               통째로 다음 페이지의 같은 클래스(.flow-items) div로
-               옮깁니다 — 문단 중간이 아니라 항상 항목 단위로 옮기므로
-               글자가 잘리지 않습니다. -->
           <div class="cell-guide flow-items editable editable-block" id="docBody" contenteditable="true" spellcheck="false">
-            <p>안녕하십니까. 다이즈하이미디어(<span style="font-family:var(--font-en)">DISEHIMEDIA</span>)입니다.</p>
-            <p>본 문서는 다이즈하이미디어의 공식 대외 발송용 공문 범용 템플릿입니다. 아래 안내에 따라 필요한 내용을 수정하신 후 사용해 주시기 바랍니다.</p>
+            <p>Dear Sir/Madam,</p>
+            <p>This is DISEHIMEDIA's official letterhead template for correspondence in English. Please revise the content below to fit your purpose before use.</p>
             <ol>
-              <li>상단 문서번호는 발송하는 문서마다 고유 일련번호(다이즈-연도-순번)로 교체하여 관리해 주십시오.</li>
-              <li>제목과 수신란은 실제 발송 목적과 수신처에 맞게 입력해 주십시오.</li>
-              <li>이 안내 문단은 삭제하고 실제 전달하실 본문 내용으로 교체해 주십시오.</li>
-              <li>본문 한글은 Asta Sans, 영문/숫자는 Open Sans로 구성되어 있습니다.</li>
-              <li>하단 발신인 정보는 담당자에 맞게 수정하여 사용하실 수 있습니다.</li>
+              <li>Replace the document number above with a unique reference number (DISE-Year-Sequence) for each letter you send.</li>
+              <li>Enter the title and recipient to match the actual purpose and destination of this letter.</li>
+              <li>Delete this instructional paragraph and replace it with your actual message.</li>
+              <li>Body text is set in Open Sans; Asta Sans is used only where Korean text appears.</li>
+              <li>The sender information below can be edited to match the person in charge.</li>
             </ol>
-            <p>문의사항이 있으시면 하단 연락처로 연락 주시기 바랍니다.</p>
-            <!-- 서명란도 본문의 마지막 "흐름 항목"입니다 — 본문이 길어져
-                 서명란이 페이지 하단을 넘으면 서명란째로 다음 페이지로
-                 넘어갑니다. contenteditable="false"로 이 블록 안쪽은
-                 타이핑으로 고칠 수 없게 막아둡니다(기존과 동일하게
-                 담당자 정보는 이 파일을 직접 수정해서 바꿉니다). -->
+            <p>Please contact us using the information below should you have any questions.</p>
             <div class="sign-block" contenteditable="false">
               <div class="sign-left">
                 <!-- "발신" 텍스트 대신 얇은 구분선 하나만 둡니다(장식용
@@ -123,41 +131,29 @@
           </div>
         </div>
 
-        <!-- 문서 푸터(주소·연락처) — 마찬가지로 renderDocFooter()가
-             채우고, pagination.js가 이 마크업을 복제해 모든 페이지
-             하단에 반복합니다. -->
+        <!-- 문서 푸터(주소·연락처) — renderDocFooter({lang:'en'})가 채웁니다. -->
         <div class="page-footer" id="docFooter"></div>
       </div>
     </div>
-    <!-- 사이트 푸터: 화면 전용 캡션. "문서 푸터"(주소 밴드)와는 다른
-         개념입니다 — shared/README.md 참고. -->
     <div id="siteFooter" class="no-print"></div>
   </div>
 
-  <!-- 공용 스크립트 — 새 문서 템플릿을 만들 때도 이 순서 그대로 복사해서
-       쓰면 됩니다. 각 파일의 역할은 파일 상단 주석 참고. -->
+  <!-- 공용 스크립트 — templates/gongmun-premium과 완전히 동일한 순서/구성입니다. -->
   <script src="../../shared/scripts/company-info.js"></script>
   <script src="../../shared/scripts/sender-info.js"></script>
   <script src="../../shared/scripts/recipient-info.js"></script>
   <script src="../../shared/scripts/template-registry.js"></script>
   <script src="../../shared/scripts/components.js"></script>
   <script>
-    // 이 문서만의 설정: 사이트 헤더/푸터 + 이 문서가 어느 계열사·어떤
-    // 종류의 문서인지. portalHref는 이 파일 기준 index.html까지의
-    // 상대 경로(폴더 깊이에 맞게 조정)입니다.
-    //
-    // DISE_CURRENT_TEMPLATE / DISE_CURRENT_COMPANY: 이 템플릿이
-    // template-registry.js(DISE.templates)·sender-info.js(DISE.senders)
-    // 중 어느 항목에 해당하는지 editor.js(섹션 12: 문서 양식/발신인
-    // 드롭다운)에게 알려주는 값입니다. 새 템플릿을 만들 때도 이 두
-    // 줄만 그 템플릿의 key/company로 바꿔주면 됩니다.
+    // 이 문서만의 설정. DISE_CURRENT_TEMPLATE key는 그대로 'gongmun'입니다
+    // (템플릿 폴더·키는 안 바꾸고 화면에 보이는 이름만 "레터헤드 (영문)"로
+    // 바뀌었습니다 — template-registry.js의 nameKr, index.html 포털의
+    // title 참고).
     window.DISE_CURRENT_TEMPLATE = 'gongmun';
     window.DISE_CURRENT_COMPANY = 'disehimedia';
     // 서버 PDF 다운로드 기능(shared/scripts/pdf-export.js)을 쓰려면
-    // 배포한 API 주소를 여기에 넣으세요(예: 'https://dise-docs-pdf.
-    // vercel.app/api/generate-pdf'). 비워두면 "서버 PDF 다운로드" 버튼
-    // 자체가 나타나지 않고 기존 "인쇄 / PDF로 저장"만 보입니다 — 배포
-    // 방법은 pdf-service/README.md 참고.
+    // 배포한 API 주소를 여기에 넣으세요 — templates/gongmun-premium과 동일한
+    // 설명은 pdf-service/README.md 참고.
     window.DISE_PDF_API_URL = 'https://docs-plum-ten-91.vercel.app/api/generate-pdf';
 
     DISE.components.renderSiteHeader({ portalHref: '../../index.html' });
@@ -165,13 +161,21 @@
     // 반드시 renderViewModeToggle()보다 먼저 호출해야 합니다.
     DISE.components.renderEditorUI({ templateKey: DISE_CURRENT_TEMPLATE, company: DISE_CURRENT_COMPANY });
     DISE.components.renderViewModeToggle();
-    DISE.components.renderSiteFooter({ text: '다이즈하이미디어 그룹 공식 문서 시스템 · 공문 템플릿' });
-    DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, docTypeTag: '공식 공문' });
-    DISE.components.renderDocFooter({ company: DISE_CURRENT_COMPANY });
+    DISE.components.renderSiteFooter({ text: '다이즈하이미디어 그룹 공식 문서 시스템 · 레터헤드(영문)' });
+    // "레터헤드 (국문)"과 같은 포맷 — 헤더에 로고만 남기고 회사명·문서
+    // 종류 텍스트는 뺍니다.
+    DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, showCompanyName: false });
+    // 헤더에서 뺀 회사명을 "수신" 바로 아래 "발신" 줄(#docFrom)에 대신
+    // 채워 넣되, 영문 문서라 onlyEnglish:true로 "DISEHIMEDIA"만 보여줍니다.
+    DISE.components.renderDocFrom({ company: DISE_CURRENT_COMPANY, onlyEnglish: true });
+    // 푸터는 해외용 전화번호만 보여주고(showPhoneDomestic:false), 주소도
+    // lang:'en'으로 영문 주소(company-info.js의 addressEn)를 씁니다.
+    DISE.components.renderDocFooter({ company: DISE_CURRENT_COMPANY, showPhoneDomestic: false, lang: 'en' });
   </script>
   <!-- 일자 자동 표기(오늘 날짜)와 발신인 옆 날짜 입력칸 연동, 문서번호
-       표시 체크박스는 editor.js 섹션 13/14가 공통으로 처리합니다 — 이
-       템플릿에서 따로 채워줄 코드가 필요 없습니다. -->
+       표시 체크박스, 수신인 드롭다운은 editor.js 섹션 13/14/15가
+       공통으로 처리합니다 — 이 템플릿에서 따로 채워줄 코드가 필요
+       없습니다. -->
   <script src="../../shared/scripts/editor.js"></script>
   <script src="../../shared/scripts/pagination.js"></script>
   <script src="../../shared/scripts/pdf-export.js"></script>

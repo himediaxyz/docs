@@ -33,13 +33,17 @@ var DISE_SITE_ROOT = (function () {
 
 DISE.templates = [
   {
+    // 2026-09-02: "공문 (대외 발송용)" → "레터헤드 (영문)"으로 개편 —
+    // gongmun-premium(레터헤드 국문)과 같은 레터헤드 포맷의 영문판입니다
+    // (템플릿 폴더/키는 그대로 'gongmun'이고 이름만 바뀌었습니다).
     key: 'gongmun',
-    nameKr: '공문 템플릿 — 직접 입력판',
+    nameKr: '레터헤드 (영문)',
     path: 'templates/gongmun/'
   },
   {
+    // 2026-09-02: "공문 — 프리미엄 레터헤드" → "레터헤드 (국문)"으로 개편.
     key: 'gongmun-premium',
-    nameKr: '공문 템플릿 — 프리미엄 레터헤드',
+    nameKr: '레터헤드 (국문)',
     path: 'templates/gongmun-premium/'
   }
   // 새 템플릿(보고서, 기안문 등)이 생기면 여기에 { key, nameKr, path }

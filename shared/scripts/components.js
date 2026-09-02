@@ -539,10 +539,14 @@ DISE.components = {
    * 보이는 문서(예: templates/gongmun)에서는 굳이 안 써도 됩니다.
    * @param {Object} [opts]
    * @param {string} [opts.company] - DISE.companies의 key (기본값 'disehimedia').
+   * @param {boolean} [opts.onlyEnglish] - true면 "국문 | 영문" 대신
+   *   영문 이름(nameEn)만 보여줍니다(기본값 false) — 문서 전체가
+   *   영문인 템플릿(예: "레터헤드 (영문)")에서 씁니다.
    */
   renderDocFrom: function (opts) {
     opts = opts || {};
     var companyKey = opts.company || 'disehimedia';
+    var onlyEnglish = !!opts.onlyEnglish;
     var target = document.getElementById('docFrom');
     if (!target) return;
 
@@ -552,7 +556,9 @@ DISE.components = {
       return;
     }
 
-    target.textContent = c.nameKr + (c.nameEn && c.nameEn !== c.nameKr ? ' | ' + c.nameEn : '');
+    target.textContent = onlyEnglish ?
+      (c.nameEn || c.nameKr) :
+      c.nameKr + (c.nameEn && c.nameEn !== c.nameKr ? ' | ' + c.nameEn : '');
   },
 
   /**
@@ -567,6 +573,10 @@ DISE.components = {
    * @param {boolean} [opts.showPhoneDomestic] - 국내용 전화번호(기본값 true).
    * @param {boolean} [opts.showEmail] - 이메일(기본값 true).
    * @param {boolean} [opts.showWebsite] - 웹사이트 주소(기본값 true).
+   * @param {string} [opts.lang] - 'en'이면 주소를 addressEn(없으면
+   *   addressKr로 대체)으로 보여주고, 국내/해외 전화 구분 문구도
+   *   "(Overseas)"/"(Domestic)"처럼 영문으로 바꿉니다(기본값 'kr' —
+   *   문서 전체가 영문인 템플릿에서만 'en'을 넘기면 됩니다).
    */
   renderDocFooter: function (opts) {
     opts = opts || {};
@@ -576,6 +586,7 @@ DISE.components = {
     var showPhoneDomestic = opts.showPhoneDomestic !== false;
     var showEmail = opts.showEmail !== false;
     var showWebsite = opts.showWebsite !== false;
+    var lang = opts.lang === 'en' ? 'en' : 'kr';
     var target = document.getElementById('docFooter');
     if (!target) return;
 
@@ -590,13 +601,19 @@ DISE.components = {
       console.warn('DISE.components.renderDocFooter: "' + companyKey + '"의 주소·연락처 정보가 아직 company-info.js에 없습니다.');
       return;
     }
+    // 영문 주소(addressEn)가 아직 없는 계열사라면 국문 주소로 대체합니다
+    // (없는 것보다 국문이라도 있는 게 낫다는 판단 — company-info.js에
+    // addressEn을 추가하면 자동으로 그쪽이 쓰입니다).
+    var addressText = lang === 'en' ? (c.addressEn || c.addressKr) : c.addressKr;
 
     // 전화번호: 국내/해외를 둘 다 보여줄 때만 "(해외)"/"(국내)" 구분을
     // 붙입니다 — 하나만 켜져 있으면 구분할 필요가 없으므로 번호만.
+    var overseasSuffix = lang === 'en' ? ' (Overseas)' : ' (해외)';
+    var domesticSuffix = lang === 'en' ? ' (Domestic)' : ' (국내)';
     var bothPhones = showPhoneIntl && showPhoneDomestic && c.phoneIntl && c.phoneDomestic;
     var phoneParts = [];
-    if (showPhoneIntl && c.phoneIntl) phoneParts.push(c.phoneIntl + (bothPhones ? ' (해외)' : ''));
-    if (showPhoneDomestic && c.phoneDomestic) phoneParts.push(c.phoneDomestic + (bothPhones ? ' (국내)' : ''));
+    if (showPhoneIntl && c.phoneIntl) phoneParts.push(c.phoneIntl + (bothPhones ? overseasSuffix : ''));
+    if (showPhoneDomestic && c.phoneDomestic) phoneParts.push(c.phoneDomestic + (bothPhones ? domesticSuffix : ''));
     var phoneText = phoneParts.length ? 'Tel. ' + phoneParts.join(' / ') : '';
 
     var l2Parts = [];
@@ -607,7 +624,7 @@ DISE.components = {
 
     target.innerHTML =
       '<div class="doc-footer-band">' +
-        (showAddress && c.addressKr ? '<div class="l1">' + c.addressKr + '</div>' : '') +
+        (showAddress && addressText ? '<div class="l1">' + addressText + '</div>' : '') +
         (l2Html ? '<div class="l2">' + l2Html + '</div>' : '') +
       '</div>';
   }

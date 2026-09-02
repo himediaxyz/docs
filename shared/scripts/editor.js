@@ -1228,9 +1228,17 @@
     return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
   }
 
+  // <body class="lang-en">가 붙은 템플릿(예: templates/gongmun "레터헤드
+  // (영문)")에서는 "2026년 9월 2일" 대신 "September 2, 2026" 형식으로
+  // 보여줍니다(2026-09-02 추가 — 문서 내용을 영문으로 바꿔도 일자만
+  // 한국어 형식으로 남아있던 버그 수정).
+  function isLangEn() {
+    return !!(document.body && document.body.classList.contains('lang-en'));
+  }
+
   function updateEffDateDisplay() {
     if (!effDateOutput || !effDateInput || !effDateInput.value) return;
-    effDateOutput.textContent = new Intl.DateTimeFormat('ko-KR', {
+    effDateOutput.textContent = new Intl.DateTimeFormat(isLangEn() ? 'en-US' : 'ko-KR', {
       year: 'numeric', month: 'long', day: 'numeric'
     }).format(parseISODate(effDateInput.value));
   }
@@ -1296,9 +1304,15 @@
   var docToAddressLine = document.getElementById('docToAddressLine');
   var docToEmailLine = document.getElementById('docToEmailLine');
 
-  var DOC_TO_PLACEHOLDER = '[담당자 이름 | 회사 이름]';
-  var DOC_TO_ADDRESS_PLACEHOLDER = '[회사 주소]';
-  var DOC_TO_EMAIL_PLACEHOLDER = '[이메일 주소]';
+  // "레터헤드 (영문)"(<body class="lang-en">)에서는 대괄호 placeholder도
+  // 그 템플릿 마크업에 원래 적혀 있던 영문 문구와 똑같이 맞춰야 합니다
+  // — 안 그러면 "새로 입력"을 눌렀을 때 영문 문서에 한국어 placeholder가
+  // 튀어나오는 문제가 생깁니다(2026-09-02 수정). isLangEn()은 섹션 13에
+  // 정의되어 있지만 함수 선언은 끌어올려지므로(hoisting) 여기서도 바로
+  // 씁니다.
+  function docToPlaceholder() { return isLangEn() ? '[Contact Name | Company Name]' : '[담당자 이름 | 회사 이름]'; }
+  function docToAddressPlaceholder() { return isLangEn() ? '[Company Address]' : '[회사 주소]'; }
+  function docToEmailPlaceholder() { return isLangEn() ? '[Email Address]' : '[이메일 주소]'; }
   var RECIPIENT_LABEL_DEFAULT = '수신인 선택';
 
   function currentRecipientList() {
@@ -1307,9 +1321,9 @@
   }
 
   function resetRecipientFields() {
-    if (docToEl) docToEl.textContent = DOC_TO_PLACEHOLDER;
-    if (docToAddressEl) docToAddressEl.textContent = DOC_TO_ADDRESS_PLACEHOLDER;
-    if (docToEmailEl) docToEmailEl.textContent = DOC_TO_EMAIL_PLACEHOLDER;
+    if (docToEl) docToEl.textContent = docToPlaceholder();
+    if (docToAddressEl) docToAddressEl.textContent = docToAddressPlaceholder();
+    if (docToEmailEl) docToEmailEl.textContent = docToEmailPlaceholder();
     if (docToAddressLine) docToAddressLine.style.display = '';
     if (docToEmailLine) docToEmailLine.style.display = '';
     if (recipientLabel) recipientLabel.textContent = RECIPIENT_LABEL_DEFAULT;
@@ -1320,7 +1334,7 @@
     var nameParts = [];
     if (recipient.contactName) nameParts.push(recipient.contactName);
     if (recipient.companyName) nameParts.push(recipient.companyName);
-    if (docToEl) docToEl.textContent = nameParts.length ? nameParts.join(' | ') : DOC_TO_PLACEHOLDER;
+    if (docToEl) docToEl.textContent = nameParts.length ? nameParts.join(' | ') : docToPlaceholder();
 
     if (docToAddressEl && docToAddressLine) {
       if (recipient.address) {

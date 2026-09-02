@@ -58,6 +58,10 @@ DISE.companies = {
     logoRatio: 180 / 100,
     badgeColor: '#212B43',              // 다이즈블루
     addressKr: '인천광역시 부평구 백범로577번길 20, 724, 725, 751호 (경인센타, 공장동)',
+    // 영문 문서(예: templates/gongmun "레터헤드 (영문)")의 푸터에서만
+    // 씁니다 — shared/scripts/components.js의 renderDocFooter({lang:'en'})
+    // 참고. 없으면 자동으로 addressKr로 대체됩니다.
+    addressEn: '20 Baekbeom-ro 577beon-gil, Bupyeong-gu, Incheon, Republic of Korea (Rm. 724, 725, 751, Gyeongin Center, Factory Bldg.)',
     phoneIntl: '+82-32-573-3114',      // 해외에서 걸 때
     phoneDomestic: '032-573-3114',      // 국내에서 걸 때
     email: 'hidise@disehimedia.com',

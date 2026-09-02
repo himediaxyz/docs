@@ -257,6 +257,29 @@
 }
 .editable li{margin-bottom:4px;}
 
+/* ---------- 영문 문서 폰트 전환(2026-09-02 추가) ----------
+   <body class="lang-en">이 붙은 템플릿(예: templates/gongmun "레터헤드
+   (영문)")에서는 문서 곳곳의 기본 글자체를 한글(Asta Sans) 대신
+   영문(Open Sans)으로 뒤집습니다. 개별 span마다 매번 .en 클래스를
+   붙이는 대신 최상위 <body>에 이 클래스 하나만 추가하면 되므로, 새로
+   영문 템플릿을 만들 때도 이 한 줄만 재사용하면 됩니다. 본문(.cell-guide)
+   문단·목록과 화면 전용 안내문(.note-line)은 일부러 넣지 않았습니다 —
+   실제로 인쇄되는 편지 본문(영문 위주로 직접 입력)과, 화면에만 보이는
+   한국어 사용 안내문은 이 규칙과 별개로 다루는 게 자연스럽기 때문입니다
+   (각 템플릿 index.html에서 필요에 맞게 직접 English/한국어로 써두면
+   됩니다). */
+.lang-en .meta-line,
+.lang-en .meta-line b,
+.lang-en .to-line,
+.lang-en .to-detail-line,
+.lang-en .from-line,
+.lang-en .title-placeholder{
+  font-family:var(--font-en);
+}
+.lang-en .doc-footer-band .l1{
+  font-family:var(--font-en);
+}
+
 /* 원문자 번호 목록(①②③...) — CSS 표준 list-style-type에 없는 모양이라
    커스텀 카운터 스타일로 정의합니다. 20개까지 지원하고, 그 이상은
    자동으로 일반 숫자로 대체됩니다(system:fixed의 표준 동작). 서식
