@@ -189,7 +189,8 @@
 .cell-to{padding:0 50px;}
 .cell-note{padding:0 50px;}
 /* .cell-guide는 이제 셀(td)이 아니라 흐름 본문(.flow-items) 자신에게
-   바로 붙는 클래스입니다 — 좌우 여백만 필요합니다. */
+   바로 붙는 클래스입니다 — 좌우 여백뿐 아니라, 아래 "본문 글자
+   스타일" 규칙도 이 클래스를 기준으로 적용됩니다(바로 아래 설명). */
 .cell-guide{padding:0 50px;}
 
 .title-placeholder{
@@ -201,12 +202,16 @@
 }
 .to-line .en{font-family:var(--font-en);}
 /* 수신처의 회사 주소·이메일(둘 다 있으면 있는 대로, 없으면 지워도
-   되는 선택 항목)을 위한 보조 줄(2026-09-02 추가) — .to-line보다
-   한 단계 작고 옅은 색으로 부가 정보임을 나타냅니다. 라벨 없이
-   대괄호 placeholder 텍스트만 그대로 두면 editor.js 섹션 1의
-   "클릭 시 전체 선택" 동작을 별도 스크립트 없이 그대로 물려받습니다. */
+   되는 선택 항목)을 위한 보조 줄(2026-09-02 추가, 2026-09-02 크기
+   통일 — 요청: "주소와 이메일 부분이 갑자기 작아져서 정리가 안
+   되는 것 같은데 크기와 간격이 통일되도록"). 원래는 부가 정보임을
+   나타내려 .to-line보다 작고 옅은 색을 썼는데, 오히려 정돈 안 된
+   느낌을 줘서 지금은 폰트 크기·글자색·줄 간격을 .to-line과 완전히
+   같게 맞췄습니다. 라벨 없이 대괄호 placeholder 텍스트만 그대로
+   두면 editor.js 섹션 1의 "클릭 시 전체 선택" 동작을 별도 스크립트
+   없이 그대로 물려받습니다. */
 .to-detail-line{
-  font-family:var(--font-kr);font-size:13px;color:var(--sub);margin:0 0 3px;
+  font-family:var(--font-kr);font-size:15px;color:var(--ink);margin:0 0 4px;
 }
 .to-detail-line .en{font-family:var(--font-en);}
 /* "발신: 다이즈하이미디어 | DISEHIMEDIA" 줄(2026-09-02 추가) — 수신/
@@ -220,20 +225,32 @@
 .note-line{
   font-family:var(--font-kr);font-style:italic;font-size:12.5px;color:#777;margin:0 0 18px;
 }
-.guide{
-  font-family:var(--font-kr);font-size:14px;line-height:1.75;color:#2a2a2a;
-}
-.guide p{
+/* ---------- 본문(.cell-guide) 글자 스타일 ----------
+   ★ 2026-09-02 버그 수정: 이 아래 규칙들이 원래 클래스 이름을
+   ".guide"로 잘못 쓰고 있었는데, 실제 본문 컨테이너(각 템플릿
+   index.html의 #docBody, pagination.js가 페이지를 나눌 때 새로
+   만드는 흐름 조각들)에 붙는 클래스는 ".cell-guide"라서 이 규칙들이
+   단 하나도 실제로 적용되지 않고 있었습니다. 그 결과 본문 문단
+   (<p>)은 스타일이 하나도 안 먹어 브라우저 기본값(16px, 좁은
+   줄간격)으로 보이는데, 번호 목록(<ol>)만은 아래 ".editable
+   ul,.editable ol" 규칙이 우연히 따로 적용되어 14px/줄간격 1.75로
+   나오면서 — 문단과 목록의 크기가 서로 달라 "폰트가 정리 안 된"
+   느낌을 줬습니다(요청: "글씨 폰트가 전체적으로 정리가 안되어
+   있다" / "숫자 목록에서도 폰트 크기 등이 약간 작아져서 통일된
+   느낌이 안난다"). 클래스 이름을 실제 마크업과 맞는 ".cell-guide"로
+   고쳐서 문단도 목록과 똑같은 14px/1.75/색으로 통일했습니다. */
+.cell-guide p{
   font-family:var(--font-kr);font-size:14px;line-height:1.75;color:#2a2a2a;margin:0 0 12px;
 }
-.guide ol{
+.cell-guide ol{
   font-family:var(--font-kr);font-size:14px;line-height:1.75;color:#2a2a2a;
   margin:0 0 14px;padding-left:20px;
 }
-.guide li{margin-bottom:4px;}
+.cell-guide li{margin-bottom:4px;}
 
 /* 사용자가 서식 도구모음에서 목록을 새로 넣을 때도(.editable 안) 같은
-   본문 스타일이 적용되도록 .guide 바깥에서도 재사용 가능한 규칙 */
+   본문 스타일이 적용되도록 .cell-guide 바깥에서도 재사용 가능한 규칙
+   (점 목록(ul)은 .cell-guide 쪽에 없어서 이 규칙이 유일한 담당입니다). */
 .editable ul,.editable ol{
   font-family:var(--font-kr);font-size:14px;line-height:1.75;color:#2a2a2a;
   margin:0 0 14px;padding-left:20px;
@@ -281,8 +298,14 @@
 /* 한글이 섞이는 입력 필드(문서번호, 수신처 등)에 공통으로 붙이는 유틸리티
    클래스 — Open Sans는 한글을 지원하지 않으므로 강제로 Asta Sans 계열로
    고정합니다. 새 템플릿에서 한글 섞인 입력칸을 추가할 때도 이 클래스를
-   붙이면 됩니다. */
-.force-kr-font{font-family:var(--font-kr);}
+   붙이면 됩니다.
+   ★ 2026-09-02 수정: !important를 붙였습니다 — 수신 영역의 #docTo처럼
+   같은 요소에 ".en"(예: .to-line .en, font-family: var(--font-en))
+   클래스도 함께 붙는 경우, 클래스 두 개짜리 선택자(.to-line .en)가
+   한 개짜리인 이 유틸리티 클래스보다 CSS 우선순위가 높아 이 클래스가
+   "강제"라는 이름과 달리 실제로는 밀리고 있었습니다. 이름 그대로
+   항상 이기도록 !important로 고정합니다. */
+.force-kr-font{font-family:var(--font-kr)!important;}
 
 /* ---------- 서명(발신) 블록 ----------
    본문(.flow-items)의 마지막 "흐름 항목"으로 함께 있으므로(예전처럼
