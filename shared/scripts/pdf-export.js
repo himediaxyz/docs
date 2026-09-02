@@ -1,9 +1,8 @@
 /* ============================================================
    pdf-export.js
-   "서버 PDF 다운로드"(#pdfDownloadBtn)와 "인쇄 / PDF로 저장"(#printBtn)
-   버튼 클릭을 모두 처리합니다 — 지금 화면에 떠 있는 문서를 서버
-   (헤드리스 Chromium, pdf-service/api/generate-pdf.js)에서 PDF로
-   렌더링해 받아옵니다.
+   "PDF 다운로드"(#pdfDownloadBtn)와 "인쇄하기"(#printBtn) 버튼 클릭을
+   모두 처리합니다 — 지금 화면에 떠 있는 문서를 서버(헤드리스 Chromium,
+   pdf-service/api/generate-pdf.js)에서 PDF로 렌더링해 받아옵니다.
 
    ---------------------------------------------------------------
    왜 필요한가
@@ -17,13 +16,13 @@
    Chromium으로 보내 PDF로 직접 만들어 받습니다 — 어떤 기기로 요청했든
    서버 쪽 렌더링 엔진은 항상 같으므로 결과가 항상 동일합니다.
 
-     - #pdfDownloadBtn ("서버 PDF 다운로드"): 파일로 내려받기.
-     - #printBtn ("인쇄 / PDF로 저장"): 새 탭에 PDF를 띄우고 데스크톱
-       브라우저에서는 인쇄 대화상자까지 자동으로 엽니다(아래 "인쇄
-       버튼 동작 방식" 참고). window.DISE_PDF_API_URL이 설정되지 않은
-       템플릿(서비스 미배포)에서는 그대로 window.print()로 동작합니다
-       — 그래서 components.js의 버튼 마크업에는 onclick을 넣지 않고
-       이 파일의 위임(delegated) 리스너가 매번 상황에 맞게 분기합니다.
+     - #pdfDownloadBtn ("PDF 다운로드"): 파일로 내려받기.
+     - #printBtn ("인쇄하기"): 새 탭에 PDF를 띄우고 데스크톱 브라우저
+       에서는 인쇄 대화상자까지 자동으로 엽니다(아래 "인쇄 버튼 동작
+       방식" 참고). window.DISE_PDF_API_URL이 설정되지 않은 템플릿
+       (서비스 미배포)에서는 그대로 window.print()로 동작합니다 —
+       그래서 components.js의 버튼 마크업에는 onclick을 넣지 않고 이
+       파일의 위임(delegated) 리스너가 매번 상황에 맞게 분기합니다.
 
    ---------------------------------------------------------------
    무엇을 보내나
@@ -45,10 +44,30 @@
         보내면 본문이 페이지 하나에 다 뭉쳐 있어 서버에서도 그 상태
         그대로 잘려 나갑니다).
 
+   HTML 스냅샷은 로딩 안내(showToast)를 화면에 붙이기 *전에* 미리
+   떠서 fetchPdf()에 인자로 넘겨줍니다 — 안내 배너 자체가 서버로 보내는
+   문서 내용에 섞여 들어가는 것을 막기 위해서입니다.
+
    서버(generate-pdf.js)는 이 HTML을 그대로 불러들여 렌더링만 할 뿐,
    레이아웃을 계산하는 코드는 이 문서가 원래 쓰는 것과 완전히
    같습니다 — 그래서 "화면에서 보던 것과 PDF가 다르다"는 불일치가
    구조적으로 생기지 않습니다.
+
+   ---------------------------------------------------------------
+   로딩 중임을 어떻게 알려주나
+
+   서버에서 PDF를 만드는 데 보통 몇 초 정도 걸립니다(콜드 스타트 시
+   더 걸릴 수 있음). 이 대기 시간을 사용자가 알 수 있도록 두 가지를
+   같이 씁니다:
+     1) 버튼 자체를 비활성화하고 문구를 "PDF 생성 중…"/"PDF 준비 중…"
+        으로 바꿉니다(setButtonBusy).
+     2) 화면 하단에 잠깐 떠 있는 안내 배너(showToast)를 띄웁니다 —
+        인쇄하기 버튼을 누르면 포커스가 새 탭으로 넘어가 버튼 문구
+        변화를 못 볼 수 있어서, 원래 탭에도 별도 안내가 필요합니다.
+   인쇄하기 버튼은 추가로, 새로 연 빈 탭이 흰 화면인 채로 몇 초를
+   그냥 흘려보내면 "안 열리나?" 싶을 수 있어서, 그 탭 자체에도 곧바로
+   로딩 화면(스피너 + 안내 문구)을 써넣습니다(writeLoadingPage) — PDF가
+   준비되면 이 로딩 화면이 실제 PDF로 자동으로 바뀝니다.
 
    ---------------------------------------------------------------
    인쇄 버튼 동작 방식(팝업 차단 우회)
@@ -76,12 +95,12 @@
    동작합니다)
      <script src="../../shared/scripts/pdf-export.js"></script>
 
-   "서버 PDF 다운로드" 버튼을 보이게 하려면 각 템플릿에서
-   renderEditorUI() 호출보다 먼저 window.DISE_PDF_API_URL에 배포된 API
-   주소를 지정해야 합니다(예: 'https://dise-docs-pdf.vercel.app/api/
-   generate-pdf'). 비워두면 components.js가 그 버튼 자체를 그리지
-   않고, "인쇄 / PDF로 저장" 버튼은 예전처럼 window.print()로만
-   동작합니다. 배포 방법은 pdf-service/README.md 참고.
+   "PDF 다운로드" 버튼을 보이게 하려면 각 템플릿에서 renderEditorUI()
+   호출보다 먼저 window.DISE_PDF_API_URL에 배포된 API 주소를 지정해야
+   합니다(예: 'https://dise-docs-pdf.vercel.app/api/generate-pdf').
+   비워두면 components.js가 그 버튼 자체를 그리지 않고, "인쇄하기"
+   버튼은 예전처럼 window.print()로만 동작합니다. 배포 방법은
+   pdf-service/README.md 참고.
    ============================================================ */
 
 (function () {
@@ -112,9 +131,41 @@
     });
   }
 
+  // 지금 화면 그대로의 HTML 스냅샷을 만듭니다 — showToast()로 안내
+  // 배너를 붙이기 전에 반드시 먼저 호출해야, 배너가 서버로 보내는
+  // 문서 내용에 섞여 들어가지 않습니다.
+  function buildDocumentHtml() {
+    var rawHtml = '<!doctype html>\n' + document.documentElement.outerHTML;
+    return withBaseHref(rawHtml, document.baseURI);
+  }
+
   function setButtonBusy(btn, busy, busyLabel, idleLabel) {
     btn.disabled = busy;
     btn.textContent = busy ? busyLabel : idleLabel;
+  }
+
+  // 화면 하단에 잠깐 떠 있는 안내 배너. hide()를 호출하면 사라집니다
+  // (버튼 문구만으로는 놓치기 쉬운 "생성 중" 상태를 눈에 더 띄게
+  // 알려주기 위한 용도 — 특히 인쇄하기는 포커스가 새 탭으로 넘어가
+  // 버려 원래 탭의 버튼 문구 변화를 못 볼 수 있습니다).
+  function showToast(message) {
+    var toast = document.createElement('div');
+    toast.className = 'no-print';
+    toast.textContent = message;
+    toast.style.cssText = [
+      'position:fixed', 'left:50%', 'bottom:28px', 'transform:translateX(-50%)',
+      'background:#212B43', 'color:#fff', 'padding:12px 20px', 'border-radius:10px',
+      'font-size:14px', 'line-height:1.5', 'box-shadow:0 6px 20px rgba(0,0,0,.28)',
+      'z-index:99999', 'max-width:min(90vw,420px)', 'text-align:center',
+      'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif'
+    ].join(';');
+    document.body.appendChild(toast);
+    var hidden = false;
+    return function hide() {
+      if (hidden || !toast.parentNode) return;
+      hidden = true;
+      toast.parentNode.removeChild(toast);
+    };
   }
 
   function downloadBlob(blob, fileName) {
@@ -127,6 +178,35 @@
     a.remove();
     // 브라우저가 다운로드를 실제로 시작할 시간을 준 뒤 정리합니다.
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  // window.open('', '_blank')로 열어둔 빈 탭에 곧바로 로딩 화면(스피너 +
+  // 안내 문구)을 써넣습니다 — PDF가 도착하기 전까지 흰 화면만 보이면
+  // "안 열리나?" 하고 오해하기 쉬워서입니다. 나중에 printTab.location.
+  // href를 실제 PDF blob URL로 바꾸면 이 화면은 자동으로 사라집니다.
+  function writeLoadingPage(win) {
+    try {
+      win.document.open();
+      win.document.write(
+        '<!doctype html><html lang="ko"><head><meta charset="utf-8">' +
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+        '<title>PDF 생성 중…</title><style>' +
+        'html,body{height:100%;margin:0;display:flex;align-items:center;justify-content:center;' +
+        'background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;color:#212B43;}' +
+        '.wrap{text-align:center;padding:24px;}' +
+        '.spinner{width:40px;height:40px;margin:0 auto 18px;border-radius:50%;' +
+        'border:4px solid #d8dbe3;border-top-color:#212B43;animation:dise-spin 0.8s linear infinite;}' +
+        '@keyframes dise-spin{to{transform:rotate(360deg);}}' +
+        'p{margin:4px 0;font-size:16px;}' +
+        '.sub{color:#6b7280;font-size:13px;margin-top:8px;}' +
+        '</style></head><body>' +
+        '<div class="wrap"><div class="spinner"></div>' +
+        '<p>PDF를 생성하고 있습니다…</p>' +
+        '<p class="sub">잠시만 기다려 주세요 (보통 몇 초 정도 걸립니다)</p>' +
+        '</div></body></html>'
+      );
+      win.document.close();
+    } catch (e) { /* 새 탭에 쓸 수 없는 예외적인 경우 — 빈 탭인 채로 둡니다 */ }
   }
 
   // 모바일 보기 상태였다면 실제 인쇄용 다중 페이지 분할을 먼저
@@ -148,15 +228,13 @@
     }
   }
 
-  // 서버에 지금 문서를 보내 PDF를 받아옵니다. 서버가 에러 응답을 주면
-  // 그 메시지를 담은 Error를 던집니다(isServerMessage:true로 표시해
-  // 두어, 호출한 쪽에서 "서버가 알려준 이유"와 "아예 연결이 안 된
-  // 경우"를 구분해 다른 문구를 보여줄 수 있게 합니다).
-  async function fetchPdf(apiUrl) {
-    var rawHtml = '<!doctype html>\n' + document.documentElement.outerHTML;
-    var html = withBaseHref(rawHtml, document.baseURI);
-    var fileName = buildFileName();
-
+  // 서버에 문서 HTML을 보내 PDF를 받아옵니다. html/fileName은 호출하는
+  // 쪽에서 미리 만들어 넘겨줍니다(안내 배너를 붙이기 전에 스냅샷을
+  // 떠야 하므로 — 위 "무엇을 보내나" 설명 참고). 서버가 에러 응답을
+  // 주면 그 메시지를 담은 Error를 던집니다(isServerMessage:true로
+  // 표시해두어, 호출한 쪽에서 "서버가 알려준 이유"와 "아예 연결이 안
+  // 된 경우"를 구분해 다른 문구를 보여줄 수 있게 합니다).
+  async function fetchPdf(apiUrl, html, fileName) {
     var response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -181,23 +259,30 @@
   async function handleDownloadClick(btn) {
     var apiUrl = window.DISE_PDF_API_URL;
     if (!apiUrl) {
-      window.alert('서버 PDF 기능이 아직 이 문서에 설정되지 않았습니다(window.DISE_PDF_API_URL 미설정). "인쇄 / PDF로 저장" 버튼을 이용해 주세요.');
+      window.alert('서버 PDF 기능이 아직 이 문서에 설정되지 않았습니다(window.DISE_PDF_API_URL 미설정). "인쇄하기" 버튼을 이용해 주세요.');
       return;
     }
 
-    setButtonBusy(btn, true, 'PDF 생성 중…', '서버 PDF 다운로드');
+    setButtonBusy(btn, true, 'PDF 생성 중…', 'PDF 다운로드');
     try {
       await withPrintPaginationMode(async function () {
-        var result = await fetchPdf(apiUrl);
-        downloadBlob(result.blob, result.fileName + '.pdf');
+        var html = buildDocumentHtml();
+        var fileName = buildFileName();
+        var hideToast = showToast('PDF를 생성하고 있습니다… 잠시만 기다려 주세요 (보통 몇 초 정도 걸립니다)');
+        try {
+          var result = await fetchPdf(apiUrl, html, fileName);
+          downloadBlob(result.blob, result.fileName + '.pdf');
+        } finally {
+          hideToast();
+        }
       });
     } catch (err) {
-      console.error('[pdf-export] 서버 PDF 다운로드 실패:', err);
+      console.error('[pdf-export] PDF 다운로드 실패:', err);
       var msg = (err && err.isServerMessage) ? err.message :
-        '서버에 연결할 수 없습니다. 인터넷 연결을 확인하시거나 "인쇄 / PDF로 저장" 버튼을 이용해 주세요.';
+        '서버에 연결할 수 없습니다. 인터넷 연결을 확인하시거나 "인쇄하기" 버튼을 이용해 주세요.';
       window.alert(msg);
     } finally {
-      setButtonBusy(btn, false, 'PDF 생성 중…', '서버 PDF 다운로드');
+      setButtonBusy(btn, false, 'PDF 생성 중…', 'PDF 다운로드');
     }
   }
 
@@ -212,14 +297,20 @@
     // 팝업 차단을 피하려면 window.open은 반드시 이 클릭 처리 함수의
     // 맨 앞, 그것도 await보다 먼저 동기적으로 호출해야 브라우저가
     // "사용자가 직접 연 것"으로 신뢰합니다(파일 상단 "인쇄 버튼 동작
-    // 방식" 설명 참고). 일단 빈 탭을 열어두고, PDF가 준비되면 그 탭의
-    // 주소만 바꿔줍니다.
+    // 방식" 설명 참고). 일단 빈 탭을 열어두고 곧바로 로딩 화면을 써넣은
+    // 뒤, PDF가 준비되면 그 탭의 주소만 바꿔줍니다.
     var printTab = window.open('', '_blank');
+    if (printTab && !printTab.closed) {
+      writeLoadingPage(printTab);
+    }
 
-    setButtonBusy(btn, true, 'PDF 준비 중…', '인쇄 / PDF로 저장');
+    setButtonBusy(btn, true, 'PDF 준비 중…', '인쇄하기');
+    var hideToast = showToast('PDF를 준비하고 있습니다… 잠시만 기다려 주세요 (보통 몇 초 정도 걸립니다)');
     try {
       await withPrintPaginationMode(async function () {
-        var result = await fetchPdf(apiUrl);
+        var html = buildDocumentHtml();
+        var fileName = buildFileName();
+        var result = await fetchPdf(apiUrl, html, fileName);
 
         if (!printTab || printTab.closed) {
           // 팝업이 차단된 경우 — 새 탭 대신 다운로드로 대체합니다.
@@ -256,7 +347,8 @@
         try { printTab.close(); } catch (closeErr) { /* 무시 */ }
       }
     } finally {
-      setButtonBusy(btn, false, 'PDF 준비 중…', '인쇄 / PDF로 저장');
+      hideToast();
+      setButtonBusy(btn, false, 'PDF 준비 중…', '인쇄하기');
     }
   }
 

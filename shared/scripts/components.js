@@ -254,14 +254,14 @@ DISE.components = {
             // 여기 마크업에는 onclick을 넣지 않습니다(inline onclick과
             // 위임 리스너가 동시에 걸리면 window.print()가 먼저
             // 실행되어 버려 서버 PDF 분기를 가로챌 수 없기 때문).
-            '<button class="print-btn" id="printBtn" type="button">인쇄 / PDF로 저장</button>' +
-            // window.DISE_PDF_API_URL이 설정된 템플릿에서만 서버 PDF
+            '<button class="print-btn" id="printBtn" type="button">인쇄하기</button>' +
+            // window.DISE_PDF_API_URL이 설정된 템플릿에서만 PDF 다운로드
             // 버튼을 보여줍니다(shared/scripts/pdf-export.js가 클릭을
             // 처리 — 이 파일도 반드시 함께 <script> 로드해야 합니다).
             // 서비스를 아직 배포하지 않았다면 이 값을 비워두면 버튼
             // 자체가 나타나지 않습니다.
             (window.DISE_PDF_API_URL ?
-              '<button class="pdf-btn" id="pdfDownloadBtn" type="button">서버 PDF 다운로드</button>' : '') +
+              '<button class="pdf-btn" id="pdfDownloadBtn" type="button">PDF 다운로드</button>' : '') +
           '</div>' +
         '</div>' +
 
@@ -275,7 +275,7 @@ DISE.components = {
             '<p>본문이 길어지면 실제 A4 낱장 모양의 페이지가 화면에도 그대로 쌓여서 늘어나며, 인쇄할 때도 같은 페이지 경계를 그대로 씁니다(워드처럼 헤더·본문·푸터가 항상 같은 자리에 고정). 아래 서식 도구모음으로 굵게·기울임·밑줄, 서체·글자 크기, 글자색, 정렬, 목록, 들여쓰기, 그림·표 삽입까지 바꿀 수 있습니다(먼저 글자를 드래그로 선택한 뒤 버튼을 눌러주세요). 표 안에 커서를 두면 그 표 오른쪽 위에 작은 설정 아이콘이 뜹니다.</p>' +
             '<p>휴대폰 등 좁은 화면에서는 위에 <b>모바일 보기 / 인쇄 레이아웃 보기</b> 선택 버튼이 나타납니다. 모바일 보기는 페이지 구분 없이 메모장처럼 이어서 편하게 입력하는 모드이고, 인쇄 레이아웃 보기는 실제 A4 페이지 그대로를 화면에 맞춰 축소해 보여주는 미리보기입니다. 어느 쪽을 보고 있든 인쇄·PDF 저장 결과물은 항상 인쇄 레이아웃과 동일하게 나옵니다.</p>' +
             (window.DISE_PDF_API_URL ?
-              '<p><b>서버 PDF 다운로드</b> 버튼은 기기·브라우저에 따라 인쇄 결과가 달라지는 문제(특히 휴대폰) 없이, 서버에서 항상 동일하게 PDF를 만들어 내려받습니다. 평소 인쇄는 기존 "인쇄 / PDF로 저장" 버튼을 쓰시고, 결과가 이상하게 나올 때 이 버튼을 대신 써보세요.</p>' : '') +
+              '<p><b>인쇄하기</b> 버튼은 서버에서 항상 동일하게 PDF를 만든 뒤 새 탭에 띄워 인쇄 대화상자를 자동으로 엽니다 — 기기·브라우저에 따라 인쇄 결과가 달라지는 문제(특히 휴대폰) 없이 항상 같은 모양으로 인쇄됩니다. 인쇄 없이 파일로만 받아두고 싶을 때는 <b>PDF 다운로드</b> 버튼을 쓰세요.</p>' : '') +
             '<div class="legend">' +
               '<span><i class="swatch kr"></i>한글 = Asta Sans</span>' +
               '<span><i class="swatch en"></i>영문/숫자 = Open Sans</span>' +
