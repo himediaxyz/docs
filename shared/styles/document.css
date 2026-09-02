@@ -168,19 +168,22 @@
 
 /* ---------- 본문 셀 여백 ---------- */
 .cell-meta{padding:16px 50px 0;}
-/* meta-line을 flex로 바꿔 "문서번호"는 왼쪽에, "일자"는 항상 오른쪽
-   끝에 붙게 합니다(2026-09-02 재구성). margin-left:auto를 쓴 이유는
+/* meta-line을 flex로 바꿔 "일자"는 왼쪽에, "문서번호"는 항상 오른쪽
+   끝에 붙게 합니다(2026-09-02 재구성, 2026-09-02 위치 교체 — 마크업도
+   각 템플릿 index.html에서 일자 span을 문서번호보다 앞에 두도록
+   함께 바꿨습니다). margin-left:auto를 .meta-docno 쪽에 쓴 이유는
    justify-content:space-between 대신인데, 문서번호 표시 체크박스를
    꺼서 #docNoField가 display:none이 되어도(editor.js 섹션 14) 남은
-   .meta-date 하나가 flex 컨테이너에 혼자 남아 왼쪽으로 붙어버리지
-   않고 계속 오른쪽 끝에 고정되기 때문입니다. */
+   .meta-date 하나가 flex 컨테이너에 혼자 남았을 때 왼쪽에 자연스럽게
+   붙어 있으면 되고, 반대로 .meta-docno가 보일 때는 항상 오른쪽 끝에
+   고정되기 때문입니다. */
 .meta-line{
   display:flex;align-items:baseline;flex-wrap:wrap;gap:8px;
   font-family:var(--font-en);font-size:12.5px;color:var(--sub);
   letter-spacing:0.2px;
 }
 .meta-line b{font-family:var(--font-kr);font-weight:600;color:var(--ink);}
-.meta-date{margin-left:auto;}
+.meta-docno{margin-left:auto;}
 
 .cell-title{padding:26px 50px 0;}
 .cell-to{padding:0 50px;}
