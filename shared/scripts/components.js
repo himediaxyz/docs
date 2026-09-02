@@ -51,6 +51,18 @@
          DISE.components.renderDocFooter({ company: 'disehimedia' });
        </script>
 
+   renderDocHeader/renderDocFooter는 company-info.js가 갖고 있는 정보(로고,
+   회사명, 주소, 전화, 이메일, 웹사이트) 중 이 문서 템플릿에 실제로
+   필요한 요소만 골라서 켜고 끌 수 있습니다(요청: "기본 정보 컴포넌트에서
+   모든 정보를 잘 정리 후 필요한 요소만 잘 불러오기") — 아래 각 함수의
+   JSDoc에 옵션 전체 목록이 있습니다. 예를 들어 로고만 남기고 회사명
+   텍스트를 빼려면:
+     DISE.components.renderDocHeader({ company: 'disehimedia', showCompanyName: false });
+   국내 전화번호 하나만 보이게 하려면:
+     DISE.components.renderDocFooter({ company: 'disehimedia', showPhoneIntl: false });
+   옵션을 안 주면 전부 기본값(true, docTypeTag는 빈 문자열)이라 기존
+   템플릿은 손대지 않아도 지금까지와 완전히 같게 나옵니다.
+
    ※ 반드시 company-info.js → sender-info.js → template-registry.js →
       components.js 순서로 불러오세요. 이 파일의 함수들은 pagination.js가
       높이를 재는 'load' 이벤트보다 먼저 실행되어야 하므로, <body> 안쪽
@@ -409,15 +421,22 @@ DISE.components = {
   /* ============ 문서 레벨 (인쇄됨, 계열사별로 다름) ============ */
 
   /**
-   * 종이 상단의 "문서 헤더" — 로고 + 회사명 + 문서 종류 태그.
+   * 종이 상단의 "문서 헤더" — 로고 + (선택) 회사명 텍스트 + (선택) 문서
+   * 종류 태그. 로고는 항상 표시되고, 나머지 텍스트 요소는 각각 켜고 끌
+   * 수 있습니다 — 예를 들어 레터헤드 디자인처럼 로고만 남기고 싶으면
+   * showCompanyName만 false로 주면 됩니다.
    * @param {Object} [opts]
    * @param {string} [opts.company] - DISE.companies의 key (기본값 'disehimedia').
-   * @param {string} [opts.docTypeTag] - "공식 공문"처럼 표시할 문서 종류 문구.
+   * @param {string} [opts.docTypeTag] - "공식 공문"처럼 표시할 문서 종류 문구
+   *   (기본값 없음 — 안 주면 아예 표시 안 함).
+   * @param {boolean} [opts.showCompanyName] - 회사명(국문/영문 워드마크)
+   *   텍스트를 보여줄지 (기본값 true).
    */
   renderDocHeader: function (opts) {
     opts = opts || {};
     var companyKey = opts.company || 'disehimedia';
     var docTypeTag = opts.docTypeTag || '';
+    var showCompanyName = opts.showCompanyName !== false;
     var target = document.getElementById('docHeader');
     if (!target) return;
 
@@ -447,27 +466,47 @@ DISE.components = {
     var logoWidthPx = Math.round(logoHeightPx * (c.logoRatio || 1));
     var logoUrl = DISE_SHARED_ROOT + 'assets/logos/' + c.logoMark;
 
+    // 회사명·문서 종류 태그를 하나도 안 보여준다면 이 텍스트 블록
+    // 자체를 아예 만들지 않습니다 — 빈 div가 flex 정렬에 영향을 주지
+    // 않도록.
+    var showTextBlock = showCompanyName || docTypeTag;
+    var textBlockHtml = showTextBlock ?
+      '<div class="doc-header-text">' +
+        (showCompanyName ? '<div class="brand-kr">' + c.nameKr + '</div>' : '') +
+        (showCompanyName && c.nameEn && c.nameEn !== c.nameKr ? '<div class="brand-en">' + DISE.components.diseWordmarkHTML(c.nameEn) + '</div>' : '') +
+        (docTypeTag ? '<div class="brand-tag">' + docTypeTag + '</div>' : '') +
+      '</div>' : '';
+
     target.innerHTML =
       '<div class="doc-header-band">' +
         '<div class="doc-logo" style="width:' + logoWidthPx + 'px;height:' + logoHeightPx + 'px;">' +
           '<img src="' + logoUrl + '" alt="' + c.nameKr + ' 로고">' +
         '</div>' +
-        '<div class="doc-header-text">' +
-          '<div class="brand-kr">' + c.nameKr + '</div>' +
-          (c.nameEn && c.nameEn !== c.nameKr ? '<div class="brand-en">' + DISE.components.diseWordmarkHTML(c.nameEn) + '</div>' : '') +
-          (docTypeTag ? '<div class="brand-tag">' + docTypeTag + '</div>' : '') +
-        '</div>' +
+        textBlockHtml +
       '</div>';
   },
 
   /**
-   * 종이 하단의 "문서 푸터" — 주소·전화·이메일·웹사이트.
+   * 종이 하단의 "문서 푸터" — 주소·전화(국내/해외)·이메일·웹사이트 중
+   * 필요한 항목만 골라 보여줍니다. 전화를 국내/해외 둘 다 보여줄 때만
+   * 각 번호 뒤에 "(국내)"/"(해외)" 표시를 붙이고, 하나만 보여줄 때는
+   * 번호만 깔끔하게 보여줍니다.
    * @param {Object} [opts]
    * @param {string} [opts.company] - DISE.companies의 key (기본값 'disehimedia').
+   * @param {boolean} [opts.showAddress] - 주소 줄(기본값 true).
+   * @param {boolean} [opts.showPhoneIntl] - 해외용 전화번호(기본값 true).
+   * @param {boolean} [opts.showPhoneDomestic] - 국내용 전화번호(기본값 true).
+   * @param {boolean} [opts.showEmail] - 이메일(기본값 true).
+   * @param {boolean} [opts.showWebsite] - 웹사이트 주소(기본값 true).
    */
   renderDocFooter: function (opts) {
     opts = opts || {};
     var companyKey = opts.company || 'disehimedia';
+    var showAddress = opts.showAddress !== false;
+    var showPhoneIntl = opts.showPhoneIntl !== false;
+    var showPhoneDomestic = opts.showPhoneDomestic !== false;
+    var showEmail = opts.showEmail !== false;
+    var showWebsite = opts.showWebsite !== false;
     var target = document.getElementById('docFooter');
     if (!target) return;
 
@@ -483,12 +522,24 @@ DISE.components = {
       return;
     }
 
+    // 전화번호: 국내/해외를 둘 다 보여줄 때만 "(해외)"/"(국내)" 구분을
+    // 붙입니다 — 하나만 켜져 있으면 구분할 필요가 없으므로 번호만.
+    var bothPhones = showPhoneIntl && showPhoneDomestic && c.phoneIntl && c.phoneDomestic;
+    var phoneParts = [];
+    if (showPhoneIntl && c.phoneIntl) phoneParts.push(c.phoneIntl + (bothPhones ? ' (해외)' : ''));
+    if (showPhoneDomestic && c.phoneDomestic) phoneParts.push(c.phoneDomestic + (bothPhones ? ' (국내)' : ''));
+    var phoneText = phoneParts.length ? 'Tel. ' + phoneParts.join(' / ') : '';
+
+    var l2Parts = [];
+    if (phoneText) l2Parts.push(phoneText);
+    if (showEmail && c.email) l2Parts.push(c.email);
+    if (showWebsite && c.website) l2Parts.push(c.website);
+    var l2Html = l2Parts.join(' &nbsp;&middot;&nbsp; ');
+
     target.innerHTML =
       '<div class="doc-footer-band">' +
-        '<div class="l1">' + c.addressKr + '</div>' +
-        '<div class="l2">Tel. ' + c.phoneIntl + ' (해외) / ' + c.phoneDomestic + ' (국내) ' +
-          '&nbsp;·&nbsp; ' + c.email + ' &nbsp;·&nbsp; ' + c.website +
-        '</div>' +
+        (showAddress && c.addressKr ? '<div class="l1">' + c.addressKr + '</div>' : '') +
+        (l2Html ? '<div class="l2">' + l2Html + '</div>' : '') +
       '</div>';
   }
 };

@@ -57,7 +57,7 @@ DISE.companies = {
     logoMark: 'disehimedia/disehimedia-mark.svg',
     logoRatio: 180 / 100,
     badgeColor: '#212B43',              // 다이즈블루
-    addressKr: '인천광역시 부평구 백범로 577번길 20',
+    addressKr: '인천광역시 부평구 백범로577번길 20, 724, 725, 751호 (경인센타, 공장동)',
     phoneIntl: '+82-32-573-3114',      // 해외에서 걸 때
     phoneDomestic: '032-573-3114',      // 국내에서 걸 때
     email: 'hidise@disehimedia.com',

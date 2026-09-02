@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>공문 템플릿(프리미엄) | 다이즈하이미디어 공식 문서 시스템</title>
+<title>레터헤드 (국문) | 다이즈하이미디어 공식 문서 시스템</title>
 
 <!-- 브랜드 웹폰트 (한글 Asta Sans / 영문·숫자 Open Sans). preconnect는
      로딩 속도 때문에 <link>로 직접 두는 게 유리해서 shared CSS로 옮기지
@@ -119,10 +119,12 @@
   <script src="../../shared/scripts/components.js"></script>
   <script>
     // 이 문서만의 설정. DISE_CURRENT_TEMPLATE만 이 템플릿의 key로
-    // 바뀌었을 뿐, 나머지는 templates/gongmun과 동일합니다 — 헤더/푸터의
+    // 바뀌었을 뿐 company는 templates/gongmun과 동일합니다 — 헤더/푸터의
     // 무채색 + 다이즈블랙 로고 디자인은 <body class="theme-mono">와
-    // shared/styles/theme-mono.css가 전부 처리하므로, 여기서 company나
-    // renderDocHeader/Footer 호출 방식을 따로 바꿀 필요가 없습니다.
+    // shared/styles/theme-mono.css가 처리합니다. 다만 이 템플릿은
+    // "레터헤드(국문)" 버전으로 로고만 남기고 회사명 텍스트·해외
+    // 전화번호는 뺐으므로, 아래 renderDocHeader/renderDocFooter 호출은
+    // templates/gongmun과 다르게 opts를 넘깁니다(각 호출부 주석 참고).
     window.DISE_CURRENT_TEMPLATE = 'gongmun-premium';
     window.DISE_CURRENT_COMPANY = 'disehimedia';
     // 서버 PDF 다운로드 기능(shared/scripts/pdf-export.js)을 쓰려면
@@ -136,8 +138,14 @@
     DISE.components.renderEditorUI({ templateKey: DISE_CURRENT_TEMPLATE, company: DISE_CURRENT_COMPANY });
     DISE.components.renderViewModeToggle();
     DISE.components.renderSiteFooter({ text: '다이즈하이미디어 그룹 공식 문서 시스템 · 공문 템플릿(프리미엄)' });
-    DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, docTypeTag: '공식 공문' });
-    DISE.components.renderDocFooter({ company: DISE_CURRENT_COMPANY });
+    // 1차 수정(2026-09-02): 레터헤드(국문) 버전은 헤더에 로고만 남기고
+    // 회사명·문서 종류 텍스트("다이즈하이미디어"/"DISEHIMEDIA"/"공식
+    // 공문")는 뺍니다. 나중에 다시 필요해지면 showCompanyName: true로
+    // 되돌리거나 docTypeTag를 다시 넘기면 됩니다.
+    DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, showCompanyName: false });
+    // 푸터는 국내 전화번호만 보여줍니다(해외용 전화는 이 버전에서는
+    // 생략 — showPhoneIntl: false).
+    DISE.components.renderDocFooter({ company: DISE_CURRENT_COMPANY, showPhoneIntl: false });
   </script>
   <script src="../../shared/scripts/editor.js"></script>
   <script src="../../shared/scripts/pagination.js"></script>

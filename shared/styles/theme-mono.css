@@ -25,10 +25,9 @@
      <link rel="stylesheet" href="../../shared/styles/theme-mono.css">
    ============================================================ */
 
-/* ---------- 문서 헤더 밴드: 색 없이 얇은 선 하나로만 구분 ---------- */
+/* ---------- 문서 헤더 밴드: 색 없이 로고만 ---------- */
 .theme-mono .doc-header-band{
   background:#fff;color:#1a1a1a;
-  border-bottom:1px solid #dcdcdc;
   padding:48px 50px 32px;
 }
 /* 로고 원본(shared/assets/logos/)이 이미 검정 도형이라, 다른 계열사색을
@@ -54,10 +53,9 @@
    본문 제목만 네이비로 남으면 튀어 보여서 나머지 톤과 맞춥니다. */
 .theme-mono .title-placeholder{color:#161616;}
 
-/* ---------- 문서 푸터 밴드: 색 없이 얇은 선 하나로만 구분 ---------- */
+/* ---------- 문서 푸터 밴드: 색 없이 무채색 텍스트만 ---------- */
 .theme-mono .doc-footer-band{
   background:#fff;color:#8a8a8a;
-  border-top:1px solid #dcdcdc;
   padding:18px 40px;
 }
 .theme-mono .doc-footer-band .l1{color:#4a4a4a;letter-spacing:0.3px;}
