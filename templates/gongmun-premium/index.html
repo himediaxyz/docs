@@ -60,14 +60,21 @@
           <div class="page-body-fixed">
             <div class="cell-meta">
               <div class="meta-line">
-                <span id="docNoField"><b>문서번호</b>: <span class="editable force-kr-font" id="docNo" contenteditable="true" spellcheck="false">다이즈-2026-001</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><b>일자</b>: <span id="effDate"></span>
+                <span id="docNoField"><b>문서번호</b>: <span class="editable force-kr-font" id="docNo" contenteditable="true" spellcheck="false">다이즈-2026-001</span></span>
+                <span class="meta-date"><b>일자</b>: <span id="effDate"></span></span>
               </div>
             </div>
             <div class="cell-title">
               <p class="title-placeholder editable" id="docTitle" contenteditable="true" spellcheck="false">[문서 제목을 입력하세요]</p>
             </div>
             <div class="cell-to">
-              <p class="to-line">수신: <span class="en editable force-kr-font" id="docTo" contenteditable="true" spellcheck="false">[수신처를 입력하세요]</span> 귀중</p>
+              <p class="to-line">수신: <span class="en editable force-kr-font" id="docTo" contenteditable="true" spellcheck="false">[담당자 이름 | 회사 이름]</span> 귀중</p>
+              <!-- 수신처의 회사 주소·이메일 — 둘 다 있으면 있는 대로,
+                   필요 없으면 지워도 되는 선택 항목입니다. 라벨 없이
+                   대괄호 placeholder만 두면 editor.js 섹션 1의 "클릭
+                   시 전체 선택" 동작을 그대로 물려받습니다. -->
+              <p class="to-detail-line"><span class="editable force-kr-font" id="docToAddress" contenteditable="true" spellcheck="false">[회사 주소]</span></p>
+              <p class="to-detail-line"><span class="editable en" id="docToEmail" contenteditable="true" spellcheck="false">[이메일 주소]</span></p>
               <!-- 로고만 남긴 헤더(showCompanyName:false)라 회사명을 여기
                    "발신" 줄로 대신 보여줍니다 — 채우는 스크립트는
                    components.js의 renderDocFrom() 호출부 참고. -->

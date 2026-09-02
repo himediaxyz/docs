@@ -52,7 +52,7 @@
      거의 없지만, 소수점 반올림 등 경계값 오차에 대비해 남겨둡니다).
      새 템플릿에서 "절대 페이지 중간에 잘리면 안 되는" 블록을 추가할
      때는 이 선택자 목록에 클래스를 더해주면 됩니다. */
-  .guide p,.guide li,.sign-block,.title-placeholder,.to-line,
+  .guide p,.guide li,.sign-block,.title-placeholder,.to-line,.to-detail-line,
   .img-wrap,.doc-table,.doc-table tr{
     break-inside:avoid;page-break-inside:avoid;
   }
