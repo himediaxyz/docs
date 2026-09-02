@@ -65,10 +65,23 @@
 // 아예 건드리지 않고 원래 의도대로 빠르게 처리되고, (2) 실제 POST
 // 요청에서 로드가 실패해도 그 에러 메시지를 그대로 JSON 응답에 담아
 // 돌려줄 수 있어 원인을 바로 알 수 있습니다.
+// ★ 2026-09-02 추가 수정: 실제 배포 후 확인된 에러 —
+// "require() of ES Module .../@sparticuz/chromium/build/index.js ...
+//  not supported. Instead change the require ... to a dynamic import()".
+// @sparticuz/chromium 최신 버전(패키지가 이번에 ESM 전용으로 바뀜)은
+// puppeteer-core(CommonJS)처럼 require()로 못 불러오고 동적 import()로만
+// 불러올 수 있습니다. import()는 함수처럼 쓰는 표현식이라 이 파일을
+// ESM으로 바꾸거나 확장자를 .mjs로 바꾸지 않아도 CommonJS 파일 안에서
+// 그대로 쓸 수 있습니다(Node 공식 안내 문구 그대로). ESM 모듈을 import()
+// 하면 default export가 있는 경우 결과 객체의 .default에 실제 값이
+// 담기므로 그 경우까지 같이 처리합니다.
 var chromium, puppeteer;
-function loadPdfEngine() {
-  if (!chromium) chromium = require('@sparticuz/chromium');
+async function loadPdfEngine() {
   if (!puppeteer) puppeteer = require('puppeteer-core');
+  if (!chromium) {
+    var mod = await import('@sparticuz/chromium');
+    chromium = mod && mod.default ? mod.default : mod;
+  }
   return { chromium: chromium, puppeteer: puppeteer };
 }
 
@@ -156,7 +169,7 @@ module.exports = async function handler(req, res) {
 
   var browser = null;
   try {
-    var engine = loadPdfEngine();
+    var engine = await loadPdfEngine();
     var chromium = engine.chromium, puppeteer = engine.puppeteer;
     browser = await puppeteer.launch({
       args: chromium.args,
