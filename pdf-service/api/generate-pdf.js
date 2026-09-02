@@ -251,7 +251,7 @@ module.exports = async function handler(req, res) {
     // 명시적으로 지정해 의도를 분명히 해둡니다.
     await page.emulateMediaType('print');
 
-    var pdfBuffer = await page.pdf({
+    var pdfData = await page.pdf({
       printBackground: true,
       // shared/styles/print.css의 @page{size:A4;margin:0} 규칙을 그대로
       // 따르게 합니다 — A4/Letter 같은 하드코딩된 값 대신 문서 자신의
@@ -259,6 +259,15 @@ module.exports = async function handler(req, res) {
       // 되어도 이 함수를 고칠 필요가 없습니다.
       preferCSSPageSize: true
     });
+    // ★ 2026-09-02 수정: 실기기 테스트에서 발견된 버그 — 다운로드는 되는데
+    // PDF 리더가 파일을 못 여는 문제. page.pdf()가 최신 puppeteer-core에서
+    // Node의 Buffer가 아니라 Uint8Array를 반환하는데, Vercel의 응답
+    // 헬퍼(res.send())는 진짜 Buffer가 아닌 값은 자동으로 JSON으로
+    // 감싸버립니다(그 결과 응답 내용이 순수 바이너리가 아니라
+    // {"0":37,"1":80,...} 같은 JSON 객체가 되어버림 — 맨 앞 바이트가
+    // 정확히 %PDF-1.4였던 걸로 확인). Buffer.from()으로 명시 변환해
+    // 진짜 Buffer로 응답하도록 고칩니다.
+    var pdfBuffer = Buffer.from(pdfData);
 
     await browser.close();
     browser = null;
