@@ -356,6 +356,62 @@
   var imageToolbar = document.getElementById('imageToolbar');
   var selectedImg = null;
 
+  // 원본 이미지를 그대로 base64로 문서에 박아 넣으면(스마트폰 사진 등
+  // 원본이 수 MB인 경우) 문서 자체가 급격히 무거워지고, 특히 서버사이드
+  // PDF API(shared/scripts/pdf-export.js → pdf-service/api/generate-pdf.js)
+  // 는 Vercel 플랫폼 자체의 요청 본문 크기 제한(약 4.5MB)이 있어 큰
+  // 이미지를 몇 장만 넣어도 "서버 PDF 다운로드"가 실패할 수 있습니다
+  // (자세한 배경은 pdf-service/README.md "알려진 제약" 참고). 그래서
+  // 삽입 시점에 <canvas>로 한 번 그려서 화면·인쇄에 필요한 수준으로만
+  // 축소해 다시 인코딩합니다 — A4 폭(210mm)에 꽉 채워 인쇄해도 충분한
+  // 해상도(장변 1600px, 약 195dpi)를 기준으로 잡았습니다.
+  var IMAGE_MAX_DIMENSION_PX = 1600;
+  var IMAGE_JPEG_QUALITY = 0.82;
+
+  // file: <input type=file>로 고른 원본 File(타입 판별용).
+  // dataUrl: FileReader로 이미 읽어둔 원본 base64(축소 실패 시 그대로 씀).
+  // callback(finalDataUrl)은 항상 정확히 한 번 호출됩니다.
+  function resizeImageDataUrl(file, dataUrl, callback) {
+    // 벡터(svg)는 축소할 필요가 없고, canvas로 다시 그리면 오히려
+    // 래스터화되어 화질만 떨어지므로 원본 그대로 씁니다.
+    if (file.type === 'image/svg+xml') { callback(dataUrl); return; }
+    var img = new Image();
+    img.onload = function () {
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h || Math.max(w, h) <= IMAGE_MAX_DIMENSION_PX) {
+        // 이미 충분히 작으면 다시 압축하지 않고 원본 그대로 씁니다
+        // (재인코딩은 최적화일 뿐인데, 이미 작은 이미지를 다시 인코딩하면
+        // 화질만 떨어뜨릴 수 있습니다).
+        callback(dataUrl);
+        return;
+      }
+      try {
+        var scale = IMAGE_MAX_DIMENSION_PX / Math.max(w, h);
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(w * scale);
+        canvas.height = Math.round(h * scale);
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        // PNG/GIF는 투명 배경(로고·스크린샷 등)일 수 있어 JPEG로 바꾸면
+        // 투명한 부분이 검은색/흰색으로 깔려버립니다 — 그 경우만 PNG로
+        // 유지하고, 나머지(사진 등)는 용량이 훨씬 작은 JPEG로 저장합니다.
+        var keepPng = (file.type === 'image/png' || file.type === 'image/gif');
+        var out = keepPng
+          ? canvas.toDataURL('image/png')
+          : canvas.toDataURL('image/jpeg', IMAGE_JPEG_QUALITY);
+        callback(out);
+      } catch (e) {
+        // canvas 처리 중 어떤 이유로든 실패하면(구형 브라우저 등) 원본을
+        // 그대로 씁니다 — 축소는 최적화일 뿐, 실패했다고 삽입 자체를
+        // 막으면 안 됩니다.
+        console.error('[editor] 이미지 축소 실패, 원본을 그대로 사용합니다:', e);
+        callback(dataUrl);
+      }
+    };
+    img.onerror = function () { callback(dataUrl); };
+    img.src = dataUrl;
+  }
+
   // 그림/표를 넣을 때 커서 위치가 하나도 저장되어 있지 않으면(사용자가
   // 아직 본문을 한 번도 클릭한 적이 없는 등) 문서 맨 끝, 즉 마지막
   // 페이지의 흐름 영역(.flow-items) 끝에 붙입니다. 페이지가 여러 장일
@@ -489,18 +545,20 @@
       if (!file) return;
       var reader = new FileReader();
       reader.onload = function () {
-        recordBeforeChange();
-        // <p class="img-wrap"><img></p> — 문단으로 감싸는 이유는 (1) 문단
-        // 자체가 자연스럽게 block이라 이미지가 항상 독립된 줄을 차지하고,
-        // (2) 이 문단의 text-align으로 정렬 버튼을 그대로 재사용할 수
-        // 있기 때문입니다(이미지 자체는 document.css에서 inline-block).
-        var wrap = document.createElement('p');
-        wrap.className = 'img-wrap';
-        var img = document.createElement('img');
-        img.src = reader.result;
-        wrap.appendChild(img);
-        insertBlockAsSibling(wrap, getLastFlowContainer());
-        wireImage(img);
+        resizeImageDataUrl(file, reader.result, function (finalDataUrl) {
+          recordBeforeChange();
+          // <p class="img-wrap"><img></p> — 문단으로 감싸는 이유는 (1) 문단
+          // 자체가 자연스럽게 block이라 이미지가 항상 독립된 줄을 차지하고,
+          // (2) 이 문단의 text-align으로 정렬 버튼을 그대로 재사용할 수
+          // 있기 때문입니다(이미지 자체는 document.css에서 inline-block).
+          var wrap = document.createElement('p');
+          wrap.className = 'img-wrap';
+          var img = document.createElement('img');
+          img.src = finalDataUrl;
+          wrap.appendChild(img);
+          insertBlockAsSibling(wrap, getLastFlowContainer());
+          wireImage(img);
+        });
       };
       reader.readAsDataURL(file);
     });

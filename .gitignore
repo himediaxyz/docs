@@ -2,3 +2,8 @@
 Thumbs.db
 *.log
 .vscode/
+
+# pdf-service를 로컬에서 검증(npm install/vercel dev)할 때 생기는
+# 폴더 — 커밋해서는 안 됨(Vercel이 배포 시 자체적으로 설치함).
+node_modules/
+.vercel/

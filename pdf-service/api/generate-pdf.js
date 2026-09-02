@@ -51,8 +51,26 @@
      (pdf-service/package.json 참고 — Vercel이 배포 시 자동 설치)
    ============================================================ */
 
-const chromium = require('@sparticuz/chromium');
-const puppeteer = require('puppeteer-core');
+// ★ 2026-09-02 수정: require를 파일 맨 위(모듈 로드 시점)가 아니라
+// handler() 안, 실제로 필요한 순간(POST 요청이 들어와 렌더링을 시작할
+// 때)으로 옮겼습니다. 원래는 파일 맨 위에서 바로 require했는데, 이
+// 두 패키지(특히 @sparticuz/chromium의 바이너리 로딩) 중 하나가 Vercel의
+// 실행 환경에서 어떤 이유로든 require 자체에서 실패하면 — 그 실패가
+// module.exports가 만들어지기도 전에 일어나므로 — GET/OPTIONS를 포함한
+// *모든* 요청이 우리 코드가 한 줄도 실행되기 전에 "FUNCTION_INVOCATION_
+// FAILED"로 죽어버리고, 우리가 만든 try/catch(아래)는 전혀 작동하지
+// 못해 원인을 알 수 없는 채로 크래시만 남습니다(실제로 겪은 증상 —
+// GET 요청조차 405가 아니라 500으로 죽음). require를 handler 안
+// try/catch로 옮기면: (1) GET/OPTIONS/잘못된 요청은 이 무거운 패키지를
+// 아예 건드리지 않고 원래 의도대로 빠르게 처리되고, (2) 실제 POST
+// 요청에서 로드가 실패해도 그 에러 메시지를 그대로 JSON 응답에 담아
+// 돌려줄 수 있어 원인을 바로 알 수 있습니다.
+var chromium, puppeteer;
+function loadPdfEngine() {
+  if (!chromium) chromium = require('@sparticuz/chromium');
+  if (!puppeteer) puppeteer = require('puppeteer-core');
+  return { chromium: chromium, puppeteer: puppeteer };
+}
 
 // 이 API를 호출할 수 있는 출처(다이즈 문서 사이트) 화이트리스트.
 // 그룹사별로 별도 도메인/서브패스를 쓰게 되면 여기에 추가하세요.
@@ -138,6 +156,8 @@ module.exports = async function handler(req, res) {
 
   var browser = null;
   try {
+    var engine = loadPdfEngine();
+    var chromium = engine.chromium, puppeteer = engine.puppeteer;
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
@@ -218,6 +238,13 @@ module.exports = async function handler(req, res) {
     if (browser) {
       try { await browser.close(); } catch (closeErr) { /* 이미 죽은 브라우저 — 무시 */ }
     }
-    res.status(500).json({ error: 'PDF 생성 중 서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' });
+    // ★ 2026-09-02: 배포 환경(Vercel)에서 크로미움 실행 자체가 실패하는
+    // 원인을 대시보드 로그 없이 바로 확인할 수 있도록, 실제 에러 메시지를
+    // 잠시 응답에 그대로 노출합니다. 이 API는 다이즈하이미디어 내부
+    // 문서 사이트에서만 쓰는 도구라 위험이 크지 않지만, 원인이 확인되고
+    // 나면 아래 메시지를 다시 고정 문구로 되돌리는 것을 권장합니다.
+    res.status(500).json({
+      error: 'PDF 생성 중 서버 오류가 발생했습니다: ' + (err && err.message ? err.message : String(err))
+    });
   }
 };
