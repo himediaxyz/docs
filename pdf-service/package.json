@@ -1,0 +1,10 @@
+{
+  "name": "dise-docs-pdf-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "다이즈하이미디어 공식 문서 시스템 — 서버사이드 PDF 생성 API (Vercel Node.js 서버리스 함수)",
+  "dependencies": {
+    "@sparticuz/chromium": "^149.0.0",
+    "puppeteer-core": "^25.9.0"
+  }
+}

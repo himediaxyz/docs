@@ -34,6 +34,31 @@
 }
 .print-btn:hover{opacity:0.9;}
 
+/* ---------- 인쇄 버튼 + 서버 PDF 버튼을 묶는 자리(2026-09-02 추가) ----------
+   .toolbar-card가 space-between으로 title과 이 그룹을 양 끝에 배치하므로,
+   버튼이 하나든 둘이든 같은 자리(오른쪽)에 나란히 붙습니다. */
+.toolbar-card-actions{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+
+/* ---------- 서버 PDF 다운로드 버튼(2026-09-02 추가) ----------
+   shared/scripts/pdf-export.js 참고 — window.DISE_PDF_API_URL이 설정된
+   템플릿에서만 components.js가 이 버튼을 그려 넣습니다(서비스를 아직
+   배포하지 않은 상태에서는 버튼 자체가 안 보이는 게, 눌러도 안 되는
+   버튼을 보여주는 것보다 낫습니다). 기존 인쇄 버튼(진한 남색 채움)과
+   구분되도록 테두리만 있는 보조 버튼 스타일을 씁니다 — "인쇄"가
+   기본(주) 동작이고 "서버 PDF"는 기기 편차가 걱정될 때 쓰는 대안이라는
+   위계를 색으로도 나타냅니다. */
+.pdf-btn{
+  border:1px solid var(--navy);background:#fff;color:var(--navy);
+  font-family:var(--font-en);font-size:13px;font-weight:600;
+  padding:8px 16px;border-radius:6px;cursor:pointer;white-space:nowrap;
+}
+.pdf-btn:hover{background:#eef1f7;}
+.print-btn:disabled,.pdf-btn:disabled{
+  opacity:0.6;cursor:default;
+}
+
 /* ---------- 문서 양식 전환 / 발신인 선택 드롭다운 ----------
    상단 도구모음 제목 자리에 들어가는 두 드롭다운. 여닫기·목록 채우기·
    이동(확인창 포함)·발신인 교체 동작은 shared/scripts/editor.js
