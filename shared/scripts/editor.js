@@ -17,6 +17,10 @@
         template-registry.js 목록을 읽어 다른 템플릿으로 이동(내용이
         있으면 확인창), 발신인은 sender-info.js 목록을 읽어 서명란만
         교체(확인창 없음)
+     8) 발신인 드롭다운 옆 "시행일자" 날짜 입력칸(#effDateInput) — 기본값은
+        오늘 날짜이고, 바꾸면 문서 상단의 시행일자 표시(#effDate)도 그
+        날짜로 다시 씁니다. 모든 문서 템플릿 공통 동작이라 템플릿 파일
+        쪽에는 시행일자를 채우는 스크립트를 따로 둘 필요가 없습니다.
 
    새 템플릿에서 그대로 재사용하려면: .editable 클래스가 붙은
    contenteditable 요소들과, 아래 id/data-cmd를 그대로 쓴 버튼·셀렉트를
@@ -1147,6 +1151,53 @@
       recordBeforeChange();
       applySender(sender);
     });
+  }
+
+  /* ---------- 13) "시행일자" 날짜 입력칸 ----------
+     발신인 드롭다운 바로 옆의 <input type="date" id="effDateInput">
+     (마크업은 components.js의 renderEditorUI() 참고). 기본값은 오늘
+     날짜로 채워두고, 문서 상단 고정 영역의 시행일자 표시(#effDate,
+     templates/*/index.html의 .cell-meta 참고)는 이 입력칸 값을 한국어
+     날짜 형식("2026년 9월 2일")으로 바꿔 보여줍니다.
+
+     보통은 자동으로 채워진 오늘 날짜를 그대로 쓰면 되지만, 실제
+     발송일과 다르게(예: 결재가 늦어져 문서 작성일보다 나중 날짜로
+     시행) 지정해야 할 때 이 칸에서 직접 바꾸면 됩니다 — 모든 문서
+     템플릿에 공통으로 적용되므로, 새 템플릿을 추가할 때도 #effDate
+     자리만 마크업에 두면 되고 날짜를 채우는 스크립트를 따로 작성할
+     필요가 없습니다(예전에는 각 템플릿 파일 맨 아래에
+     document.getElementById('effDate').textContent = ... 코드를 매번
+     복사해 넣었는데, 이제 이 섹션 하나로 통일했습니다). */
+  var effDateInput = document.getElementById('effDateInput');
+  var effDateOutput = document.getElementById('effDate');
+
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+
+  // <input type="date">가 쓰는 "YYYY-MM-DD" 형식으로 변환.
+  function toISODate(d) {
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  // "YYYY-MM-DD" 문자열을 그 날짜 그대로 Date로 만듭니다 — new
+  // Date('YYYY-MM-DD')는 문자열을 UTC 자정으로 해석해서, 한국(UTC+9)
+  // 등 시간대에 따라 하루 전날로 표시될 수 있습니다. 연/월/일을 직접
+  // 로컬 시간대로 넣어 이 문제를 피합니다.
+  function parseISODate(value) {
+    var parts = value.split('-');
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+
+  function updateEffDateDisplay() {
+    if (!effDateOutput || !effDateInput || !effDateInput.value) return;
+    effDateOutput.textContent = new Intl.DateTimeFormat('ko-KR', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    }).format(parseISODate(effDateInput.value));
+  }
+
+  if (effDateInput && effDateOutput) {
+    effDateInput.value = toISODate(new Date());
+    updateEffDateDisplay();
+    effDateInput.addEventListener('change', updateEffDateDisplay);
   }
 
 })();

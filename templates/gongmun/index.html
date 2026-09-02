@@ -167,13 +167,11 @@
     DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, docTypeTag: '공식 공문' });
     DISE.components.renderDocFooter({ company: DISE_CURRENT_COMPANY });
   </script>
+  <!-- 시행일자 자동 표기(오늘 날짜)와 발신인 옆 날짜 입력칸 연동은
+       editor.js 섹션 13이 공통으로 처리합니다 — 이 템플릿에서 따로
+       채워줄 코드가 필요 없습니다. -->
   <script src="../../shared/scripts/editor.js"></script>
   <script src="../../shared/scripts/pagination.js"></script>
   <script src="../../shared/scripts/pdf-export.js"></script>
-  <script>
-    // 이 문서만의 설정: 시행일자를 오늘 날짜로 자동 표기
-    document.getElementById('effDate').textContent =
-      new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date());
-  </script>
 </body>
 </html>
