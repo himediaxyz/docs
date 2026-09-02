@@ -60,7 +60,7 @@
           <div class="page-body-fixed">
             <div class="cell-meta">
               <div class="meta-line">
-                <b>문서번호</b>: <span class="editable force-kr-font" id="docNo" contenteditable="true" spellcheck="false">다이즈-2026-001</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>시행일자</b>: <span id="effDate"></span>
+                <span id="docNoField"><b>문서번호</b>: <span class="editable force-kr-font" id="docNo" contenteditable="true" spellcheck="false">다이즈-2026-001</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><b>일자</b>: <span id="effDate"></span>
               </div>
             </div>
             <div class="cell-title">
@@ -147,9 +147,9 @@
     // 생략 — showPhoneIntl: false).
     DISE.components.renderDocFooter({ company: DISE_CURRENT_COMPANY, showPhoneIntl: false });
   </script>
-  <!-- 시행일자 자동 표기(오늘 날짜)와 발신인 옆 날짜 입력칸 연동은
-       editor.js 섹션 13이 공통으로 처리합니다 — 이 템플릿에서 따로
-       채워줄 코드가 필요 없습니다. -->
+  <!-- 일자 자동 표기(오늘 날짜)와 발신인 옆 날짜 입력칸 연동, 문서번호
+       표시 체크박스는 editor.js 섹션 13/14가 공통으로 처리합니다 — 이
+       템플릿에서 따로 채워줄 코드가 필요 없습니다. -->
   <script src="../../shared/scripts/editor.js"></script>
   <script src="../../shared/scripts/pagination.js"></script>
   <script src="../../shared/scripts/pdf-export.js"></script>

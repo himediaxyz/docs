@@ -17,10 +17,12 @@
         template-registry.js 목록을 읽어 다른 템플릿으로 이동(내용이
         있으면 확인창), 발신인은 sender-info.js 목록을 읽어 서명란만
         교체(확인창 없음)
-     8) 발신인 드롭다운 옆 "시행일자" 날짜 입력칸(#effDateInput) — 기본값은
-        오늘 날짜이고, 바꾸면 문서 상단의 시행일자 표시(#effDate)도 그
+     8) 발신인 드롭다운 옆 "일자" 날짜 입력칸(#effDateInput) — 기본값은
+        오늘 날짜이고, 바꾸면 문서 상단의 일자 표시(#effDate)도 그
         날짜로 다시 씁니다. 모든 문서 템플릿 공통 동작이라 템플릿 파일
-        쪽에는 시행일자를 채우는 스크립트를 따로 둘 필요가 없습니다.
+        쪽에는 일자를 채우는 스크립트를 따로 둘 필요가 없습니다.
+     9) "문서번호 표시" 체크박스(#docNoToggle) — 체크를 켜고 끄면 문서
+        상단의 문서번호 줄(#docNoField)이 즉시 나타나거나 사라집니다.
 
    새 템플릿에서 그대로 재사용하려면: .editable 클래스가 붙은
    contenteditable 요소들과, 아래 id/data-cmd를 그대로 쓴 버튼·셀렉트를
@@ -1153,21 +1155,29 @@
     });
   }
 
-  /* ---------- 13) "시행일자" 날짜 입력칸 ----------
-     발신인 드롭다운 바로 옆의 <input type="date" id="effDateInput">
+  /* ---------- 13) "일자" 날짜 입력칸 ----------
+     발신인 드롭다운 바로 옆의 input type=date, id=effDateInput
      (마크업은 components.js의 renderEditorUI() 참고). 기본값은 오늘
-     날짜로 채워두고, 문서 상단 고정 영역의 시행일자 표시(#effDate,
-     templates/*/index.html의 .cell-meta 참고)는 이 입력칸 값을 한국어
-     날짜 형식("2026년 9월 2일")으로 바꿔 보여줍니다.
+     날짜로 채워두고, 문서 상단 고정 영역의 일자 표시(id=effDate, 각
+     템플릿 index.html의 .cell-meta 참고)는 이 입력칸 값을 한국어 날짜
+     형식("2026년 9월 2일")으로 바꿔 보여줍니다.
 
      보통은 자동으로 채워진 오늘 날짜를 그대로 쓰면 되지만, 실제
      발송일과 다르게(예: 결재가 늦어져 문서 작성일보다 나중 날짜로
      시행) 지정해야 할 때 이 칸에서 직접 바꾸면 됩니다 — 모든 문서
-     템플릿에 공통으로 적용되므로, 새 템플릿을 추가할 때도 #effDate
+     템플릿에 공통으로 적용되므로, 새 템플릿을 추가할 때도 id=effDate
      자리만 마크업에 두면 되고 날짜를 채우는 스크립트를 따로 작성할
-     필요가 없습니다(예전에는 각 템플릿 파일 맨 아래에
-     document.getElementById('effDate').textContent = ... 코드를 매번
-     복사해 넣었는데, 이제 이 섹션 하나로 통일했습니다). */
+     필요가 없습니다(예전에는 각 템플릿 파일 맨 아래에 effDate의
+     textContent를 채우는 코드를 매번 복사해 넣었는데, 이제 이 섹션
+     하나로 통일했습니다).
+
+     ★ 2026-09-02 버그 수정: 이 블록 주석 안에 폴더 이름 자리에 별표
+     하나만 넣은 예전 경로 표기(슬래시-별표-슬래시 형태)가 그대로 들어
+     있었는데, 그 별표 앞뒤 슬래시 조합이 블록 주석을 실제 끝나는
+     지점보다 먼저 닫아버려서 그 뒤 문장이 코드로 읽혀 전체 스크립트가
+     SyntaxError로 깨졌습니다(발신인 드롭다운까지 같이 먹통이 된 원인).
+     그래서 주석 안에서는 경로를 "각 템플릿 폴더의 index.html"처럼
+     풀어서 쓰고, 여러 폴더를 가리키는 와일드카드 기호는 쓰지 않습니다. */
   var effDateInput = document.getElementById('effDateInput');
   var effDateOutput = document.getElementById('effDate');
 
@@ -1198,6 +1208,23 @@
     effDateInput.value = toISODate(new Date());
     updateEffDateDisplay();
     effDateInput.addEventListener('change', updateEffDateDisplay);
+  }
+
+  /* ---------- 14) "문서번호 표시" 체크박스 ----------
+     일자 입력칸 옆의 체크박스(id=docNoToggle). 문서번호 줄 전체(라벨
+     "문서번호" + 실제 번호 칸 + 뒤 여백)를 id=docNoField로 감싸두고
+     (마크업은 각 템플릿 index.html의 .cell-meta 참고), 체크를 해제하면
+     그 자리를 즉시 화면에서 숨기고(display:none) 체크하면 즉시 다시
+     보여줍니다 — 인쇄/서버 PDF도 지금 화면 그대로(DOM의 인라인 style
+     포함)를 내보내므로, 숨긴 상태 그대로 인쇄/PDF에도 반영됩니다.
+     체크박스 상태는 저장되지 않고 새로 문서를 열면 항상 "표시"로
+     시작합니다(문서번호가 없는 문서가 기본이 아니라 예외이므로). */
+  var docNoToggle = document.getElementById('docNoToggle');
+  var docNoField = document.getElementById('docNoField');
+  if (docNoToggle && docNoField) {
+    docNoToggle.addEventListener('change', function () {
+      docNoField.style.display = docNoToggle.checked ? '' : 'none';
+    });
   }
 
 })();
