@@ -244,7 +244,17 @@ DISE.components = {
             '<button type="button" class="help-btn" id="helpBtn" title="사용법 안내" aria-label="사용법 안내">?</button>' +
           '</div>' +
           '<div class="toolbar-card-actions">' +
-            '<button class="print-btn" onclick="window.print()">인쇄 / PDF로 저장</button>' +
+            // id="printBtn" — 클릭 처리는 shared/scripts/pdf-export.js가
+            // 문서 레벨 위임(delegated) 리스너로 맡습니다(그 파일도
+            // 반드시 함께 <script> 로드해야 합니다). window.DISE_PDF_API_URL이
+            // 설정된 템플릿에서는 서버 PDF를 새 탭에 띄워 인쇄
+            // 대화상자를 자동으로 여는 방식으로 동작하고, 설정 안 된
+            // 템플릿(서비스 미배포)에서는 그대로 window.print()로
+            // 동작합니다 — 어느 쪽이든 pdf-export.js 안에서 분기하므로
+            // 여기 마크업에는 onclick을 넣지 않습니다(inline onclick과
+            // 위임 리스너가 동시에 걸리면 window.print()가 먼저
+            // 실행되어 버려 서버 PDF 분기를 가로챌 수 없기 때문).
+            '<button class="print-btn" id="printBtn" type="button">인쇄 / PDF로 저장</button>' +
             // window.DISE_PDF_API_URL이 설정된 템플릿에서만 서버 PDF
             // 버튼을 보여줍니다(shared/scripts/pdf-export.js가 클릭을
             // 처리 — 이 파일도 반드시 함께 <script> 로드해야 합니다).
