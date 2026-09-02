@@ -135,51 +135,94 @@
   /* ---------- 하단: 선택한 그룹사의 문서 템플릿 ---------- */
   .template-panel{
     width:100%;
-    max-width:720px;
+    max-width:880px;
     margin-top:28px;
   }
   .template-panel[hidden]{display:none;}
-  .template-panel h2{
-    font-size:15px;
-    color:var(--sub);
-    margin:0 0 14px;
-    font-weight:600;
-  }
-  .template-panel h2 b{color:var(--navy);}
 
-  .template-list{
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-  }
-  .template-card{
+  /* 제목 줄과 필터 버튼을 한 줄에 — 좁은 화면에서는 줄바꿈되어
+     필터가 제목 아래로 내려갑니다(flex-wrap). */
+  .template-panel-head{
     display:flex;
     align-items:center;
-    gap:20px;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .template-panel-head h2{
+    font-size:15px;
+    color:var(--sub);
+    margin:0;
+    font-weight:600;
+  }
+  .template-panel-head h2 b{color:var(--navy);}
+
+  /* 항목별 필터(전체/공식서신/견적서/계약서 ...) — 새 카테고리가
+     생기면 TEMPLATE_CATEGORIES 배열에만 추가하면 버튼이 자동으로
+     늘어납니다. */
+  .template-filter{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .filter-btn{
+    font-family:var(--font-kr);
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--sub);
+    background:#fff;
+    border:1px solid #dde3ee;
+    border-radius:999px;
+    padding:6px 14px;
+    cursor:pointer;
+    transition:background-color .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .filter-btn:hover{border-color:var(--navy);color:var(--navy);}
+  .filter-btn.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+  /* 문서가 늘어나도 한눈에 훑어볼 수 있도록 리스트 대신 타일(그리드)
+     형태로 배치 — 데스크톱 기준 5열, 좁은 화면에서는 열 수를
+     줄입니다. */
+  .template-grid{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:14px;
+  }
+  @media (max-width:760px){
+    .template-grid{grid-template-columns:repeat(3, 1fr);}
+  }
+  @media (max-width:480px){
+    .template-grid{grid-template-columns:repeat(2, 1fr);}
+  }
+
+  .template-tile{
+    display:flex;
+    flex-direction:column;
     background:#fff;
     border:1px solid #e2e6ee;
     border-radius:10px;
-    padding:16px;
+    padding:10px;
     text-decoration:none;
     color:inherit;
     transition:box-shadow .15s ease, transform .15s ease;
   }
-  .template-card:hover{
+  .template-tile:hover{
     box-shadow:0 6px 18px rgba(11,35,79,0.12);
-    transform:translateY(-1px);
+    transform:translateY(-2px);
   }
 
   /* 실제 A4(가로 210mm × 세로 297mm) 비율을 그대로 축소한 미리보기 —
      문서 종류가 늘어도 이 클래스 하나로 항상 같은 비율을 유지합니다. */
-  .template-thumb{
-    flex:0 0 auto;
-    width:96px;
+  .tile-thumb{
+    width:100%;
     aspect-ratio:210 / 297;
     background:#fff;
     border:1px solid #dde3ee;
     border-radius:5px;
     overflow:hidden;
     box-shadow:0 2px 6px rgba(20,30,60,0.08);
+    margin-bottom:8px;
   }
   .thumb-band{height:24%;background:var(--navy);}
   .thumb-lines{padding:14% 14% 0;}
@@ -189,27 +232,26 @@
   .thumb-lines span.w60{width:60%;}
   .thumb-lines span.w80{width:80%;}
 
-  .template-info{flex:1 1 auto;min-width:0;}
-  .template-info h3{
-    margin:0 0 6px;
-    font-size:16.5px;
+  .tile-category{
+    align-self:flex-start;
+    font-size:10.5px;
+    font-weight:700;
     color:var(--navy);
+    background:#eef1f8;
+    border-radius:4px;
+    padding:2px 6px;
+    margin-bottom:6px;
   }
-  .template-info p{
-    margin:0 0 12px;
-    font-size:13.5px;
-    color:#555;
-    line-height:1.55;
-  }
-  .template-btn{
-    display:inline-block;
-    font-family:var(--font-kr);
-    font-size:13px;
+  .tile-title{
+    margin:0;
+    font-size:12.5px;
     font-weight:600;
-    color:#fff;
-    background:var(--navy);
-    border-radius:6px;
-    padding:7px 14px;
+    line-height:1.4;
+    color:var(--navy);
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
   }
 
   .template-empty{
@@ -254,24 +296,49 @@
        늘어납니다. -->
   <script src="shared/scripts/company-info.js"></script>
   <script>
+    // 항목별 필터 버튼 목록 — 새 문서 종류가 생기면 여기에 { key, label }
+    // 만 추가하면 필터 버튼이 자동으로 늘어납니다. key는 아래
+    // TEMPLATES_BY_COMPANY의 각 템플릿 항목이 갖는 category 값과
+    // 일치해야 합니다('all'은 특수 키 — 전체 보기).
+    var TEMPLATE_CATEGORIES = [
+      { key: 'all', label: '전체' },
+      { key: 'official', label: '공식서신' },
+      { key: 'quote', label: '견적서' },
+      { key: 'contract', label: '계약서' }
+    ];
+
+    function categoryLabel(key) {
+      var found = TEMPLATE_CATEGORIES.filter(function (cat) { return cat.key === key; })[0];
+      return found ? found.label : '';
+    }
+
     // 이 포털 페이지에서만 쓰는 "그룹사별 문서 템플릿" 목록 — 새 템플릿이
-    // 생기면 해당 계열사 key 아래에 { title, desc, href }를 추가하면
-    // 됩니다. 아직 템플릿이 없는 계열사는 항목을 만들지 않으면 자동으로
-    // "곧 생성됩니다" 안내가 나타납니다.
+    // 생기면 해당 계열사 key 아래에 { title, desc, href, category }를
+    // 추가하면 됩니다(category는 위 TEMPLATE_CATEGORIES의 key 중 하나).
+    // 아직 템플릿이 없는 계열사는 항목을 만들지 않으면 자동으로 "곧
+    // 생성됩니다" 안내가 나타납니다.
     var TEMPLATES_BY_COMPANY = {
       disehimedia: [
         {
           title: '공문 (대외 발송용)',
           desc: 'A4 세로 규격, 브라우저에서 직접 입력 및 인쇄 가능한 범용 공문 템플릿입니다.',
-          href: 'templates/gongmun/'
+          href: 'templates/gongmun/',
+          category: 'official'
         },
         {
           title: '공문 — 프리미엄 레터헤드',
           desc: '같은 공문 양식에 헤더·푸터의 색을 빼고 다이즈블랙 로고만 남긴 고급스러운 레터헤드 디자인입니다.',
-          href: 'templates/gongmun-premium/'
+          href: 'templates/gongmun-premium/',
+          category: 'official'
         }
       ]
     };
+
+    // 현재 선택된 그룹사/필터 — selectCompany()와 필터 버튼 클릭이 이
+    // 값을 바꾸고, renderTemplatePanel()이 이 값을 기준으로 다시
+    // 그립니다.
+    var currentCompanyKey = null;
+    var currentFilterKey = 'all';
 
     var LOGO_ROOT = 'shared/assets/logos/';
 
@@ -312,38 +379,70 @@
       Array.prototype.forEach.call(grid.children, function (el) {
         el.classList.toggle('active', el === card);
       });
+      currentCompanyKey = key;
+      currentFilterKey = 'all'; // 그룹사를 바꾸면 필터도 "전체"로 초기화합니다.
+      renderTemplatePanel();
+    }
 
-      var c = DISE.companies[key];
-      var templates = TEMPLATES_BY_COMPANY[key] || [];
+    // 현재 선택된 그룹사(currentCompanyKey)·필터(currentFilterKey)를
+    // 기준으로 템플릿 패널 전체(제목 줄 + 필터 버튼 + 타일 그리드)를
+    // 다시 그립니다. 필터 버튼을 누르면 currentFilterKey만 바꾸고 이
+    // 함수를 다시 호출합니다.
+    function renderTemplatePanel() {
+      var c = DISE.companies[currentCompanyKey];
+      var allTemplates = TEMPLATES_BY_COMPANY[currentCompanyKey] || [];
       var panel = document.getElementById('templatePanel');
       panel.hidden = false;
 
-      if (templates.length) {
-        panel.innerHTML =
-          '<h2><b>' + c.nameKr + '</b>의 문서 템플릿</h2>' +
-          '<div class="template-list">' +
-          templates.map(function (t) {
-            return (
-              '<a class="template-card" href="' + t.href + '">' +
-                '<span class="template-thumb">' +
-                  '<span class="thumb-band"></span>' +
-                  '<span class="thumb-lines">' +
-                    '<span class="w80"></span><span></span><span class="w60"></span>' +
-                  '</span>' +
-                '</span>' +
-                '<span class="template-info">' +
-                  '<h3>' + t.title + '</h3>' +
-                  '<p>' + t.desc + '</p>' +
-                  '<span class="template-btn">편집기 열기 &rarr;</span>' +
-                '</span>' +
-              '</a>'
-            );
-          }).join('') +
-          '</div>';
-      } else {
+      if (!allTemplates.length) {
         panel.innerHTML =
           '<div class="template-empty"><p>현재 <b>' + c.nameKr + '</b>의 문서 템플릿은 없습니다. 곧 생성됩니다.</p></div>';
+        return;
       }
+
+      var filtered = currentFilterKey === 'all' ?
+        allTemplates :
+        allTemplates.filter(function (t) { return t.category === currentFilterKey; });
+
+      panel.innerHTML =
+        '<div class="template-panel-head">' +
+          '<h2><b>' + c.nameKr + '</b>의 문서 템플릿</h2>' +
+          '<div class="template-filter">' +
+            TEMPLATE_CATEGORIES.map(function (cat) {
+              return '<button type="button" class="filter-btn' + (cat.key === currentFilterKey ? ' active' : '') + '" data-filter="' + cat.key + '">' + cat.label + '</button>';
+            }).join('') +
+          '</div>' +
+        '</div>' +
+        (filtered.length ?
+          '<div class="template-grid">' +
+            filtered.map(function (t) {
+              var label = categoryLabel(t.category);
+              return (
+                '<a class="template-tile" href="' + t.href + '" title="' + t.desc.replace(/"/g, '&quot;') + '">' +
+                  '<span class="tile-thumb">' +
+                    '<span class="thumb-band"></span>' +
+                    '<span class="thumb-lines">' +
+                      '<span class="w80"></span><span></span><span class="w60"></span>' +
+                    '</span>' +
+                  '</span>' +
+                  (label ? '<span class="tile-category">' + label + '</span>' : '') +
+                  '<span class="tile-title">' + t.title + '</span>' +
+                '</a>'
+              );
+            }).join('') +
+          '</div>' :
+          '<div class="template-empty"><p>선택한 항목에 해당하는 템플릿이 아직 없습니다.</p></div>'
+        );
+
+      // 필터 버튼 클릭 처리 — 패널을 통째로 다시 그리므로(위 innerHTML),
+      // 매번 새로 그려진 버튼에 리스너를 다시 붙여줍니다.
+      var filterBtns = panel.querySelectorAll('.filter-btn');
+      Array.prototype.forEach.call(filterBtns, function (btn) {
+        btn.addEventListener('click', function () {
+          currentFilterKey = btn.getAttribute('data-filter');
+          renderTemplatePanel();
+        });
+      });
     }
 
     // 첫 화면에서 바로 확인할 수 있도록 다이즈하이미디어를 기본 선택.
