@@ -72,9 +72,12 @@
               <!-- 수신처의 회사 주소·이메일 — 둘 다 있으면 있는 대로,
                    필요 없으면 지워도 되는 선택 항목입니다. 라벨 없이
                    대괄호 placeholder만 두면 editor.js 섹션 1의 "클릭
-                   시 전체 선택" 동작을 그대로 물려받습니다. -->
-              <p class="to-detail-line"><span class="editable force-kr-font" id="docToAddress" contenteditable="true" spellcheck="false">[회사 주소]</span></p>
-              <p class="to-detail-line"><span class="editable en" id="docToEmail" contenteditable="true" spellcheck="false">[이메일 주소]</span></p>
+                   시 전체 선택" 동작을 그대로 물려받습니다. 감싸는
+                   <p>에 id를 둔 이유: 수신인 드롭다운(editor.js 섹션
+                   15)이 값이 없는 항목은 줄 전체를 감춰서 정리하기
+                   때문입니다. -->
+              <p class="to-detail-line" id="docToAddressLine"><span class="editable force-kr-font" id="docToAddress" contenteditable="true" spellcheck="false">[회사 주소]</span></p>
+              <p class="to-detail-line" id="docToEmailLine"><span class="editable en" id="docToEmail" contenteditable="true" spellcheck="false">[이메일 주소]</span></p>
               <!-- 로고만 남긴 헤더(showCompanyName:false)라 회사명을 여기
                    "발신" 줄로 대신 보여줍니다 — 채우는 스크립트는
                    components.js의 renderDocFrom() 호출부 참고. -->
@@ -126,6 +129,7 @@
   <!-- 공용 스크립트 — templates/gongmun과 완전히 동일한 순서/구성입니다. -->
   <script src="../../shared/scripts/company-info.js"></script>
   <script src="../../shared/scripts/sender-info.js"></script>
+  <script src="../../shared/scripts/recipient-info.js"></script>
   <script src="../../shared/scripts/template-registry.js"></script>
   <script src="../../shared/scripts/components.js"></script>
   <script>

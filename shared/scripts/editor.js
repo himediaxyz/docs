@@ -23,6 +23,13 @@
         쪽에는 일자를 채우는 스크립트를 따로 둘 필요가 없습니다.
      9) "문서번호 표시" 체크박스(#docNoToggle) — 체크를 켜고 끄면 문서
         상단의 문서번호 줄(#docNoField)이 즉시 나타나거나 사라집니다.
+        기본값은 "미표시"입니다(2026-09-02 변경 — 문서번호가 필요한
+        문서가 오히려 예외라 체크를 꺼둔 채 시작합니다).
+    10) 발신인 옆 "수신인" 드롭다운(#recipientBtn/#recipientPopover) —
+        recipient-info.js 목록에서 자주 쓰는 수신처를 골라 수신
+        영역(#docTo/#docToAddress/#docToEmail)을 한 번에 채우거나,
+        "새로 입력"으로 직접 타이핑할 수 있게 초기화합니다. 주소·
+        이메일처럼 값이 없는 항목은 그 줄 자체를 감춰 정리합니다.
 
    새 템플릿에서 그대로 재사용하려면: .editable 클래스가 붙은
    contenteditable 요소들과, 아래 id/data-cmd를 그대로 쓴 버튼·셀렉트를
@@ -899,11 +906,23 @@
     var docNoEl = document.getElementById('docNo');
     var docTitleEl = document.getElementById('docTitle');
     var docToEl = document.getElementById('docTo');
+    // 수신처 주소/이메일(있는 템플릿에서만 존재 — 섹션 15 참고)과 그
+    // 줄의 표시 여부까지 함께 기억해둬야, 수신인 드롭다운으로 통째로
+    // 바꿔치기한 뒤에도 Ctrl+Z로 이전 수신처(숨김 상태 포함)까지 그대로
+    // 되돌아갑니다.
+    var docToAddressEl = document.getElementById('docToAddress');
+    var docToEmailEl = document.getElementById('docToEmail');
+    var docToAddressLineEl = document.getElementById('docToAddressLine');
+    var docToEmailLineEl = document.getElementById('docToEmailLine');
     var flows = Array.prototype.slice.call(document.querySelectorAll('.flow-items'));
     return {
       docNo: docNoEl ? docNoEl.innerHTML : null,
       docTitle: docTitleEl ? docTitleEl.innerHTML : null,
       docTo: docToEl ? docToEl.innerHTML : null,
+      docToAddress: docToAddressEl ? docToAddressEl.innerHTML : null,
+      docToEmail: docToEmailEl ? docToEmailEl.innerHTML : null,
+      docToAddressHidden: docToAddressLineEl ? docToAddressLineEl.style.display === 'none' : null,
+      docToEmailHidden: docToEmailLineEl ? docToEmailLineEl.style.display === 'none' : null,
       flowHTML: flows.map(function (f) { return f.innerHTML; }).join('')
     };
   }
@@ -951,9 +970,17 @@
     var docNoEl = document.getElementById('docNo');
     var docTitleEl = document.getElementById('docTitle');
     var docToEl = document.getElementById('docTo');
+    var docToAddressEl = document.getElementById('docToAddress');
+    var docToEmailEl = document.getElementById('docToEmail');
+    var docToAddressLineEl = document.getElementById('docToAddressLine');
+    var docToEmailLineEl = document.getElementById('docToEmailLine');
     if (docNoEl && snap.docNo !== null) docNoEl.innerHTML = snap.docNo;
     if (docTitleEl && snap.docTitle !== null) docTitleEl.innerHTML = snap.docTitle;
     if (docToEl && snap.docTo !== null) docToEl.innerHTML = snap.docTo;
+    if (docToAddressEl && snap.docToAddress !== null) docToAddressEl.innerHTML = snap.docToAddress;
+    if (docToEmailEl && snap.docToEmail !== null) docToEmailEl.innerHTML = snap.docToEmail;
+    if (docToAddressLineEl && snap.docToAddressHidden !== null) docToAddressLineEl.style.display = snap.docToAddressHidden ? 'none' : '';
+    if (docToEmailLineEl && snap.docToEmailHidden !== null) docToEmailLineEl.style.display = snap.docToEmailHidden ? 'none' : '';
 
     var pagesRoot = document.getElementById('pages');
     var firstFlow = null;
@@ -1048,6 +1075,10 @@
     return now.docNo !== initialDocSnapshot.docNo ||
       now.docTitle !== initialDocSnapshot.docTitle ||
       now.docTo !== initialDocSnapshot.docTo ||
+      now.docToAddress !== initialDocSnapshot.docToAddress ||
+      now.docToEmail !== initialDocSnapshot.docToEmail ||
+      now.docToAddressHidden !== initialDocSnapshot.docToAddressHidden ||
+      now.docToEmailHidden !== initialDocSnapshot.docToEmailHidden ||
       now.flowHTML !== initialDocSnapshot.flowHTML;
   }
 
@@ -1217,13 +1248,142 @@
      그 자리를 즉시 화면에서 숨기고(display:none) 체크하면 즉시 다시
      보여줍니다 — 인쇄/서버 PDF도 지금 화면 그대로(DOM의 인라인 style
      포함)를 내보내므로, 숨긴 상태 그대로 인쇄/PDF에도 반영됩니다.
-     체크박스 상태는 저장되지 않고 새로 문서를 열면 항상 "표시"로
-     시작합니다(문서번호가 없는 문서가 기본이 아니라 예외이므로). */
+     체크박스 상태는 저장되지 않고 새로 문서를 열면 항상 마크업의
+     기본 상태(2026-09-02부터 "미표시" — components.js의 renderEditorUI()
+     참고)로 시작합니다. */
   var docNoToggle = document.getElementById('docNoToggle');
   var docNoField = document.getElementById('docNoField');
   if (docNoToggle && docNoField) {
+    // 체크박스 기본값(unchecked)에 맞춰 문서번호 줄도 처음부터 감춰
+    // 둡니다 — 마크업 쪽 docNoField에는 별도 style이 없어서, change
+    // 이벤트를 기다리지 않고 여기서 한 번 동기화해줘야 합니다.
+    docNoField.style.display = docNoToggle.checked ? '' : 'none';
     docNoToggle.addEventListener('change', function () {
       docNoField.style.display = docNoToggle.checked ? '' : 'none';
+    });
+  }
+
+  /* ---------- 15) 수신인 드롭다운 ----------
+     발신인 드롭다운 바로 옆의 #recipientBtn/#recipientPopover(마크업은
+     components.js의 renderEditorUI() 참고). shared/scripts/
+     recipient-info.js의 DISE.recipients[회사키] 목록을 읽어 자주 쓰는
+     수신처를 보여주고, 고르면 수신 영역(#docTo/#docToAddress/
+     #docToEmail)을 한 번에 채웁니다. 목록 맨 위에는 항상 "새로 입력"
+     항목이 따로 있어서, 목록에 없는 상대는 그걸 눌러 수신 영역을 빈
+     안내 문구로 되돌리고 바로 타이핑할 수 있습니다(발신인과 달리
+     수신인은 매번 다른 상대일 수 있어, 목록은 어디까지나 "자주 보내는
+     상대라 등록해두면 편한" 선택 사항입니다).
+
+     수신인은 회사만/회사+담당자/담당자만일 수 있고 주소·이메일도
+     있을 때만 있으므로(요청사항), #docTo는 항상 "담당자 이름 | 회사
+     이름" 형식으로 채우되 둘 다 있을 때만 |로 연결하고 하나만 있으면
+     그 값만 넣습니다. #docToAddress/#docToEmail은 값이 없으면 그
+     줄(감싸는 <p>, id=docToAddressLine/docToEmailLine) 자체를
+     display:none으로 감춰서 빈 대괄호 placeholder가 어색하게 남지
+     않도록 정리합니다. 이 두 줄이 아예 없는 템플릿(예: templates/
+     gongmun처럼 수신 영역에 주소·이메일 칸을 안 둔 경우)에서는 해당
+     요소가 없으니 그냥 건너뜁니다.
+
+     문서 상단 고정 영역을 바꾸는 거라 실행취소(Ctrl+Z)에도 잡히게
+     하려고 바꾸기 직전에 recordBeforeChange()를 부릅니다 — 9)/13)과
+     마찬가지로 내용을 지우는 게 아니라 바꿔치기라 확인창은 없습니다. */
+  var recipientBtn = document.getElementById('recipientBtn');
+  var recipientPopover = document.getElementById('recipientPopover');
+  var recipientLabel = document.getElementById('recipientLabel');
+  var docToEl = document.getElementById('docTo');
+  var docToAddressEl = document.getElementById('docToAddress');
+  var docToEmailEl = document.getElementById('docToEmail');
+  var docToAddressLine = document.getElementById('docToAddressLine');
+  var docToEmailLine = document.getElementById('docToEmailLine');
+
+  var DOC_TO_PLACEHOLDER = '[담당자 이름 | 회사 이름]';
+  var DOC_TO_ADDRESS_PLACEHOLDER = '[회사 주소]';
+  var DOC_TO_EMAIL_PLACEHOLDER = '[이메일 주소]';
+  var RECIPIENT_LABEL_DEFAULT = '수신인 선택';
+
+  function currentRecipientList() {
+    var companyKey = window.DISE_CURRENT_COMPANY || 'disehimedia';
+    return (window.DISE && DISE.recipients && DISE.recipients[companyKey]) || [];
+  }
+
+  function resetRecipientFields() {
+    if (docToEl) docToEl.textContent = DOC_TO_PLACEHOLDER;
+    if (docToAddressEl) docToAddressEl.textContent = DOC_TO_ADDRESS_PLACEHOLDER;
+    if (docToEmailEl) docToEmailEl.textContent = DOC_TO_EMAIL_PLACEHOLDER;
+    if (docToAddressLine) docToAddressLine.style.display = '';
+    if (docToEmailLine) docToEmailLine.style.display = '';
+    if (recipientLabel) recipientLabel.textContent = RECIPIENT_LABEL_DEFAULT;
+  }
+
+  function applyRecipient(recipient) {
+    if (!recipient) return;
+    var nameParts = [];
+    if (recipient.contactName) nameParts.push(recipient.contactName);
+    if (recipient.companyName) nameParts.push(recipient.companyName);
+    if (docToEl) docToEl.textContent = nameParts.length ? nameParts.join(' | ') : DOC_TO_PLACEHOLDER;
+
+    if (docToAddressEl && docToAddressLine) {
+      if (recipient.address) {
+        docToAddressEl.textContent = recipient.address;
+        docToAddressLine.style.display = '';
+      } else {
+        docToAddressLine.style.display = 'none';
+      }
+    }
+    if (docToEmailEl && docToEmailLine) {
+      if (recipient.email) {
+        docToEmailEl.textContent = recipient.email;
+        docToEmailLine.style.display = '';
+      } else {
+        docToEmailLine.style.display = 'none';
+      }
+    }
+    if (recipientLabel) {
+      recipientLabel.textContent = '수신인: ' + (recipient.contactName || recipient.companyName || '');
+    }
+  }
+
+  if (recipientBtn && recipientPopover) {
+    var recipientList = currentRecipientList();
+    recipientPopover.innerHTML =
+      '<button type="button" class="dd-new-btn" data-recipient-action="new">+ 새로 입력</button>' +
+      (recipientList.length ?
+        '<div class="dd-divider"></div>' +
+        recipientList.map(function (r) {
+          var label = [r.contactName, r.companyName].filter(Boolean).join(' | ') || '(이름 없음)';
+          return '<button type="button" data-recipient-id="' + r.id + '">' + label + '</button>';
+        }).join('') :
+        '');
+
+    recipientBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      recipientPopover.hidden = !recipientPopover.hidden;
+    });
+    document.addEventListener('click', function (e) {
+      if (!recipientPopover.hidden && e.target !== recipientBtn &&
+        !recipientPopover.contains(e.target) && !recipientBtn.contains(e.target)) {
+        recipientPopover.hidden = true;
+      }
+    });
+    recipientPopover.addEventListener('click', function (e) {
+      var newBtn = e.target.closest('[data-recipient-action="new"]');
+      if (newBtn) {
+        recipientPopover.hidden = true;
+        recordBeforeChange();
+        resetRecipientFields();
+        // docTo에 포커스를 옮기면 섹션 1의 focus 리스너가 대괄호
+        // placeholder를 자동으로 전체 선택해줍니다(resetRecipientFields가
+        // 방금 그 placeholder 문구로 되돌려뒀으므로).
+        if (docToEl) docToEl.focus();
+        return;
+      }
+      var optBtn = e.target.closest('[data-recipient-id]');
+      if (!optBtn) return;
+      recipientPopover.hidden = true;
+      var recipient = recipientList.filter(function (r) { return r.id === optBtn.getAttribute('data-recipient-id'); })[0];
+      if (!recipient) return;
+      recordBeforeChange();
+      applyRecipient(recipient);
     });
   }
 

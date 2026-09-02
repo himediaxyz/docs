@@ -264,6 +264,19 @@ DISE.components = {
               '</button>' +
               '<div class="sender-popover" id="senderPopover" hidden></div>' +
             '</span>' +
+            // "수신인" 드롭다운(2026-09-02 추가) — 발신인 바로 옆. 목록/
+            // "새로 입력" 처리와 수신 영역(#docTo 등) 채우기·정리는
+            // shared/scripts/editor.js 섹션 15, 목록 데이터는
+            // shared/scripts/recipient-info.js 참고. 버튼/팝업 모양은
+            // 발신인과 똑같이 맞추려고 같은 sender-btn/sender-popover
+            // 클래스를 그대로 재사용합니다.
+            '<span class="dropdown-anchor recipient-anchor">' +
+              '<button type="button" class="sender-btn" id="recipientBtn" aria-haspopup="true" aria-expanded="false">' +
+                '<span id="recipientLabel">수신인 선택</span>' +
+                '<span class="dd-caret" aria-hidden="true">&#9662;</span>' +
+              '</button>' +
+              '<div class="sender-popover" id="recipientPopover" hidden></div>' +
+            '</span>' +
             // "일자" 입력칸 — 기본값(오늘 날짜)과 문서 상단 표시(#effDate)
             // 갱신은 shared/scripts/editor.js 섹션 13이 처리합니다. 모든
             // 문서 템플릿 공통이라 여기 한 곳에만 마크업을 두면 됩니다.
@@ -274,8 +287,12 @@ DISE.components = {
             // "문서번호 표시" 체크박스 — 문서번호 줄(#docNoField, 각
             // 템플릿의 .cell-meta 참고)을 즉시 켜고 끕니다. 처리는
             // shared/scripts/editor.js 섹션 14 참고.
+            // 기본값은 미체크(2026-09-02 변경) — 문서번호가 필요한
+            // 문서가 오히려 예외라, 필요할 때만 체크해서 켜는 방식으로
+            // 바꿨습니다. 문서 로드 직후 문서번호 줄을 실제로 감추는
+            // 처리는 shared/scripts/editor.js 섹션 14 참고.
             '<label class="docno-toggle">' +
-              '<input type="checkbox" id="docNoToggle" checked>' +
+              '<input type="checkbox" id="docNoToggle">' +
               '<span>문서번호 표시</span>' +
             '</label>' +
             '<button type="button" class="help-btn" id="helpBtn" title="사용법 안내" aria-label="사용법 안내">?</button>' +
@@ -309,7 +326,8 @@ DISE.components = {
           '<div class="help-modal-card">' +
             '<button type="button" class="help-modal-close" id="helpModalClose" aria-label="닫기">&times;</button>' +
             '<h2>사용법 안내</h2>' +
-            '<p>점선 테두리가 있는 <b>문서번호 · 제목 · 수신처 · 본문</b> 영역은 브라우저에서 바로 클릭해서 입력할 수 있습니다. 대괄호([ ])로 된 안내 문구는 클릭하면 자동으로 전체 선택되어 바로 타이핑하면 덮어써집니다. 일자는 오늘 날짜로 자동 채워지고, 상단 발신인 옆 날짜 입력칸에서 다른 날짜로 바꿀 수 있습니다. 문서번호가 필요 없는 문서라면 그 옆 "문서번호 표시" 체크를 해제해 감출 수 있습니다.</p>' +
+            '<p>점선 테두리가 있는 <b>문서번호 · 제목 · 수신처 · 본문</b> 영역은 브라우저에서 바로 클릭해서 입력할 수 있습니다. 대괄호([ ])로 된 안내 문구는 클릭하면 자동으로 전체 선택되어 바로 타이핑하면 덮어써집니다. 일자는 오늘 날짜로 자동 채워지고, 상단 발신인 옆 날짜 입력칸에서 다른 날짜로 바꿀 수 있습니다. 문서번호는 기본적으로 감춰져 있으며, 필요한 문서에서만 옆의 "문서번호 표시"를 체크해 켤 수 있습니다.</p>' +
+            '<p>발신인 옆 <b>수신인</b> 버튼에서는 자주 쓰는 수신처를 목록에서 골라 회사·담당자·주소·이메일을 한 번에 채우거나, "새로 입력"을 눌러 직접 타이핑할 수 있습니다. 수신처는 회사만/회사+담당자/담당자만일 수 있고 주소·이메일도 있는 경우만 있으면 되는데, 채워진 정보에 따라 주소·이메일 줄은 있으면 보이고 없으면 자동으로 감춰져 정리됩니다.</p>' +
             '<p>본문이 길어지면 실제 A4 낱장 모양의 페이지가 화면에도 그대로 쌓여서 늘어나며, 인쇄할 때도 같은 페이지 경계를 그대로 씁니다(워드처럼 헤더·본문·푸터가 항상 같은 자리에 고정). 아래 서식 도구모음으로 굵게·기울임·밑줄, 서체·글자 크기, 글자색, 정렬, 목록, 들여쓰기, 그림·표 삽입까지 바꿀 수 있습니다(먼저 글자를 드래그로 선택한 뒤 버튼을 눌러주세요). 표 안에 커서를 두면 그 표 오른쪽 위에 작은 설정 아이콘이 뜹니다.</p>' +
             '<p>휴대폰 등 좁은 화면에서는 위에 <b>모바일 보기 / 인쇄 레이아웃 보기</b> 선택 버튼이 나타납니다. 모바일 보기는 페이지 구분 없이 메모장처럼 이어서 편하게 입력하는 모드이고, 인쇄 레이아웃 보기는 실제 A4 페이지 그대로를 화면에 맞춰 축소해 보여주는 미리보기입니다. 어느 쪽을 보고 있든 인쇄·PDF 저장 결과물은 항상 인쇄 레이아웃과 동일하게 나옵니다.</p>' +
             (window.DISE_PDF_API_URL ?
