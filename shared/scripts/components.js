@@ -239,7 +239,12 @@ DISE.components = {
     target.innerHTML =
       '<div class="toolbar no-print">' +
         '<div class="toolbar-card">' +
-          '<div class="toolbar-card-title">' +
+          // 윗줄: "문서 양식"(=문서 제목/종류) 드롭다운만 단독으로 —
+          // 요청: "문서 제목 및 문서 변경 드랍다운 버튼은 제일 윗줄"
+          // (2026-09-02). 항목이 늘어날수록(발신인/일자/체크박스/버튼)
+          // 아랫줄만 길어지고 줄바꿈되는 게, 윗줄까지 같이 좁아지는
+          // 것보다 보기 좋습니다.
+          '<div class="toolbar-card-row toolbar-card-row-top">' +
             '<span class="dropdown-anchor doc-type-anchor">' +
               '<button type="button" class="doc-type-btn" id="docTypeBtn" aria-haspopup="true" aria-expanded="false">' +
                 '<span id="docTypeLabel">' + currentTemplateName + '</span>' +
@@ -247,6 +252,11 @@ DISE.components = {
               '</button>' +
               '<div class="doc-type-popover" id="docTypePopover" hidden></div>' +
             '</span>' +
+          '</div>' +
+          // 아랫줄: 발신인/일자/문서번호 표시 체크박스/도움말 + 인쇄·PDF
+          // 버튼. 폭이 좁아지면 이 줄 안에서만 자연스럽게 줄바꿈됩니다.
+          '<div class="toolbar-card-row toolbar-card-row-bottom">' +
+          '<div class="toolbar-card-title">' +
             '<span class="dropdown-anchor sender-anchor">' +
               '<button type="button" class="sender-btn" id="senderBtn" aria-haspopup="true" aria-expanded="false">' +
                 '<span id="senderLabel">발신인: ' + defaultSenderName + '</span>' +
@@ -289,6 +299,7 @@ DISE.components = {
             // 자체가 나타나지 않습니다.
             (window.DISE_PDF_API_URL ?
               '<button class="pdf-btn" id="pdfDownloadBtn" type="button">PDF 다운로드</button>' : '') +
+          '</div>' +
           '</div>' +
         '</div>' +
 
@@ -499,6 +510,31 @@ DISE.components = {
         '</div>' +
         textBlockHtml +
       '</div>';
+  },
+
+  /**
+   * 본문 상단 고정 영역의 "발신" 줄 — "수신: ..." 바로 아래, 회사명을
+   * "국문 | 영문" 형태로 보여줍니다(예: "다이즈하이미디어 | DISEHIMEDIA").
+   * 로고만 남기고 회사명 텍스트를 뺀 레터헤드 헤더(renderDocHeader의
+   * showCompanyName:false)를 쓰는 문서에서, 그 회사명 정보를 수신/발신
+   * 줄 쪽에 대신 보여주고 싶을 때 씁니다 — 헤더에 회사명이 이미
+   * 보이는 문서(예: templates/gongmun)에서는 굳이 안 써도 됩니다.
+   * @param {Object} [opts]
+   * @param {string} [opts.company] - DISE.companies의 key (기본값 'disehimedia').
+   */
+  renderDocFrom: function (opts) {
+    opts = opts || {};
+    var companyKey = opts.company || 'disehimedia';
+    var target = document.getElementById('docFrom');
+    if (!target) return;
+
+    var c = DISE.companies[companyKey];
+    if (!c) {
+      console.error('DISE.components.renderDocFrom: "' + companyKey + '" 계열사 정보가 company-info.js에 없습니다.');
+      return;
+    }
+
+    target.textContent = c.nameKr + (c.nameEn && c.nameEn !== c.nameKr ? ' | ' + c.nameEn : '');
   },
 
   /**

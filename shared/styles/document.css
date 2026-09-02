@@ -189,6 +189,14 @@
   font-family:var(--font-kr);font-size:15px;color:var(--ink);margin:0 0 6px;
 }
 .to-line .en{font-family:var(--font-en);}
+/* "발신: 다이즈하이미디어 | DISEHIMEDIA" 줄(2026-09-02 추가) — 수신
+   줄 바로 아래. 마크업/스크립트는 components.js의 renderDocFrom()과
+   각 템플릿 index.html의 #docFrom 참고(로고만 남긴 레터헤드 헤더에서
+   회사명을 대신 보여주는 용도). .to-line과 같은 굵기·크기로 맞추되,
+   마지막 줄이라 아래 여백을 조금 더 둡니다. */
+.from-line{
+  font-family:var(--font-kr);font-size:15px;color:var(--ink);margin:0 0 12px;
+}
 .note-line{
   font-family:var(--font-kr);font-style:italic;font-size:12.5px;color:#777;margin:0 0 18px;
 }

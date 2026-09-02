@@ -14,9 +14,19 @@
 .toolbar{
   max-width:900px;margin:0 auto;padding:18px 20px 0;
 }
+/* ---------- 도구모음 카드: 두 줄 구성(2026-09-02) ----------
+   윗줄(.toolbar-card-row-top)에는 "문서 양식" 드롭다운(문서 제목/종류
+   변경) 하나만 단독으로 두고, 나머지(발신인·일자·문서번호 표시 체크
+   박스·도움말 + 인쇄/PDF 버튼)는 전부 아랫줄(.toolbar-card-row-bottom)
+   에 모읍니다 — 항목이 늘어날 때 인쇄/PDF 버튼만 어색하게 다음 줄로
+   밀려나는 대신, 처음부터 두 줄로 나눠 각 줄 안에서만 자연스럽게
+   줄바꿈되게 합니다. */
 .toolbar-card{
   background:#ffffff;border:1px solid #d8dee8;border-radius:10px;
-  padding:16px 20px;font-family:var(--font-en);
+  padding:14px 20px;font-family:var(--font-en);
+  display:flex;flex-direction:column;gap:10px;
+}
+.toolbar-card-row{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
   flex-wrap:wrap;
 }

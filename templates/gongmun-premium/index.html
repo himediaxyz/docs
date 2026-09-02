@@ -68,6 +68,10 @@
             </div>
             <div class="cell-to">
               <p class="to-line">수신: <span class="en editable force-kr-font" id="docTo" contenteditable="true" spellcheck="false">[수신처를 입력하세요]</span> 귀중</p>
+              <!-- 로고만 남긴 헤더(showCompanyName:false)라 회사명을 여기
+                   "발신" 줄로 대신 보여줍니다 — 채우는 스크립트는
+                   components.js의 renderDocFrom() 호출부 참고. -->
+              <p class="from-line">발신: <span id="docFrom"></span></p>
             </div>
             <div class="cell-note no-print">
               <p class="note-line">(본 문서는 다이즈하이미디어의 공식 대외 발송용 공문 템플릿(프리미엄 레터헤드)입니다. 아래 파란 점선 영역을 클릭해 내용을 입력하세요.)</p>
@@ -143,6 +147,9 @@
     // 공문")는 뺍니다. 나중에 다시 필요해지면 showCompanyName: true로
     // 되돌리거나 docTypeTag를 다시 넘기면 됩니다.
     DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, showCompanyName: false });
+    // 헤더에서 뺀 회사명을 "수신" 바로 아래 "발신" 줄(#docFrom)에 대신
+    // 채워 넣습니다 — "다이즈하이미디어 | DISEHIMEDIA" 형태.
+    DISE.components.renderDocFrom({ company: DISE_CURRENT_COMPANY });
     // 푸터는 국내 전화번호만 보여줍니다(해외용 전화는 이 버전에서는
     // 생략 — showPhoneIntl: false).
     DISE.components.renderDocFooter({ company: DISE_CURRENT_COMPANY, showPhoneIntl: false });
