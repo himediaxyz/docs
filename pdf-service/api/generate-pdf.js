@@ -68,19 +68,23 @@
 // ★ 2026-09-02 추가 수정: 실제 배포 후 확인된 에러 —
 // "require() of ES Module .../@sparticuz/chromium/build/index.js ...
 //  not supported. Instead change the require ... to a dynamic import()".
-// @sparticuz/chromium 최신 버전(패키지가 이번에 ESM 전용으로 바뀜)은
-// puppeteer-core(CommonJS)처럼 require()로 못 불러오고 동적 import()로만
+// 그다음 같은 방식으로 고쳐 재배포하니 이번엔 puppeteer-core에서도 똑같은
+// 에러가 남 — package.json에 지정된 두 패키지의 최신 버전이 이제 둘 다
+// ESM 전용으로 바뀌어서, require()로는 못 불러오고 동적 import()로만
 // 불러올 수 있습니다. import()는 함수처럼 쓰는 표현식이라 이 파일을
 // ESM으로 바꾸거나 확장자를 .mjs로 바꾸지 않아도 CommonJS 파일 안에서
 // 그대로 쓸 수 있습니다(Node 공식 안내 문구 그대로). ESM 모듈을 import()
 // 하면 default export가 있는 경우 결과 객체의 .default에 실제 값이
-// 담기므로 그 경우까지 같이 처리합니다.
+// 담기므로 그 경우까지 같이 처리합니다(두 패키지 다 동일하게 처리).
 var chromium, puppeteer;
 async function loadPdfEngine() {
-  if (!puppeteer) puppeteer = require('puppeteer-core');
+  if (!puppeteer) {
+    var puppeteerMod = await import('puppeteer-core');
+    puppeteer = puppeteerMod && puppeteerMod.default ? puppeteerMod.default : puppeteerMod;
+  }
   if (!chromium) {
-    var mod = await import('@sparticuz/chromium');
-    chromium = mod && mod.default ? mod.default : mod;
+    var chromiumMod = await import('@sparticuz/chromium');
+    chromium = chromiumMod && chromiumMod.default ? chromiumMod.default : chromiumMod;
   }
   return { chromium: chromium, puppeteer: puppeteer };
 }
