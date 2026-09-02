@@ -140,6 +140,22 @@ function sanitizeFileName(name) {
   return cleaned || fallback;
 }
 
+// ★ 2026-09-02 수정: 실제 문서(한글 문서번호·제목)로 테스트하다 발견된
+// 버그 — "Invalid character in header content [Content-Disposition]".
+// HTTP 헤더 값은 Latin-1(ISO-8859-1) 범위 문자만 허용되는데,
+// `Content-Disposition: ...filename="다이즈-2026-001.pdf"`처럼 한글을
+// 그대로 넣으면 Node가 즉시 예외를 던지며 요청 전체가 실패합니다(간단한
+// 영문 파일명("test")으로만 테스트했을 땐 이 경로를 안 타서 못 잡았던
+// 버그입니다). RFC 5987/6266의 filename*=UTF-8''(퍼센트 인코딩) 확장
+// 문법으로 실제(한글) 파일명을 넣고, 구형 브라우저를 위한 대체용
+// 순수 ASCII filename=도 같이 둡니다(최신 브라우저는 filename*=을
+// 우선 사용하므로 한글이 정상적으로 파일명에 반영됩니다).
+function contentDispositionHeader(fileName) {
+  var asciiFallback = fileName.replace(/[^\x20-\x7E]/g, '_').trim() || 'document';
+  var encoded = encodeURIComponent(fileName);
+  return 'attachment; filename="' + asciiFallback + '.pdf"; filename*=UTF-8\'\'' + encoded + '.pdf';
+}
+
 module.exports = async function handler(req, res) {
   setCorsHeaders(req, res);
 
@@ -248,20 +264,18 @@ module.exports = async function handler(req, res) {
     browser = null;
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="' + fileName + '.pdf"');
+    res.setHeader('Content-Disposition', contentDispositionHeader(fileName));
     res.status(200).send(pdfBuffer);
   } catch (err) {
     console.error('[generate-pdf] PDF 생성 실패:', err);
     if (browser) {
       try { await browser.close(); } catch (closeErr) { /* 이미 죽은 브라우저 — 무시 */ }
     }
-    // ★ 2026-09-02: 배포 환경(Vercel)에서 크로미움 실행 자체가 실패하는
-    // 원인을 대시보드 로그 없이 바로 확인할 수 있도록, 실제 에러 메시지를
-    // 잠시 응답에 그대로 노출합니다. 이 API는 다이즈하이미디어 내부
-    // 문서 사이트에서만 쓰는 도구라 위험이 크지 않지만, 원인이 확인되고
-    // 나면 아래 메시지를 다시 고정 문구로 되돌리는 것을 권장합니다.
-    res.status(500).json({
-      error: 'PDF 생성 중 서버 오류가 발생했습니다: ' + (err && err.message ? err.message : String(err))
-    });
+    // ★ 2026-09-02: 배포 디버깅 중에는 실제 에러 메시지를 응답에 그대로
+    // 노출해서 원인(ESM 전용 패키지 require 문제)을 바로 찾아 고쳤습니다.
+    // 원인 확인이 끝났으니 이제는 서버 내부 경로(/var/task/... 등)가
+    // 외부에 노출되지 않도록 다시 고정 문구로 되돌립니다 — 실제 원인은
+    // 항상 console.error로 Vercel 로그에 남으니 필요하면 거기서 확인.
+    res.status(500).json({ error: 'PDF 생성 중 서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' });
   }
 };
