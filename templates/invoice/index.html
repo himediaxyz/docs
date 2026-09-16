@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>송장(인보이스) | 다이즈하이미디어 그룹 공식 문서 시스템</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Asta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- 공용 스타일 — 다른 문서 템플릿과 동일한 순서. theme-mono.css를
+     기본으로 씁니다(2026-09-16 결정: 인보이스도 사이트의 최신 방향인
+     무채색+로고 디자인으로 통일). -->
+<link rel="stylesheet" href="../../shared/styles/variables.css">
+<link rel="stylesheet" href="../../shared/styles/document.css">
+<link rel="stylesheet" href="../../shared/styles/theme-mono.css">
+<link rel="stylesheet" href="../../shared/styles/editable.css">
+<link rel="stylesheet" href="../../shared/styles/toolbar.css">
+<link rel="stylesheet" href="../../shared/styles/site.css">
+<link rel="stylesheet" href="../../shared/styles/print.css">
+
+<!-- ============================================================
+     이 템플릿만의 스타일. 다른 레터헤드 템플릿과 달리 본문이 사람이
+     타이핑하는 게 아니라 구글 시트(마스터 데이터)에서 그대로 읽어와
+     채워지는 "데이터 문서"라서, 선택 바 / 수신·발신 2단 정보 블록 /
+     품목 표 / 합계 블록에 필요한 스타일을 여기서 새로 정의합니다.
+     표 자체는 shared/styles/document.css의 .doc-table을 그대로
+     재사용합니다(서식 도구모음으로 사용자가 넣는 표와 같은 모양). ============================================================ -->
+<style>
+  /* 화면에서만 보이는 "회사/송장번호 선택" 바 — 인쇄 안 됨 */
+  .inv-select-bar{
+    max-width:900px;margin:0 auto 14px;padding:0 20px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .inv-select-bar label{
+    font-family:var(--font-kr);font-size:13px;color:var(--sub);
+    display:flex;align-items:center;gap:8px;
+  }
+  .inv-select-bar select{
+    font-family:var(--font-kr);font-size:13.5px;
+    padding:7px 10px;border:1px solid #d3d9e6;border-radius:6px;
+    background:#fff;color:var(--ink);min-width:220px;
+  }
+  .inv-status{
+    font-family:var(--font-kr);font-size:12.5px;color:#999;
+  }
+  .inv-status.is-error{color:#c0392b;}
+
+  /* 문서 상단 우측 "INVOICE" 타이틀 + 송장번호/발행일 */
+  .inv-title-row{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:20px 50px 0;
+  }
+  .inv-title{
+    font-family:var(--font-en);font-weight:700;font-size:26px;
+    letter-spacing:1px;color:var(--ink);
+  }
+  .inv-title-meta{
+    text-align:right;font-family:var(--font-en);font-size:12px;color:var(--sub);
+    line-height:1.8;
+  }
+  .inv-title-meta b{font-family:var(--font-kr);font-weight:600;color:var(--ink);}
+
+  /* 수신(거래처) / 공급자(발신) 2단 블록 */
+  .inv-parties{
+    display:flex;gap:32px;padding:18px 50px 0;
+    border-top:1px solid #e5e5e5;margin-top:16px;
+  }
+  .inv-party{flex:1 1 0;min-width:0;}
+  .inv-party h3{
+    font-family:var(--font-kr);font-size:12.5px;font-weight:700;color:var(--sub);
+    margin:0 0 8px;letter-spacing:0.3px;
+  }
+  .inv-party .p-name{
+    font-family:var(--font-kr);font-weight:700;font-size:15px;color:var(--ink);margin-bottom:3px;
+  }
+  .inv-party .p-line{
+    font-family:var(--font-kr);font-size:12.5px;color:#444;line-height:1.65;
+  }
+
+  /* 품목 표 영역(.doc-table 재사용) + 합계 블록 */
+  .inv-items-wrap{padding:22px 50px 0;}
+  .inv-items-wrap table.doc-table{width:100%;margin:0;}
+  .inv-items-wrap table.doc-table th{font-size:12.5px;}
+  .inv-items-wrap table.doc-table td{font-size:12.5px;}
+  .inv-items-wrap td.num,.inv-items-wrap th.num{text-align:right;}
+  .inv-empty-row td{color:#aaa;text-align:center;padding:18px;}
+
+  .inv-totals{
+    display:flex;justify-content:flex-end;padding:14px 50px 0;
+  }
+  .inv-totals table{border-collapse:collapse;min-width:260px;}
+  .inv-totals td{
+    font-family:var(--font-kr);font-size:13px;color:#444;
+    padding:4px 0;text-align:right;
+  }
+  .inv-totals td.label{color:var(--sub);padding-right:18px;}
+  .inv-totals tr.total td{
+    font-weight:700;font-size:15px;color:var(--ink);
+    border-top:1.5px solid #333;padding-top:8px;
+  }
+
+  .inv-bank-note{
+    display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;
+    padding:20px 50px 24px;
+  }
+  .inv-bank-note h4{
+    font-family:var(--font-kr);font-size:12px;font-weight:700;color:var(--sub);margin:0 0 4px;
+  }
+  .inv-bank-note p{
+    font-family:var(--font-kr);font-size:12.5px;color:#444;margin:0;line-height:1.6;
+  }
+</style>
+</head>
+<body class="theme-mono">
+
+  <div id="siteHeader" class="no-print"></div>
+  <div id="editorUI" class="no-print"></div>
+
+  <!-- 회사/송장번호 선택 — 이 문서만의 화면 전용 바(인쇄 안 됨). 스프레드시트
+       쪽 "송장출력_{회사}" 탭의 상단 선택 셀과 같은 역할입니다. -->
+  <div class="inv-select-bar no-print">
+    <label>송장번호 선택
+      <select id="invoiceSelect"><option value="">불러오는 중…</option></select>
+    </label>
+    <span class="inv-status" id="invStatus"></span>
+  </div>
+
+  <div class="sheet-wrap">
+    <div class="pages" id="pages">
+      <div class="page" data-page-index="0">
+
+        <div class="page-header" id="docHeader"></div>
+
+        <div class="page-body">
+          <div class="page-body-fixed">
+            <div class="inv-title-row">
+              <div class="inv-title">INVOICE</div>
+              <div class="inv-title-meta">
+                <div>송장번호 <b id="invNo">&nbsp;</b></div>
+                <div>발행일 <b id="invDate">&nbsp;</b></div>
+                <div>결제기한 <b id="invDue">&nbsp;</b></div>
+              </div>
+            </div>
+
+            <div class="inv-parties">
+              <div class="inv-party">
+                <h3>수신</h3>
+                <div class="p-name" id="custName">&nbsp;</div>
+                <div class="p-line" id="custBiz"></div>
+                <div class="p-line" id="custAddr"></div>
+                <div class="p-line" id="custContact"></div>
+              </div>
+              <div class="inv-party">
+                <h3>공급자 (발신)</h3>
+                <div class="p-name" id="supName">&nbsp;</div>
+                <div class="p-line" id="supBiz"></div>
+                <div class="p-line" id="supAddr"></div>
+                <div class="p-line" id="supContact"></div>
+                <div class="p-line" id="supSender"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-items">
+            <div class="inv-items-wrap">
+              <table class="doc-table" id="invItemsTable">
+                <thead>
+                  <tr>
+                    <th>품목명</th><th>규격/단위</th>
+                    <th class="num">수량</th><th class="num">단가</th><th class="num">공급가액</th>
+                  </tr>
+                </thead>
+                <tbody id="invItemsBody">
+                  <tr class="inv-empty-row"><td colspan="5">송장을 선택하면 품목이 표시됩니다</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="inv-totals">
+              <table>
+                <tr><td class="label">공급가액 소계</td><td id="invSubtotal">0원</td></tr>
+                <tr><td class="label">세액</td><td id="invTax">0원</td></tr>
+                <tr class="total"><td class="label">합계금액</td><td id="invTotal">0원</td></tr>
+              </table>
+            </div>
+
+            <div class="inv-bank-note">
+              <div>
+                <h4>입금계좌</h4>
+                <p id="invBank">&nbsp;</p>
+              </div>
+              <div>
+                <h4>비고</h4>
+                <p id="invNote">&nbsp;</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="page-footer" id="docFooter"></div>
+      </div>
+    </div>
+    <div id="siteFooter" class="no-print"></div>
+  </div>
+
+  <script src="../../shared/scripts/company-info.js"></script>
+  <script src="../../shared/scripts/sender-info.js"></script>
+  <script src="../../shared/scripts/recipient-info.js"></script>
+  <script src="../../shared/scripts/template-registry.js"></script>
+  <script src="../../shared/scripts/components.js"></script>
+  <script>
+    window.DISE_CURRENT_TEMPLATE = 'invoice';
+    // URL의 ?company= 로 어느 계열사 송장인지 결정합니다(포털 타일이
+    // 계열사별로 이 값을 다르게 넘겨줍니다 — index.html TEMPLATES_BY_COMPANY
+    // 참고). 값이 없거나 잘못되면 disehimedia로 대체합니다.
+    var DISE_INVOICE_COMPANY = (function () {
+      var m = /[?&]company=([^&]+)/.exec(location.search);
+      var key = m ? decodeURIComponent(m[1]) : 'disehimedia';
+      return DISE.companies[key] ? key : 'disehimedia';
+    })();
+    window.DISE_CURRENT_COMPANY = DISE_INVOICE_COMPANY;
+
+    // ★ 마스터 데이터(구글 시트) API 주소 — 다이즈하이미디어_그룹_마스터데이터.xlsx에
+    // 붙인 Apps Script를 웹 앱으로 배포해서 나온 URL입니다(2026-09-16 배포 완료).
+    // pdf-export.js의 DISE_PDF_API_URL과 같은 방식의 설정값입니다.
+    window.DISE_INVOICE_API_URL = 'https://script.google.com/macros/s/AKfycbzuiZVaHkk18v0KSUHr61YBdyKTNJCbEJ3s3f3q2pX4sovX1g7h7BrYj6oDcNZScv4j/exec';
+
+    window.DISE_PDF_API_URL = 'https://docs-plum-ten-91.vercel.app/api/generate-pdf';
+
+    DISE.components.renderSiteHeader({ portalHref: '../../index.html' });
+    DISE.components.renderEditorUI({ templateKey: DISE_CURRENT_TEMPLATE, company: DISE_CURRENT_COMPANY });
+    DISE.components.renderViewModeToggle();
+    DISE.components.renderSiteFooter({ text: '다이즈하이미디어 그룹 공식 문서 시스템 · 송장(인보이스)' });
+    // 로고만 표시(theme-mono가 무채색으로 자동 처리) — 회사명 텍스트는
+    // 수신/발신 블록에 이미 나오므로 헤더에는 로고만 남깁니다.
+    DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, showCompanyName: false });
+    // 문서 푸터(주소·연락처)는 여기서 렌더링하지 않습니다 — company-info.js가
+    // 아직 모든 계열사의 주소를 갖고 있지 않고(r2v/bic/axis-one 비어있음),
+    // 무엇보다 "마스터 데이터는 구글 시트 한 곳"이라는 이번 결정에 따라
+    // 아래 invoice-loader.js가 API로 받아온 실제 회사정보로 직접 채웁니다.
+  </script>
+  <script src="../../shared/scripts/editor.js"></script>
+  <script src="../../shared/scripts/pagination.js"></script>
+  <script src="../../shared/scripts/pdf-export.js"></script>
+  <!-- 이 템플릿 전용 스크립트 — 구글 시트(Apps Script API)에서 송장
+       데이터를 읽어와 위 자리들을 채웁니다. 다른 템플릿들은 쓰지
+       않으므로 shared/scripts/components.js 등 공용 파일에는 넣지
+       않고 별도 파일로 분리했습니다. -->
+  <script src="../../shared/scripts/invoice-loader.js"></script>
+</body>
+</html>

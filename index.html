@@ -303,6 +303,7 @@
     var TEMPLATE_CATEGORIES = [
       { key: 'all', label: '전체' },
       { key: 'official', label: '공식서신' },
+      { key: 'invoice', label: '송장' },
       { key: 'quote', label: '견적서' },
       { key: 'contract', label: '계약서' },
       { key: 'businesscard', label: '명함 서식' },
@@ -335,6 +336,39 @@
           desc: '헤더·푸터의 색을 빼고 다이즈블랙 로고만 남긴 고급스러운 국문 레터헤드 디자인입니다.',
           href: 'templates/gongmun-premium/',
           category: 'official'
+        },
+        {
+          // 2026-09-16 추가 — 구글 시트(마스터 데이터)에서 그대로 읽어와
+          // 채워지는 송장. 4개사 공용 템플릿(templates/invoice/)을
+          // ?company= 로 구분해서 씁니다.
+          title: '송장 (인보이스)',
+          desc: '구글 시트에 입력한 송장 데이터를 그대로 불러와 인쇄용 레이아웃으로 보여줍니다. 시트를 고치면 다음에 열 때 바로 반영됩니다.',
+          href: 'templates/invoice/index.html?company=disehimedia',
+          category: 'invoice'
+        }
+      ],
+      r2v: [
+        {
+          title: '송장 (인보이스)',
+          desc: '구글 시트에 입력한 송장 데이터를 그대로 불러와 인쇄용 레이아웃으로 보여줍니다. 시트를 고치면 다음에 열 때 바로 반영됩니다.',
+          href: 'templates/invoice/index.html?company=r2v',
+          category: 'invoice'
+        }
+      ],
+      bic: [
+        {
+          title: '송장 (인보이스)',
+          desc: '구글 시트에 입력한 송장 데이터를 그대로 불러와 인쇄용 레이아웃으로 보여줍니다. 시트를 고치면 다음에 열 때 바로 반영됩니다.',
+          href: 'templates/invoice/index.html?company=bic',
+          category: 'invoice'
+        }
+      ],
+      'axis-one': [
+        {
+          title: '송장 (인보이스)',
+          desc: '구글 시트에 입력한 송장 데이터를 그대로 불러와 인쇄용 레이아웃으로 보여줍니다. 시트를 고치면 다음에 열 때 바로 반영됩니다.',
+          href: 'templates/invoice/index.html?company=axis-one',
+          category: 'invoice'
         }
       ]
     };

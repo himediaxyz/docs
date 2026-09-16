@@ -45,6 +45,16 @@ DISE.templates = [
     key: 'gongmun-premium',
     nameKr: '레터헤드 (국문)',
     path: 'templates/gongmun-premium/'
+  },
+  {
+    // 2026-09-16 추가 — 구글 시트(다이즈하이미디어_그룹_송장관리시스템)를
+    // 마스터 데이터로 삼아 Apps Script API로 읽어와 채우는 송장(인보이스)
+    // 문서. 4개사 공용 템플릿이며 ?company= 파라미터로 계열사를 구분합니다
+    // (index.html의 TEMPLATES_BY_COMPANY 참고). 자세한 구조는
+    // shared/scripts/invoice-loader.js 상단 주석 참고.
+    key: 'invoice',
+    nameKr: '송장 (인보이스)',
+    path: 'templates/invoice/'
   }
   // 새 템플릿(보고서, 기안문 등)이 생기면 여기에 { key, nameKr, path }
   // 형식으로 추가하면 됩니다.
