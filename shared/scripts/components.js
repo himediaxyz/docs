@@ -485,6 +485,8 @@ DISE.components = {
     if (!target) return;
 
     var c = DISE.companies[companyKey];
+    // 계열사별 색(표 테두리·머리행 등, document.css의 body[data-company])
+    if (c && document.body) document.body.setAttribute('data-company', companyKey);
     if (!c) {
       console.error('DISE.components.renderDocHeader: "' + companyKey + '" 계열사 정보가 company-info.js에 없습니다.');
       return;
