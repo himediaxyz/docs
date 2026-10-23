@@ -32,13 +32,13 @@ DISE.contractRenderer = (function () {
     var c = DISE.companies[company] || {};
     return function (s) {
       // 빈칸 "[   ]"의 연속 공백이 HTML에서 하나로 줄어들지 않도록 &nbsp;로
-      return esc(s).replace(/\{R2V\}/g, esc(c.nameKr || ''))
+      return esc(s).replace(/\{(CO|R2V)\}/g, esc(c.nameKr || ''))
         .replace(/ {2,}/g, function (m) { return new Array(m.length + 1).join('&nbsp;'); });
     };
   }
 
   function partyDisplay(p) {
-    if (p.r2v) return '{R2V}';
+    if (p.self || p.r2v) return '{CO}';
     return '[' + String(p.label).replace(/\(.*?\)/g, '').trim() + ' 상호]';
   }
 
@@ -85,15 +85,19 @@ DISE.contractRenderer = (function () {
   }
 
   /* ---------- 서명란 ---------- */
-  function signCol(p, roleName, title, company, T) {
+  function signCol(p, roleName, title, company, T, rowsOverride) {
     var c = DISE.companies[company] || {};
-    var r2v = p && p.r2v;
+    var r2v = p && (p.self || p.r2v); // 이 문서를 쓰는 회사 자신
     var rows = [
       ['상호', r2v ? T(c.nameKr) : T('[          ]')],
       ['주소', r2v && c.addressKr ? T(c.addressKr) : T('[                    ]')],
       ['사업자등록번호', r2v && c.bizNo ? T(c.bizNo) : T('[     -    -          ]')],
       ['대표자', (r2v && c.ceo ? T(c.ceo) : T('[          ]')) + ' <span class="ct-seal">(인)</span>']
     ];
+    // signRows로 칸 구성을 바꿀 수 있음(예: 근로계약서의 근로자 — 성명·생년월일 등)
+    if (rowsOverride) rows = rowsOverride.map(function (r) {
+      return [r[0], /</.test(r[1]) ? r[1] : T(r[1])];
+    });
     var head = title || (roleName + (p ? ' (' + T(p.label) + ')' : ''));
     return '<div class="ct-sign-col">' +
       (head ? '<p class="ct-sign-h">' + head + '</p>' : '') +
@@ -106,10 +110,11 @@ DISE.contractRenderer = (function () {
     var parties = item.parties || [];
     var titles = item.signTitle || [];
     var html = '<div class="ct-signoff"><p class="ct-date">20&nbsp;&nbsp;&nbsp;&nbsp;년&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;월&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;일</p><div class="ct-sign">';
-    if (item.signOnly === 'r2v') {
+    if (item.signOnly === 'self' || item.signOnly === 'r2v') {
       html += '<div class="ct-sign-col ct-sign-spacer"></div>' + signCol({ r2v: true, label: '' }, '', titles[1] || '', company, T);
     } else {
-      html += signCol(parties[0], '갑', titles[0], company, T) + signCol(parties[1], '을', titles[1], company, T);
+      var sr = item.signRows || {};
+      html += signCol(parties[0], '갑', titles[0], company, T, sr[0]) + signCol(parties[1], '을', titles[1], company, T, sr[1]);
     }
     return html + '</div></div>';
   }

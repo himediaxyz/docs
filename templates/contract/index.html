@@ -57,8 +57,8 @@
   .ct-annex{padding-top:18px;}
 
   /* 날짜·서명란 — 하나의 블록이라 페이지 중간에 갈라지지 않음 */
-  .ct-signoff{margin-top:18px;}
-  .cell-guide .ct-date{text-align:center;font-size:13.5px;margin:0 0 18px;}
+  .ct-signoff{margin-top:10px;}
+  .cell-guide .ct-date{text-align:center;font-size:13.5px;margin:0 0 12px;}
   .ct-sign{display:flex;gap:26px;}
   .ct-sign-col{flex:1 1 0;min-width:0;}
   .cell-guide .ct-sign-h{font-size:13px;font-weight:700;margin:0 0 6px;}
@@ -104,7 +104,9 @@
   <script src="../../shared/scripts/template-registry.js"></script>
   <script src="../../shared/scripts/components.js"></script>
   <!-- 계약서 원문 데이터 — 회사가 늘면 contracts/{회사}.js를 추가하고 여기에 한 줄 -->
+  <script src="../../shared/scripts/contracts/common.js"></script>
   <script src="../../shared/scripts/contracts/r2v.js"></script>
+  <script src="../../shared/scripts/contracts/bic.js"></script>
   <script src="../../shared/scripts/contract-renderer.js"></script>
   <script>
     window.DISE_CURRENT_TEMPLATE = 'contract';
