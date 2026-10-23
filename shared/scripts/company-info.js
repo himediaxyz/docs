@@ -74,6 +74,9 @@ DISE.companies = {
     logoRatio: 180 / 100,
     badgeColor: '#212B43',              // 다이즈블루
     addressKr: '인천광역시 부평구 백범로577번길 20, 724, 725, 751호 (경인센타, 공장동)',
+    // 좁은 칸(견적서 공급자 표, 계약서 서명란)에서 줄을 나눌 위치 — 문서 하단
+    // 푸터처럼 넓은 곳은 위 addressKr 한 줄 그대로 씁니다(2026-10-23).
+    addressKrLines: ['인천광역시 부평구 백범로577번길 20,', '724, 725, 751호 (경인센타, 공장동)'],
     // 영문 문서(예: templates/gongmun "레터헤드 (영문)")의 푸터에서만
     // 씁니다 — shared/scripts/components.js의 renderDocFooter({lang:'en'})
     // 참고. 없으면 자동으로 addressKr로 대체됩니다.

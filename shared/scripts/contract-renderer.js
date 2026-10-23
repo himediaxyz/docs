@@ -90,7 +90,8 @@ DISE.contractRenderer = (function () {
     var r2v = p && (p.self || p.r2v); // 이 문서를 쓰는 회사 자신
     var rows = [
       ['상호', r2v ? T(c.nameKr) : T('[          ]')],
-      ['주소', r2v && c.addressKr ? T(c.addressKr) : T('[                    ]')],
+      ['주소', r2v && (c.addressKrLines || c.addressKr) ?
+        (c.addressKrLines ? c.addressKrLines.map(T).join('<br>') : T(c.addressKr)) : T('[                    ]')],
       ['사업자등록번호', r2v && c.bizNo ? T(c.bizNo) : T('[     -    -          ]')],
       ['대표자', (r2v && c.ceo ? T(c.ceo) : T('[          ]')) + ' <span class="ct-seal">(인)</span>']
     ];

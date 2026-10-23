@@ -137,13 +137,16 @@ DISE.quote = (function () {
       ['등록번호', c.bizNo || ''],
       ['상호', c.nameKr || ''],
       ['대표자', c.ceo || '', true],
-      ['주소', c.addressKr || ''],
+      ['주소', c.addressKrLines || c.addressKr || ''],   // 배열이면 줄바꿈
       ['업태 / 종목', (c.bizType || '') + (c.bizItem ? ' / ' + c.bizItem : '')],
       ['전화', c.phoneDomestic || ''],
       ['이메일', c.email || '']
     ];
     set('qSupplier', '<tbody>' + sup.map(function (r) {
-      return '<tr><th>' + r[0] + '</th><td>' + ed('', r[1], '[  ]') + (r[2] ? ' <span class="q-seal">(인)</span>' : '') + '</td></tr>';
+      var cell = Array.isArray(r[1]) ?
+        ed('', '', '[  ]').replace('></span>', '>' + r[1].map(nb).join('<br>') + '</span>') :
+        ed('', r[1], '[  ]');
+      return '<tr><th>' + r[0] + '</th><td>' + cell + (r[2] ? ' <span class="q-seal">(인)</span>' : '') + '</td></tr>';
     }).join('') + '</tbody>');
 
     set('qIntro', nb(P.intro));
