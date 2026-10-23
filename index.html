@@ -416,6 +416,16 @@
       ]
     };
 
+    // 표준 견적서(2026-10-23) — 4개사 공용 템플릿을 ?company= 로 구분
+    Object.keys(DISE.companies).forEach(function (co) {
+      (TEMPLATES_BY_COMPANY[co] = TEMPLATES_BY_COMPANY[co] || []).push({
+        title: '견적서',
+        desc: '회사 레터헤드 디자인의 표준 견적서. 품목을 입력하면 공급가액·부가세·합계(한글 금액)가 자동 계산됩니다.',
+        href: 'templates/quote/index.html?company=' + co,
+        category: 'quote'
+      });
+    });
+
     // 계약서·부속 서식은 shared/scripts/contracts/{회사}.js 데이터에서 자동으로
     // 목록을 만듭니다(계약서 종류를 늘리면 이 포털에도 자동 반영).
     Object.keys(DISE.contracts || {}).forEach(function (co) {

@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>견적서 | 다이즈하이미디어 그룹 공식 문서 시스템</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Asta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- 계열사 표준 견적서(2026-10-23). 각 회사 레터헤드 디자인
+     (letterhead-companies.css)과 표 색(document.css body[data-company])을
+     그대로 따릅니다. 동작은 shared/scripts/quote-editor.js 참고. -->
+<link rel="stylesheet" href="../../shared/styles/variables.css">
+<link rel="stylesheet" href="../../shared/styles/document.css">
+<link rel="stylesheet" href="../../shared/styles/theme-mono.css">
+<link rel="stylesheet" href="../../shared/styles/letterhead-companies.css">
+<link rel="stylesheet" href="../../shared/styles/editable.css">
+<link rel="stylesheet" href="../../shared/styles/toolbar.css">
+<link rel="stylesheet" href="../../shared/styles/site.css">
+<link rel="stylesheet" href="../../shared/styles/print.css">
+
+<style>
+  /* ---- 화면 전용 바 ---- */
+  .q-bar{max-width:900px;margin:0 auto 6px;padding:0 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+    font-family:var(--font-kr);font-size:13px;color:var(--sub);}
+  .q-bar label{display:flex;align-items:center;gap:6px;cursor:pointer;}
+  .q-note{max-width:900px;margin:0 auto 12px;padding:0 20px;font-family:var(--font-kr);font-size:12px;color:#999;}
+
+  /* ---- 머리 ---- */
+  .cell-title{padding-top:10px;padding-bottom:12px;}
+  .q-title{font-family:var(--font-kr);font-weight:800;font-size:26px;letter-spacing:0.6em;text-align:center;
+    margin:0;color:#161616;display:block;}
+  .q-head{display:flex;gap:24px;align-items:stretch;padding-bottom:10px;}
+  .q-head-left{flex:1 1 0;min-width:0;font-family:var(--font-kr);font-size:12.5px;color:#444;line-height:1.7;}
+  .q-head-left .q-meta b{display:inline-block;min-width:58px;color:#666;font-weight:500;}
+  .q-head-left .q-to{font-size:16px;font-weight:700;color:#161616;margin:10px 0 2px;}
+  .q-head-right{flex:0 0 52%;}
+  .q-sup-cap{font-family:var(--font-kr);font-size:12px;font-weight:700;color:#666;margin:0 0 4px;}
+  .q-sup{width:100%;margin:0;font-size:12px;}
+  .q-sup th,.q-sup td{min-width:0;padding:4px 8px;font-size:12px;vertical-align:middle;}
+  .q-sup th{width:28%;white-space:nowrap;}
+  .q-seal{float:right;color:#aaa;}
+
+  /* ---- 본문 ---- */
+  .q-grand{margin:0 0 10px;}
+  .cell-guide .q-intro{font-size:13px;margin:0 0 8px;}
+  .q-grand-box{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:10px 14px;
+    border:1.5px solid var(--co-tbl-border,#b9c2d6);background:var(--co-tbl-head,#f3f5fa);font-family:var(--font-kr);}
+  .q-grand-box .lb{font-size:13px;font-weight:700;color:#444;}
+  .q-grand-box .w{font-size:17px;font-weight:800;color:#161616;letter-spacing:0.02em;}
+  .q-grand-box .n{font-family:var(--font-en);font-size:13px;color:#555;}
+
+  .q-items{width:100%;margin:0;}
+  .q-items th,.q-items td{min-width:0;font-size:12px;padding:6px 7px;vertical-align:middle;}
+  .q-items th{text-align:center;white-space:nowrap;}
+  .q-items td.num{text-align:right;}
+  .q-items td.c,.q-items td.q-no{text-align:center;}
+  .q-items .col-no{width:34px;} .q-items .col-qty{width:52px;} .q-items .col-unit{width:50px;}
+  .q-items .col-price{width:92px;} .q-items .col-amt{width:100px;} .q-items .col-note{width:80px;}
+  .q-items td .q-ed{display:block;min-width:16px;}
+  .q-items td.q-name-cell{position:relative;}
+  html.q-has-items .q-items td.q-name-cell{padding-right:26px;}
+  .q-pick-btn{display:none;position:absolute;right:3px;top:50%;transform:translateY(-50%);width:20px;height:20px;padding:0;border:0;
+    border-radius:4px;background:transparent;color:#999;font-size:11px;cursor:pointer;}
+  html.q-has-items .q-pick-btn{display:block;}
+  .q-items td.q-del,.q-items th.q-del{width:26px;padding:2px;border-color:transparent;background:transparent;text-align:center;}
+  .q-del-btn{width:20px;height:20px;border:0;border-radius:50%;background:transparent;color:#bbb;font-size:15px;line-height:20px;cursor:pointer;padding:0;}
+  .q-del-btn:hover{background:#fdecea;color:#c0392b;}
+  .q-add{display:block;width:100%;margin-top:4px;padding:4px 0;border:1px dashed #c4ccdc;border-radius:6px;background:#fafbfd;
+    font-family:var(--font-kr);font-size:12.5px;color:var(--sub);cursor:pointer;}
+  .q-add:hover{border-color:var(--navy);color:var(--ink);}
+
+  .q-totals{display:flex;justify-content:flex-end;margin:8px 0 10px;}
+  .q-totals table{border-collapse:collapse;min-width:250px;font-family:var(--font-kr);}
+  .q-totals td{font-size:12.5px;color:#444;padding:3px 0;text-align:right;}
+  .q-totals td.lb{color:#777;padding-right:18px;}
+  .q-totals tr.t td{font-weight:700;font-size:14px;color:#161616;border-top:1.5px solid #333;padding-top:7px;}
+
+  .cell-guide .q-h{font-size:13px;font-weight:700;margin:0 0 6px;color:#161616;}
+  .q-cond{width:100%;margin:0 0 12px;}
+  .q-cond th,.q-cond td{min-width:0;font-size:12px;padding:5px 8px;}
+  .q-cond th{width:22%;white-space:nowrap;}
+  .cell-guide .q-contact{font-size:12.5px;color:#444;margin:4px 0 0;text-align:right;}
+
+  /* 빈칸 안내(화면만) */
+  .q-ed:empty::before{content:attr(data-ph);color:#bbb;}
+  @media print{
+    .q-ed:empty::before{content:none;}
+    .q-items tr.is-blank{display:none;}
+    .q-ed{outline:none !important;background:none !important;transition:none !important;}
+  }
+  .q-picker{position:absolute;z-index:1000;max-height:280px;overflow-y:auto;background:#fff;border:1px solid #d3d9e6;border-radius:8px;
+    box-shadow:0 8px 24px rgba(20,30,60,.14);padding:4px;font-family:var(--font-kr);}
+  .q-picker-opt{padding:7px 10px;border-radius:6px;cursor:pointer;}
+  .q-picker-opt .nm{font-size:13px;color:var(--ink);} .q-picker-opt .mt{font-size:11.5px;color:#888;}
+  .q-picker-opt:hover,.q-picker-opt.is-active{background:#eef1f7;}
+</style>
+</head>
+<body class="theme-mono">
+
+  <div id="siteHeader" class="no-print"></div>
+  <div id="editorUI" class="no-print"></div>
+
+  <div class="q-bar no-print">
+    <label><input type="checkbox" id="qTaxable" checked> 부가세 10% 포함 합계</label>
+  </div>
+  <div class="q-note no-print">점선 칸을 눌러 입력하세요. 공급가액·부가세·합계(한글 금액 포함)는 자동 계산됩니다. (수정 내용은 인쇄/PDF에만 반영되며 시트에 저장되지 않습니다)</div>
+
+  <div class="sheet-wrap">
+    <div class="pages" id="pages">
+      <div class="page" data-page-index="0">
+        <div class="page-header" id="docHeader"></div>
+        <div class="page-body">
+          <div class="page-body-fixed">
+            <div class="cell-title">
+              <p class="q-title editable" id="docTitle" contenteditable="true" spellcheck="false">견적서</p>
+            </div>
+            <div class="cell-to">
+              <div class="q-head">
+                <div class="q-head-left">
+                  <div class="q-meta"><b>견적번호</b> <span id="qNo"></span></div>
+                  <div class="q-meta"><b>견적일</b> <span id="qDate"></span></div>
+                  <div class="q-meta"><b>유효기간</b> <span id="qValid"></span></div>
+                  <div class="q-to" id="qTo"></div>
+                  <div id="qToRef"></div>
+                  <div id="qProject"></div>
+                </div>
+                <div class="q-head-right">
+                  <p class="q-sup-cap">공급자</p>
+                  <table class="doc-table q-sup" id="qSupplier"></table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cell-guide flow-items" id="docBody">
+            <div class="q-grand">
+              <p class="q-intro" id="qIntro"></p>
+              <div class="q-grand-box"><span class="lb">합계금액</span><span class="w" id="qGrandWords"></span><span class="n" id="qGrandNum"></span></div>
+            </div>
+            <div class="q-items-wrap">
+              <table class="doc-table q-items">
+                <colgroup><col class="col-no"><col><col><col class="col-qty"><col class="col-unit"><col class="col-price"><col class="col-amt"><col class="col-note"><col class="no-print"></colgroup>
+                <thead><tr><th>No</th><th>품명</th><th>규격</th><th>수량</th><th>단위</th><th>단가</th><th>공급가액</th><th>비고</th><th class="q-del no-print"></th></tr></thead>
+                <tbody id="qItemsBody"></tbody>
+              </table>
+              <button type="button" class="q-add no-print" id="qAddRow">+ 행 추가</button>
+            </div>
+            <div class="q-totals">
+              <table>
+                <tr><td class="lb">공급가액 합계</td><td id="qSubtotal">0원</td></tr>
+                <tr><td class="lb">부가세</td><td id="qTax">0원</td></tr>
+                <tr class="t"><td class="lb">합계금액</td><td id="qTotal">0원</td></tr>
+              </table>
+            </div>
+            <div class="q-cond-wrap">
+              <p class="q-h">견적 조건</p>
+              <table class="doc-table q-cond" id="qConditions"></table>
+              <p class="q-contact" id="qContact"></p>
+            </div>
+          </div>
+        </div>
+        <div class="page-footer" id="docFooter"></div>
+      </div>
+    </div>
+    <div id="siteFooter" class="no-print"></div>
+  </div>
+
+  <script src="../../shared/scripts/company-info.js"></script>
+  <script src="../../shared/scripts/sender-info.js"></script>
+  <script src="../../shared/scripts/recipient-info.js"></script>
+  <script src="../../shared/scripts/template-registry.js"></script>
+  <script src="../../shared/scripts/components.js"></script>
+  <script src="../../shared/scripts/quote-editor.js"></script>
+  <script>
+    window.DISE_CURRENT_TEMPLATE = 'quote';
+    window.DISE_CURRENT_COMPANY = (function () {
+      var m = /[?&]company=([^&]+)/.exec(location.search);
+      var key = m ? decodeURIComponent(m[1]) : 'disehimedia';
+      return DISE.companies[key] ? key : 'disehimedia';
+    })();
+    var DISE_LH_CO = DISE.companies[DISE_CURRENT_COMPANY];
+    // 품목마스터(Apps Script) — 송장과 같은 주소
+    window.DISE_INVOICE_API_URL = 'https://script.google.com/macros/s/AKfycbzuiZVaHkk18v0KSUHr61YBdyKTNJCbEJ3s3f3q2pX4sovX1g7h7BrYj6oDcNZScv4j/exec';
+    window.DISE_PDF_API_URL = 'https://docs-plum-ten-91.vercel.app/api/generate-pdf';
+
+    DISE.quote.init({ company: DISE_CURRENT_COMPANY });
+    DISE.components.prepareLetterhead({ company: DISE_CURRENT_COMPANY });
+
+    DISE.components.renderSiteHeader({ portalHref: '../../index.html' });
+    DISE.components.renderEditorUI({ templateKey: DISE_CURRENT_TEMPLATE, company: DISE_CURRENT_COMPANY });
+    DISE.components.renderViewModeToggle();
+    DISE.components.renderSiteFooter({ text: '다이즈하이미디어 그룹 공식 문서 시스템 · 견적서' });
+    DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, showCompanyName: !!DISE_LH_CO.lhShowName });
+    DISE.components.renderDocFooter({ company: DISE_CURRENT_COMPANY, showPhoneIntl: false });
+  </script>
+  <script src="../../shared/scripts/editor.js"></script>
+  <script src="../../shared/scripts/pagination.js"></script>
+  <script src="../../shared/scripts/pdf-export.js"></script>
+</body>
+</html>
