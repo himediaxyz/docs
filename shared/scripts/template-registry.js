@@ -55,6 +55,13 @@ DISE.templates = [
     key: 'invoice',
     nameKr: '송장 (인보이스)',
     path: 'templates/invoice/'
+  },
+  {
+    // 2026-10-23 — 계약서(?company=&type=). 본문은 shared/scripts/contracts/
+    // {회사}.js 데이터로 그립니다. 현재 R2V만 계약서 데이터가 있습니다.
+    key: 'contract',
+    nameKr: '계약서',
+    path: 'templates/contract/'
   }
   // 새 템플릿(보고서, 기안문 등)이 생기면 여기에 { key, nameKr, path }
   // 형식으로 추가하면 됩니다.

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>계약서 | 다이즈하이미디어 그룹 공식 문서 시스템</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Asta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- 공용 스타일 — 레터헤드와 같은 구성(계열사 레터헤드 디자인 포함).
+     계약서 본문은 shared/scripts/contracts/{회사}.js 데이터로
+     shared/scripts/contract-renderer.js가 그립니다(2026-10-23). -->
+<link rel="stylesheet" href="../../shared/styles/variables.css">
+<link rel="stylesheet" href="../../shared/styles/document.css">
+<link rel="stylesheet" href="../../shared/styles/theme-mono.css">
+<link rel="stylesheet" href="../../shared/styles/letterhead-companies.css">
+<link rel="stylesheet" href="../../shared/styles/editable.css">
+<link rel="stylesheet" href="../../shared/styles/toolbar.css">
+<link rel="stylesheet" href="../../shared/styles/site.css">
+<link rel="stylesheet" href="../../shared/styles/print.css">
+
+<style>
+  /* ---- 화면 전용: 계약서 종류 선택 바 ---- */
+  .ct-bar{
+    max-width:900px;margin:0 auto 6px;padding:0 20px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    font-family:var(--font-kr);font-size:13px;color:var(--sub);
+  }
+  .ct-bar select{
+    font-family:var(--font-kr);font-size:13.5px;padding:7px 10px;
+    border:1px solid #d3d9e6;border-radius:6px;background:#fff;color:var(--ink);min-width:260px;
+  }
+  .ct-desc{max-width:900px;margin:0 auto 12px;padding:0 20px;font-family:var(--font-kr);font-size:12px;color:#999;}
+
+  /* ---- 계약서 본문 ---- */
+  /* 제목 아래 간격은 margin이 아니라 padding으로 — margin은 고정 영역 밖으로
+     겹쳐 나가 pagination.js가 1페이지 남은 높이를 실제보다 크게 계산함 */
+  .cell-title{padding-top:30px;padding-bottom:22px;}
+  .ct-title{
+    font-family:var(--font-kr);font-weight:800;font-size:24px;letter-spacing:0.25em;
+    text-align:center;margin:0;color:#161616;display:block;
+  }
+  .cell-guide .ct-p{font-size:13px;line-height:1.75;margin:0 0 5px;text-align:justify;}
+  .cell-guide .ct-preamble{margin-bottom:16px;}
+  .cell-guide .ct-num{display:inline-block;min-width:1.1em;}
+  .cell-guide .ct-art{margin:0 0 12px;}
+  .cell-guide .ct-art-h{font-size:13.5px;font-weight:700;margin:0 0 4px;color:#161616;}
+  .cell-guide .ct-art .ct-p{padding-left:0;}
+  .cell-guide .ct-item{font-size:13px;line-height:1.7;margin:0 0 3px;padding-left:1.6em;}
+  .cell-guide .ct-h{font-size:13.5px;font-weight:700;margin:14px 0 6px;color:#161616;}
+  .cell-guide .ct-closing{margin-top:16px;}
+  .ct-table{width:100%;margin:2px 0 12px;font-size:12.5px;}
+  .ct-table th,.ct-table td{min-width:0;font-size:12.5px;padding:6px 9px;}
+  .ct-kv th{width:26%;white-space:nowrap;}
+  .ct-annex{padding-top:18px;}
+
+  /* 날짜·서명란 — 하나의 블록이라 페이지 중간에 갈라지지 않음 */
+  .ct-signoff{margin-top:18px;}
+  .cell-guide .ct-date{text-align:center;font-size:13.5px;margin:0 0 18px;}
+  .ct-sign{display:flex;gap:26px;}
+  .ct-sign-col{flex:1 1 0;min-width:0;}
+  .cell-guide .ct-sign-h{font-size:13px;font-weight:700;margin:0 0 6px;}
+  .ct-sign-t{width:100%;border-collapse:collapse;font-family:var(--font-kr);font-size:12.5px;color:#2a2a2a;}
+  .ct-sign-t th{width:30%;text-align:left;font-weight:500;color:#666;padding:5px 6px 5px 0;vertical-align:top;white-space:nowrap;}
+  .ct-sign-t td{padding:5px 0;border-bottom:1px solid #ddd;}
+  .ct-seal{float:right;color:#999;}
+  @media print{ .ct-sign-t td{border-bottom-color:#bbb;} }
+</style>
+</head>
+<body class="theme-mono">
+
+  <div id="siteHeader" class="no-print"></div>
+  <div id="editorUI" class="no-print"></div>
+
+  <div class="ct-bar no-print" id="contractBar">
+    <label for="contractSelect">계약서 종류</label>
+    <select id="contractSelect"></select>
+  </div>
+  <div class="ct-desc no-print" id="contractDesc"></div>
+
+  <div class="sheet-wrap">
+    <div class="pages" id="pages">
+      <div class="page" data-page-index="0">
+        <div class="page-header" id="docHeader"></div>
+        <div class="page-body">
+          <div class="page-body-fixed">
+            <div class="cell-title">
+              <p class="ct-title editable" id="docTitle" contenteditable="true" spellcheck="false">계약서</p>
+            </div>
+          </div>
+          <div class="cell-guide flow-items editable editable-block" id="docBody" contenteditable="true" spellcheck="false"></div>
+        </div>
+        <div class="page-footer" id="docFooter"></div>
+      </div>
+    </div>
+    <div id="siteFooter" class="no-print"></div>
+  </div>
+
+  <script src="../../shared/scripts/company-info.js"></script>
+  <script src="../../shared/scripts/sender-info.js"></script>
+  <script src="../../shared/scripts/recipient-info.js"></script>
+  <script src="../../shared/scripts/template-registry.js"></script>
+  <script src="../../shared/scripts/components.js"></script>
+  <!-- 계약서 원문 데이터 — 회사가 늘면 contracts/{회사}.js를 추가하고 여기에 한 줄 -->
+  <script src="../../shared/scripts/contracts/r2v.js"></script>
+  <script src="../../shared/scripts/contract-renderer.js"></script>
+  <script>
+    window.DISE_CURRENT_TEMPLATE = 'contract';
+    window.DISE_CURRENT_COMPANY = (function () {
+      var m = /[?&]company=([^&]+)/.exec(location.search);
+      var key = m ? decodeURIComponent(m[1]) : 'disehimedia';
+      return DISE.companies[key] ? key : 'disehimedia';
+    })();
+    var DISE_LH_CO = DISE.companies[DISE_CURRENT_COMPANY];
+    window.DISE_PDF_API_URL = 'https://docs-plum-ten-91.vercel.app/api/generate-pdf';
+
+    // 본문을 먼저 그린 뒤(prepareLetterhead·editor.js보다 먼저) 공용 화면 요소를 붙입니다.
+    DISE.contractRenderer.render({ company: DISE_CURRENT_COMPANY });
+    DISE.components.prepareLetterhead({ company: DISE_CURRENT_COMPANY });
+
+    DISE.components.renderSiteHeader({ portalHref: '../../index.html' });
+    DISE.components.renderEditorUI({ templateKey: DISE_CURRENT_TEMPLATE, company: DISE_CURRENT_COMPANY });
+    DISE.components.renderViewModeToggle();
+    DISE.components.renderSiteFooter({ text: '다이즈하이미디어 그룹 공식 문서 시스템 · 계약서' });
+    DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, showCompanyName: !!DISE_LH_CO.lhShowName });
+    DISE.components.renderDocFooter({ company: DISE_CURRENT_COMPANY, showPhoneIntl: false });
+  </script>
+  <script src="../../shared/scripts/editor.js"></script>
+  <script src="../../shared/scripts/pagination.js"></script>
+  <script src="../../shared/scripts/pdf-export.js"></script>
+</body>
+</html>

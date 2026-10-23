@@ -295,6 +295,8 @@
        company-info.js에 항목만 추가하면 이 페이지에도 자동으로 카드가
        늘어납니다. -->
   <script src="shared/scripts/company-info.js"></script>
+  <!-- 계열사 계약서 목록(2026-10-23) — 아래 TEMPLATES_BY_COMPANY에 자동 추가 -->
+  <script src="shared/scripts/contracts/r2v.js"></script>
   <script>
     // 항목별 필터 버튼 목록 — 새 문서 종류가 생기면 여기에 { key, label }
     // 만 추가하면 필터 버튼이 자동으로 늘어납니다. key는 아래
@@ -411,6 +413,20 @@
         }
       ]
     };
+
+    // 계약서·부속 서식은 shared/scripts/contracts/{회사}.js 데이터에서 자동으로
+    // 목록을 만듭니다(계약서 종류를 늘리면 이 포털에도 자동 반영).
+    Object.keys(DISE.contracts || {}).forEach(function (co) {
+      var list = TEMPLATES_BY_COMPANY[co] = TEMPLATES_BY_COMPANY[co] || [];
+      DISE.contracts[co].items.forEach(function (it) {
+        list.push({
+          title: it.title,
+          desc: it.desc,
+          href: 'templates/contract/index.html?company=' + co + '&type=' + it.key,
+          category: 'contract'
+        });
+      });
+    });
 
     // 현재 선택된 그룹사/필터 — selectCompany()와 필터 버튼 클릭이 이
     // 값을 바꾸고, renderTemplatePanel()이 이 값을 기준으로 다시
