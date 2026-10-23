@@ -111,6 +111,51 @@
   .inv-bank-note p{
     font-family:var(--font-kr);font-size:12.5px;color:#444;margin:0;line-height:1.6;
   }
+
+  /* ---- 화면 편집(2026-10-23) ----
+     품목 표의 칸(품목명·규격·수량·단가)과 송장번호·일자·수신처·비고를
+     화면에서 바로 고칠 수 있게 했습니다. 공급가액·세액·합계는 입력할
+     때마다 자동으로 다시 계산됩니다. 수정 내용은 이 화면(인쇄/PDF)에만
+     반영되고 구글 시트에는 저장되지 않습니다(시트 저장은 로그인 관문
+     작업과 함께 추후 진행). */
+  .inv-select-bar .inv-btn{
+    font-family:var(--font-kr);font-size:13px;padding:7px 12px;
+    border:1px solid #d3d9e6;border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;
+  }
+  .inv-select-bar .inv-btn:hover{background:#f3f5fa;}
+  .inv-select-bar .inv-check{cursor:pointer;}
+  .inv-edit-note{
+    max-width:900px;margin:-6px auto 12px;padding:0 20px;
+    font-family:var(--font-kr);font-size:12px;color:#999;
+  }
+  .inv-edit-note.is-dirty{color:#b26a00;}
+
+  .inv-items-wrap td .inv-ed{display:inline-block;min-width:24px;width:auto;}
+  .inv-items-wrap td:not(.num) .inv-ed{display:block;}
+  .inv-items-wrap td.inv-col-del,.inv-items-wrap th.inv-col-del{
+    min-width:0;width:28px;padding:4px;text-align:center;vertical-align:middle;
+    border-color:transparent;background:transparent;
+  }
+  .inv-del-btn{
+    width:22px;height:22px;border:0;border-radius:50%;background:transparent;
+    color:#bbb;font-size:16px;line-height:22px;cursor:pointer;padding:0;
+  }
+  .inv-del-btn:hover{background:#fdecea;color:#c0392b;}
+  .inv-add-row{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;margin-top:6px;padding:7px 0;
+    border:1px dashed #c4ccdc;border-radius:6px;background:#fafbfd;
+    font-family:var(--font-kr);font-size:13px;color:var(--sub);cursor:pointer;
+  }
+  .inv-add-row:hover{border-color:var(--navy);color:var(--ink);background:#f3f5fa;}
+  .inv-add-row b{font-size:17px;line-height:1;}
+
+  /* 빈 칸 안내 문구 — 화면에서만 보이고 인쇄/PDF에는 안 나옴 */
+  .inv-ed:empty::before{content:attr(data-ph);color:#bbb;pointer-events:none;}
+  @media print{
+    .inv-ed:empty::before{content:none;}
+    .inv-items-wrap tr.is-blank{display:none;}
+  }
 </style>
 </head>
 <body class="theme-mono">
@@ -124,7 +169,13 @@
     <label>송장번호 선택
       <select id="invoiceSelect"><option value="">불러오는 중…</option></select>
     </label>
+    <button type="button" class="inv-btn" id="invNewBtn">+ 새 송장 작성</button>
+    <label class="inv-check"><input type="checkbox" id="invTaxable" checked> 부가세 10% 적용</label>
     <span class="inv-status" id="invStatus"></span>
+  </div>
+  <div class="inv-edit-note no-print" id="invEditNote">
+    점선 칸을 눌러 직접 입력·수정할 수 있습니다. 공급가액·세액·합계는 자동 계산됩니다.
+    (수정 내용은 인쇄/PDF에만 반영되며 구글 시트에는 저장되지 않습니다)
   </div>
 
   <div class="sheet-wrap">
@@ -170,12 +221,14 @@
                   <tr>
                     <th>품목명</th><th>규격/단위</th>
                     <th class="num">수량</th><th class="num">단가</th><th class="num">공급가액</th>
+                    <th class="inv-col-del no-print"></th>
                   </tr>
                 </thead>
                 <tbody id="invItemsBody">
                   <tr class="inv-empty-row"><td colspan="5">송장을 선택하면 품목이 표시됩니다</td></tr>
                 </tbody>
               </table>
+              <button type="button" class="inv-add-row no-print" id="invAddRow"><b>+</b> 행 추가</button>
             </div>
 
             <div class="inv-totals">
