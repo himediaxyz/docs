@@ -1112,6 +1112,11 @@
       if (key === currentTemplateKey) return;
       var href = DISE.templateHref ? DISE.templateHref(key) : null;
       if (!href) return;
+      // 계열사 유지(레터헤드·송장 모두 ?company= 지원 — 2026-10-23)
+      var curCompany = window.DISE_CURRENT_COMPANY;
+      if (curCompany && curCompany !== 'disehimedia') {
+        href += (href.indexOf('?') === -1 ? '?' : '&') + 'company=' + encodeURIComponent(curCompany);
+      }
       if (isDocModifiedFromInitial() &&
         !window.confirm('작성 중인 내용이 있습니다. 다른 문서 양식으로 이동하면 지금까지 입력한 내용이 사라집니다. 계속할까요?')) {
         return;

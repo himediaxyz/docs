@@ -568,6 +568,60 @@ DISE.components = {
   },
 
   /**
+   * 계열사 레터헤드 준비 (2026-10-23). 레터헤드 템플릿(국문/영문)은
+   * 다이즈하이미디어 기준 예시 문구로 작성돼 있으므로, ?company=로 다른
+   * 계열사를 열면 renderDocHeader 등을 부르기 전에 이 함수로:
+   *   - <body class="lh">를 붙여 letterhead-companies.css 디자인을 켜고
+   *   - 문서번호 예시(다이즈-/DISE-) → 그 회사 접두사(docNoPrefix)
+   *   - 본문·안내문의 "다이즈하이미디어"/"DISEHIMEDIA" → 그 회사 이름
+   *   - 그 회사 발신인(sender-info.js)이 아직 없으면 서명란을 빈칸 표시로
+   * editor.js보다 먼저 실행해야 "수정 여부" 비교 기준이 바뀐 문구가 됩니다.
+   * @param {Object} opts
+   * @param {string} opts.company
+   */
+  prepareLetterhead: function (opts) {
+    opts = opts || {};
+    var key = opts.company || 'disehimedia';
+    var c = DISE.companies[key];
+    document.body.classList.add('lh');
+    if (!c || key === 'disehimedia') return;
+
+    var docNo = document.getElementById('docNo');
+    if (docNo && c.docNoPrefix) docNo.textContent = docNo.textContent.replace(/^(다이즈|DISE)/, c.docNoPrefix);
+
+    // 텍스트 노드만 바꿔서 기존 서식(span 등)을 그대로 둡니다
+    var roots = document.querySelectorAll('#docBody, .cell-note');
+    var nameEn = c.nameEn || c.nameKr;
+    Array.prototype.forEach.call(roots, function (root) {
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+      var n;
+      while ((n = walker.nextNode())) {
+        if (n.parentNode && n.parentNode.closest && n.parentNode.closest('.sign-block')) continue;
+        n.nodeValue = n.nodeValue
+          .replace(/다이즈하이미디어/g, c.nameKr)
+          .replace(/DISEHIMEDIA/g, nameEn)
+          .replace(/DISE-Year/g, (c.docNoPrefix || nameEn) + '-Year')
+          .replace(/다이즈-연도/g, (c.docNoPrefix || nameEn) + '-연도');
+      }
+    });
+
+    var hasSenders = DISE.senders && DISE.senders[key] && DISE.senders[key].length;
+    var sign = document.querySelector('.sign-block');
+    if (sign && !hasSenders) {
+      var set = function (sel, html) { var el = sign.querySelector(sel); if (el) el.innerHTML = html; };
+      var en = document.body.classList.contains('lang-en');
+      set('.name-kr', en ? '[Name]' : '[이름]');
+      set('.name-en', en ? '[Name in English]' : '[English Name]');
+      set('.title', en ? '[Title]' : '[직함 | Title]');
+      set('.sign-right', en ? '[Phone]<br>[Email]' : '[전화번호]<br>[이메일]');
+      Array.prototype.forEach.call(sign.querySelectorAll('.name-kr,.name-en,.title,.sign-right'), function (el) {
+        el.setAttribute('contenteditable', 'true');
+        el.classList.add('editable');
+      });
+    }
+  },
+
+  /**
    * 종이 하단의 "문서 푸터" — 주소·전화(국내/해외)·이메일·웹사이트 중
    * 필요한 항목만 골라 보여줍니다. 전화를 국내/해외 둘 다 보여줄 때만
    * 각 번호 뒤에 "(국내)"/"(해외)" 표시를 붙이고, 하나만 보여줄 때는
@@ -605,6 +659,11 @@ DISE.components = {
       // 주소 등 연락처 정보가 아직 없는 계열사(R2V/BIC/AXIS-ONE 등) —
       // 잘못된 정보를 인쇄하지 않도록 조용히 비워두고 콘솔에만 알립니다.
       console.warn('DISE.components.renderDocFooter: "' + companyKey + '"의 주소·연락처 정보가 아직 company-info.js에 없습니다.');
+      // 화면에만 안내(인쇄·PDF에는 안 나옴) — 푸터 디자인(띠 등)은 그대로 보이게
+      target.innerHTML =
+        '<div class="doc-footer-band">' +
+          '<div class="l1 no-print doc-footer-missing">[회사 주소 · 연락처 미입력 — company-info.js에 입력하면 이 자리에 표시됩니다]</div>' +
+        '</div>';
       return;
     }
     // 영문 주소(addressEn)가 아직 없는 계열사라면 국문 주소로 대체합니다

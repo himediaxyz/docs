@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="../../shared/styles/variables.css">
 <link rel="stylesheet" href="../../shared/styles/document.css">
 <link rel="stylesheet" href="../../shared/styles/theme-mono.css">
+<link rel="stylesheet" href="../../shared/styles/letterhead-companies.css">
 <link rel="stylesheet" href="../../shared/styles/editable.css">
 <link rel="stylesheet" href="../../shared/styles/toolbar.css">
 <link rel="stylesheet" href="../../shared/styles/site.css">
@@ -141,7 +142,16 @@
     // 전화번호는 뺐으므로, 아래 renderDocHeader/renderDocFooter 호출은
     // templates/gongmun과 다르게 opts를 넘깁니다(각 호출부 주석 참고).
     window.DISE_CURRENT_TEMPLATE = 'gongmun-premium';
-    window.DISE_CURRENT_COMPANY = 'disehimedia';
+    // 계열사: URL의 ?company= (포털 계열사 카드가 넘겨줌). 없거나 잘못되면
+    // 다이즈하이미디어. 계열사별 디자인은 shared/styles/letterhead-companies.css,
+    // 예시 문구·서명란 정리는 components.js prepareLetterhead() 참고(2026-10-23).
+    window.DISE_CURRENT_COMPANY = (function () {
+      var m = /[?&]company=([^&]+)/.exec(location.search);
+      var key = m ? decodeURIComponent(m[1]) : 'disehimedia';
+      return DISE.companies[key] ? key : 'disehimedia';
+    })();
+    var DISE_LH_CO = DISE.companies[DISE_CURRENT_COMPANY];
+    DISE.components.prepareLetterhead({ company: DISE_CURRENT_COMPANY });
     // 서버 PDF 다운로드 기능(shared/scripts/pdf-export.js)을 쓰려면
     // 배포한 API 주소를 여기에 넣으세요 — templates/gongmun과 동일한
     // 설명은 pdf-service/README.md 참고.
@@ -157,7 +167,7 @@
     // 회사명·문서 종류 텍스트("다이즈하이미디어"/"DISEHIMEDIA"/"공식
     // 공문")는 뺍니다. 나중에 다시 필요해지면 showCompanyName: true로
     // 되돌리거나 docTypeTag를 다시 넘기면 됩니다.
-    DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, showCompanyName: false });
+    DISE.components.renderDocHeader({ company: DISE_CURRENT_COMPANY, showCompanyName: !!DISE_LH_CO.lhShowName });
     // 헤더에서 뺀 회사명을 "수신" 바로 아래 "발신" 줄(#docFrom)에 대신
     // 채워 넣습니다 — "다이즈하이미디어 | DISEHIMEDIA" 형태.
     DISE.components.renderDocFrom({ company: DISE_CURRENT_COMPANY });

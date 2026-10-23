@@ -1,0 +1,84 @@
+/* ============================================================
+   letterhead-companies.css
+   계열사별 레터헤드 디자인 (2026-10-23 시안 선택 결과)
+     R2V       — B안 "왼쪽 세로 띠": 왼쪽 가장자리 세로 그라데이션 띠,
+                 로고 오른쪽에 R2V / 알투뷔, 제목 R2V레드, 푸터 왼쪽 정렬
+     BIC       — B안 "녹색 푸터 밴드": 헤더는 흰색, 푸터를 BIC그린 다크
+                 밴드 + 라이트그린 윗선, 제목 BIC그린 다크
+     AXIS ONE  — C안 "삼각 기하 포인트": 오른쪽 위 퍼플·다크 삼각형,
+                 왼쪽 아래 라이트퍼플 작은 삼각형(로고의 삼각형 모티프),
+                 제목 AXIS퍼플
+     다이즈하이미디어 — 기존 레터헤드(theme-mono) 그대로
+
+   적용 조건: <body class="lh" data-company="...">
+     - class="lh"   : components.js prepareLetterhead()가 붙임(레터헤드
+                      템플릿에서만 — 송장 등 다른 문서는 영향 없음)
+     - data-company : components.js renderDocHeader()가 붙임
+   장식(띠·삼각형)은 .page의 가상 요소라 pagination.js가 만드는 2페이지
+   이후에도 자동으로 똑같이 들어가고, 인쇄·PDF에도 그대로 나옵니다
+   (variables.css의 print-color-adjust:exact).
+
+   이 파일을 쓰는 곳: 레터헤드 템플릿(templates/gongmun, gongmun-premium)
+   — theme-mono.css 다음에 불러옵니다.
+   ============================================================ */
+
+/* 모바일 보기(페이지 경계 없는 한 흐름)에서는 장식을 빼고 색만 유지 */
+html[data-view="mobile"] body.lh .page::before,
+html[data-view="mobile"] body.lh .page::after,
+html[data-view="mobile"] body.lh .page-footer::after{display:none;}
+
+/* ---------------- R2V — B안 왼쪽 세로 띠 ---------------- */
+body.lh[data-company="r2v"]{--lh-indent:64px;}
+body.lh[data-company="r2v"] .page::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:14px;z-index:1;
+  background:linear-gradient(180deg,#ebc11f 0%,#e66f51 30%,#d94a1c 60%,#a62c24 100%);
+}
+body.lh[data-company="r2v"] .doc-header-band{padding-left:var(--lh-indent);align-items:flex-end;}
+body.lh[data-company="r2v"] .doc-header-text{
+  flex:0 0 auto;margin-left:auto;text-align:right;
+  display:flex;flex-direction:column-reverse;gap:2px;
+}
+body.lh[data-company="r2v"] .brand-en{
+  font-family:var(--font-en);font-weight:700;font-size:11px;letter-spacing:3px;color:#da4f1e;margin:0;
+}
+body.lh[data-company="r2v"] .brand-kr{
+  font-family:var(--font-kr);font-weight:600;font-size:11px;letter-spacing:3px;color:#999;
+}
+body.lh[data-company="r2v"] .cell-meta,
+body.lh[data-company="r2v"] .cell-title,
+body.lh[data-company="r2v"] .cell-to,
+body.lh[data-company="r2v"] .cell-note,
+body.lh[data-company="r2v"] .cell-guide{padding-left:var(--lh-indent);}
+body.lh[data-company="r2v"] .title-placeholder{color:#a62c24;}
+body.lh[data-company="r2v"] .sign-left .role::after{background:linear-gradient(90deg,#da4f1e,transparent);}
+body.lh[data-company="r2v"] .doc-footer-band{text-align:left;padding-left:var(--lh-indent);}
+body.lh[data-company="r2v"] .doc-footer-band .l1{color:#a62c24;font-weight:600;}
+
+/* ---------------- BIC — B안 녹색 푸터 밴드 ---------------- */
+body.lh[data-company="bic"] .title-placeholder{color:#1b3728;}
+body.lh[data-company="bic"] .sign-left .role::after{background:linear-gradient(90deg,#74bf96,transparent);}
+body.lh[data-company="bic"] .doc-footer-band{
+  background:#1b3728;color:#9fc9b2;
+  border-top:5px solid #74bf96;padding:20px 40px;
+}
+body.lh[data-company="bic"] .doc-footer-band .l1{color:#fff;}
+body.lh[data-company="bic"] .doc-footer-band .l2{color:#9fc9b2;}
+body.lh[data-company="bic"] .doc-footer-missing{color:#cfe6d9 !important;}
+
+/* ---------------- AXIS ONE — C안 삼각 기하 포인트 ---------------- */
+body.lh[data-company="axis-one"] .page::before,
+body.lh[data-company="axis-one"] .page::after{
+  content:'';position:absolute;right:0;top:0;width:0;height:0;z-index:1;pointer-events:none;
+}
+body.lh[data-company="axis-one"] .page::before{
+  border-top:150px solid #573369;border-left:150px solid transparent;
+}
+body.lh[data-company="axis-one"] .page::after{
+  border-top:90px solid #180e1c;border-left:90px solid transparent;
+}
+body.lh[data-company="axis-one"] .page-footer::after{
+  content:'';position:absolute;left:0;bottom:0;width:0;height:0;pointer-events:none;
+  border-bottom:70px solid rgba(159,121,180,.6);border-right:70px solid transparent;
+}
+body.lh[data-company="axis-one"] .title-placeholder{color:#573369;}
+body.lh[data-company="axis-one"] .sign-left .role::after{background:linear-gradient(90deg,#573369,transparent);}

@@ -58,7 +58,13 @@ DISE.site = {
                     기존대로 logoMark(검정).
      docLogoScale — 문서 헤더 로고 높이 배율(기본 1 = 56px). BIC 로고는
                     가로로 넓어 같은 높이면 커 보여서 줄였습니다.
-   포털(index.html)의 계열사 카드는 배지색 위 단색 로고 그대로입니다. */
+   포털(index.html)의 계열사 카드는 배지색 위 단색 로고 그대로입니다.
+
+   docNoPrefix / lhShowName (2026-10-23, 계열사 레터헤드):
+     docNoPrefix — 레터헤드 문서번호 예시 접두사(예: R2V-2026-001).
+     lhShowName  — 레터헤드 헤더 오른쪽에 회사명(영문/국문)을 함께 표시.
+   계열사별 레터헤드 디자인 자체는 shared/styles/letterhead-companies.css
+   참고(R2V B안·BIC B안·AXIS ONE C안). */
 DISE.companies = {
 
   disehimedia: {
@@ -84,6 +90,8 @@ DISE.companies = {
     logoMark: 'r2v/r2v-mark.svg',                  // 단색 · mask 기법용
     logoMarkGradient: 'r2v/r2v-mark-gradient.svg', // 그라데이션 원본 · 색 고정 용도
     docLogo: 'r2v/r2v-mark-gradient.svg',          // 문서 헤더: 그라데이션 원색
+    docNoPrefix: 'R2V',
+    lhShowName: true,                              // 레터헤드 B안: 로고 오른쪽에 R2V / 알투뷔
     logoRatio: 200 / 108,
     badgeColor: '#DA4F1E'                // R2V오렌지
     // TODO: 주소·전화·이메일 확정되면 disehimedia 항목과 동일한 형식으로 추가
@@ -95,6 +103,7 @@ DISE.companies = {
     logoMark: 'bic/bic-mark.svg',
     docLogo: 'bic/bic-mark-color.svg',   // 문서 헤더: BIC그린 다크(#1B3728)
     docLogoScale: 0.65,                  // 문서 헤더 로고 56px → 약 36px
+    docNoPrefix: 'BIC',
     logoRatio: 200 / 68,
     badgeColor: '#428363'                // BIC그린 미드(메인 톤으로 사용)
     // TODO: 주소·전화·이메일 확정되면 추가
@@ -104,6 +113,7 @@ DISE.companies = {
     nameKr: '엑시스 원',
     nameEn: 'AXIS ONE',
     logoMark: 'axis-one/axis-one-mark.svg',
+    docNoPrefix: 'AXIS',
     logoRatio: 108 / 108,
     badgeColor: '#180E1C'                // AXIS다크
     // TODO: 주소·전화·이메일 확정되면 추가
