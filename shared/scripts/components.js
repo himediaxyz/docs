@@ -506,9 +506,13 @@ DISE.components = {
     // 버리고 평범한 <img> + CSS filter로 바꿨습니다(색 규칙은
     // shared/styles/document.css의 .doc-logo img 참고) — <img>와
     // filter는 인쇄 렌더링에서 훨씬 안정적입니다.
-    var logoHeightPx = 56;
+    // 문서용 컬러 로고(docLogo)가 있으면 그것을 색 필터 없이 원본 그대로,
+    // 없으면 단색 logoMark를 씁니다. 높이는 docLogoScale로 계열사별 조정
+    // (company-info.js의 docLogo/docLogoScale 설명 참고).
+    var logoHeightPx = Math.round(56 * (c.docLogoScale || 1));
     var logoWidthPx = Math.round(logoHeightPx * (c.logoRatio || 1));
-    var logoUrl = DISE_SHARED_ROOT + 'assets/logos/' + c.logoMark;
+    var logoUrl = DISE_SHARED_ROOT + 'assets/logos/' + (c.docLogo || c.logoMark);
+    var logoClass = 'doc-logo' + (c.docLogo ? ' doc-logo--color' : '');
 
     // 회사명·문서 종류 태그를 하나도 안 보여준다면 이 텍스트 블록
     // 자체를 아예 만들지 않습니다 — 빈 div가 flex 정렬에 영향을 주지
@@ -523,7 +527,7 @@ DISE.components = {
 
     target.innerHTML =
       '<div class="doc-header-band">' +
-        '<div class="doc-logo" style="width:' + logoWidthPx + 'px;height:' + logoHeightPx + 'px;">' +
+        '<div class="' + logoClass + '" style="width:' + logoWidthPx + 'px;height:' + logoHeightPx + 'px;">' +
           '<img src="' + logoUrl + '" alt="' + c.nameKr + ' 로고">' +
         '</div>' +
         textBlockHtml +

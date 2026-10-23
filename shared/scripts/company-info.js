@@ -48,7 +48,17 @@ DISE.site = {
    badgeColor: index.html 포털 페이지의 원형 배지(그룹사 선택 버튼)
    배경색 — 각 계열사 "메인 컬러"입니다. BIC는 다크/미드/라이트 3단계 중
    지정이 없어 중간 톤(미드, #428363)을 메인 컬러로 사용했습니다. 다른
-   톤을 메인으로 쓰기로 하면 이 값만 바꾸면 됩니다. */
+   톤을 메인으로 쓰기로 하면 이 값만 바꾸면 됩니다.
+
+   docLogo / docLogoScale (2026-10-23): 공식 문서(레터헤드·송장 등) 헤더에
+   쓰는 로고. theme-mono는 원래 모든 계열사 로고를 검정 단색으로 썼는데,
+   R2V는 그라데이션 원색, BIC는 BIC그린 다크 원색으로 쓰기로 결정했습니다.
+     docLogo      — 문서용 컬러 로고 파일. 있으면 logoMark(단색) 대신
+                    이 파일을 색 필터 없이 원본 그대로 씁니다. 없으면
+                    기존대로 logoMark(검정).
+     docLogoScale — 문서 헤더 로고 높이 배율(기본 1 = 56px). BIC 로고는
+                    가로로 넓어 같은 높이면 커 보여서 줄였습니다.
+   포털(index.html)의 계열사 카드는 배지색 위 단색 로고 그대로입니다. */
 DISE.companies = {
 
   disehimedia: {
@@ -73,6 +83,7 @@ DISE.companies = {
     nameEn: 'R2V',
     logoMark: 'r2v/r2v-mark.svg',                  // 단색 · mask 기법용
     logoMarkGradient: 'r2v/r2v-mark-gradient.svg', // 그라데이션 원본 · 색 고정 용도
+    docLogo: 'r2v/r2v-mark-gradient.svg',          // 문서 헤더: 그라데이션 원색
     logoRatio: 200 / 108,
     badgeColor: '#DA4F1E'                // R2V오렌지
     // TODO: 주소·전화·이메일 확정되면 disehimedia 항목과 동일한 형식으로 추가
@@ -82,6 +93,8 @@ DISE.companies = {
     nameKr: '비아이씨',
     nameEn: 'BIC',
     logoMark: 'bic/bic-mark.svg',
+    docLogo: 'bic/bic-mark-color.svg',   // 문서 헤더: BIC그린 다크(#1B3728)
+    docLogoScale: 0.65,                  // 문서 헤더 로고 56px → 약 36px
     logoRatio: 200 / 68,
     badgeColor: '#428363'                // BIC그린 미드(메인 톤으로 사용)
     // TODO: 주소·전화·이메일 확정되면 추가

@@ -16,7 +16,9 @@
    필터만 없앱니다(원본 SVG 자체가 검정 도형이라 필터 없이 그대로 두면
    다이즈블랙에 가장 가까운 색) — 계열사가 달라져도(company 옵션) 이
    테마를 쓰는 한 로고는 항상 이 검정 하나만 씁니다(요청: "로고는 다이즈
-   블랙 컬러를 사용"). 2026-08-28: 원래 mask+background-color 방식이던
+   블랙 컬러를 사용"). ★ 예외(2026-10-23): R2V(그라데이션)·BIC(BIC그린
+   다크)는 원색 로고를 씁니다 — company-info.js의 docLogo, document.css의
+   .doc-logo--color 참고. 2026-08-28: 원래 mask+background-color 방식이던
    것을 모바일 실기기 인쇄 버그 때문에 img+filter 방식으로 바꿨습니다
    (document.css의 .doc-logo 주석 참고).
 
