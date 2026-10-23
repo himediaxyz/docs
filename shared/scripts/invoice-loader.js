@@ -22,6 +22,8 @@
      - 송장번호·발행일·결제기한·수신(거래처)·비고도 직접 수정 가능.
      - [+ 새 송장 작성]: 공급자(발신)·입금계좌는 그대로 두고 나머지를
        비운 빈 양식으로 시작.
+     - 품목명: 직접 입력 + 품목마스터 자동완성 드롭다운(아래 "품목명
+       자동완성" 섹션, Apps Script ?action=items 필요).
      - 수정 내용은 화면(인쇄/PDF)에만 반영되고 구글 시트에는 저장되지
        않습니다. 시트 저장(Apps Script doPost)은 로그인 관문(Cloudflare
        Access) 작업과 함께 추후 진행 — 프로젝트 문서 "송장(인보이스)
@@ -161,8 +163,20 @@
     var tr = document.createElement('tr');
     tr.className = 'inv-item-row';
 
+    if (it.itemCode) tr.setAttribute('data-item-code', it.itemCode);
+
     var tdName = document.createElement('td');
+    tdName.className = 'inv-name-cell';
     tdName.appendChild(cellSpan('itemName', it.itemName, '품목명'));
+    // ▾ 품목마스터에서 고르기 (화면 전용) — 품목 목록을 못 불러오면 CSS로 숨김
+    var pickBtn = document.createElement('button');
+    pickBtn.type = 'button';
+    pickBtn.className = 'inv-pick-btn no-print';
+    pickBtn.title = '품목마스터에서 고르기';
+    pickBtn.setAttribute('aria-label', '품목마스터에서 고르기');
+    pickBtn.setAttribute('tabindex', '-1');
+    pickBtn.textContent = '▾';
+    tdName.appendChild(pickBtn);
 
     var tdSpec = document.createElement('td');
     tdSpec.appendChild(cellSpan('spec', it.spec, '규격/단위'));
@@ -178,7 +192,10 @@
     var pr = cellSpan('unitPrice', it.unitPrice ? fmt(it.unitPrice) : '', '0');
     pr.setAttribute('inputmode', 'numeric');
     tdPrice.appendChild(pr);
-    tdPrice.appendChild(document.createTextNode('원'));
+    var wonSfx = document.createElement('span');
+    wonSfx.className = 'inv-won';
+    wonSfx.textContent = '원';
+    tdPrice.appendChild(wonSfx);
 
     var tdAmt = document.createElement('td');
     tdAmt.className = 'num inv-amount';
@@ -391,6 +408,204 @@
     return !dirty || window.confirm('화면에서 수정한 내용이 사라집니다. 계속할까요?\n(수정 내용은 시트에 저장되지 않습니다)');
   }
 
+  /* ---------- 품목명 자동완성 드롭다운 (2026-10-23) ----------
+     품목명 칸 하나로 "직접 입력"과 "품목마스터에서 고르기"를 함께 합니다.
+       - 글자를 입력하면 품목마스터에서 그 글자가 들어간 품목만 보여줌
+         (품목명·품목코드·규격 모두 검색, 띄어쓰기·대소문자 무시)
+       - ▾ 버튼(또는 빈 칸에 커서)으로 전체 목록
+       - 고르면 품목명·규격·단가가 채워지고 수량이 비어 있으면 1
+       - 목록에 없는 이름은 그냥 입력하면 끝(직접 입력) — 새 품목을
+         품목마스터에 추가하는 건 시트 저장 기능과 함께 추후 진행
+       - ↑↓ 이동, Enter 선택, Esc 닫기, 한글 조합 중 Enter는 무시
+     드롭다운은 문서(.page) 밖 <body>에 붙는 화면 전용 요소라 인쇄·PDF·
+     되돌리기(Ctrl+Z) 스냅샷에 섞이지 않습니다. 품목 목록은 페이지를
+     열 때 한 번만 불러옵니다(?action=items). Apps Script가 아직 이
+     기능이 없는 옛 버전이면 조용히 실패하고 ▾ 버튼만 숨겨집니다 —
+     직접 입력은 그대로 됩니다. */
+  var masterItems = [];
+  var picker = { el: null, cell: null, list: [], active: -1 };
+  var MAX_PICK = 80;
+
+  function norm(s) { return String(s || '').toLowerCase().replace(/\s+/g, ''); }
+
+  function loadMasterItems() {
+    if (!API_URL) return;
+    fetchJson(API_URL + '?action=items&company=' + encodeURIComponent(COMPANY))
+      .then(function (list) {
+        masterItems = (list || []).filter(function (it) { return it && it.itemName; });
+        ROOT.classList.toggle('inv-has-items', masterItems.length > 0);
+      })
+      .catch(function () { /* 옛 Apps Script — 직접 입력만 사용 */ });
+  }
+
+  function ensurePickerEl() {
+    if (picker.el) return picker.el;
+    var el = document.createElement('div');
+    el.className = 'inv-picker no-print';
+    el.setAttribute('role', 'listbox');
+    el.hidden = true;
+    // 목록을 눌러도 입력 칸의 포커스가 빠지지 않도록
+    el.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    el.addEventListener('click', function (e) {
+      var opt = e.target.closest ? e.target.closest('.inv-picker-opt') : null;
+      if (!opt) return;
+      choose(Number(opt.getAttribute('data-idx')));
+    });
+    document.body.appendChild(el);
+    picker.el = el;
+    return el;
+  }
+
+  function closePicker() {
+    if (picker.el) picker.el.hidden = true;
+    picker.cell = null;
+    picker.list = [];
+    picker.active = -1;
+  }
+
+  function positionPicker() {
+    if (!picker.cell || !picker.el) return;
+    var td = picker.cell.closest('td') || picker.cell;
+    var r = td.getBoundingClientRect();
+    picker.el.style.left = (r.left + window.scrollX) + 'px';
+    picker.el.style.top = (r.bottom + window.scrollY + 2) + 'px';
+    picker.el.style.minWidth = Math.max(r.width, 280) + 'px';
+  }
+
+  function renderPicker() {
+    var el = ensurePickerEl();
+    var typed = picker.cell ? picker.cell.textContent.trim() : '';
+    el.innerHTML = '';
+    picker.list.forEach(function (it, i) {
+      var opt = document.createElement('div');
+      opt.className = 'inv-picker-opt' + (i === picker.active ? ' is-active' : '');
+      opt.setAttribute('role', 'option');
+      opt.setAttribute('data-idx', i);
+      var name = document.createElement('div');
+      name.className = 'nm';
+      name.textContent = it.itemName;
+      var meta = document.createElement('div');
+      meta.className = 'mt';
+      meta.textContent = [it.spec, it.unitPrice ? won(it.unitPrice) : '', it.itemCode].filter(Boolean).join(' · ');
+      opt.appendChild(name);
+      opt.appendChild(meta);
+      el.appendChild(opt);
+    });
+    var exact = picker.list.some(function (it) { return norm(it.itemName) === norm(typed); });
+    if (typed && !exact) {
+      var hint = document.createElement('div');
+      hint.className = 'inv-picker-hint';
+      hint.textContent = picker.list.length ?
+        '목록에 없으면 그대로 입력하세요 — "' + typed + '" 직접 입력' :
+        '일치하는 품목 없음 — "' + typed + '" 직접 입력으로 사용';
+      el.appendChild(hint);
+    }
+    if (!picker.list.length && !typed) { closePicker(); return; }
+    el.hidden = false;
+    positionPicker();
+    var act = el.querySelector('.is-active');
+    if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest' });
+  }
+
+  function openPicker(cell, showAll) {
+    if (!masterItems.length) return;
+    picker.cell = cell;
+    var q = showAll ? '' : norm(cell.textContent);
+    picker.list = masterItems.filter(function (it) {
+      return !q || norm(it.itemName + ' ' + it.itemCode + ' ' + it.spec).indexOf(q) !== -1;
+    }).slice(0, MAX_PICK);
+    picker.active = -1;
+    renderPicker();
+  }
+
+  function moveActive(delta) {
+    if (!picker.list.length) return;
+    var n = picker.list.length;
+    picker.active = picker.active < 0 ? (delta > 0 ? 0 : n - 1) : (picker.active + delta + n) % n;
+    renderPicker();
+  }
+
+  function placeCaretAtEnd(el) {
+    el.focus();
+    var r = document.createRange();
+    r.selectNodeContents(el);
+    r.collapse(false);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
+
+  function choose(idx) {
+    var it = picker.list[idx];
+    var cell = picker.cell;
+    if (!it || !cell) return;
+    var tr = cell.closest('.inv-item-row');
+    closePicker();
+    if (!tr) return;
+    var f = function (name) { return tr.querySelector('[data-field="' + name + '"]'); };
+    setText(f('itemName'), it.itemName);
+    setText(f('spec'), it.spec);
+    setText(f('unitPrice'), it.unitPrice ? fmt(it.unitPrice) : '');
+    if (!parseNum(f('qty').textContent)) setText(f('qty'), '1');
+    if (it.itemCode) tr.setAttribute('data-item-code', it.itemCode);
+    else tr.removeAttribute('data-item-code');
+    recalc();
+    setDirty(true);
+    refreshLayout();
+    placeCaretAtEnd(f('qty'));
+  }
+
+  function isNameCell(t) {
+    return t && t.getAttribute && t.getAttribute('data-field') === 'itemName';
+  }
+
+  function wirePicker() {
+    // 입력할 때마다 걸러서 보여주기 (한글 조합 중에도 갱신)
+    document.addEventListener('input', function (e) {
+      if (!isNameCell(e.target)) return;
+      // 품목명을 손으로 바꾸면 품목코드 연결은 끊습니다(다른 품목이 될 수 있으므로)
+      var tr = e.target.closest('.inv-item-row');
+      if (tr) tr.removeAttribute('data-item-code');
+      openPicker(e.target, false);
+    });
+    // 빈 품목명 칸에 들어가면 전체 목록
+    document.addEventListener('focusin', function (e) {
+      if (isNameCell(e.target) && !e.target.textContent.trim()) openPicker(e.target, true);
+    });
+    document.addEventListener('focusout', function (e) {
+      if (isNameCell(e.target)) setTimeout(function () {
+        if (picker.cell && document.activeElement !== picker.cell) closePicker();
+      }, 120);
+    });
+    // ▾ 버튼
+    document.addEventListener('mousedown', function (e) {
+      var btn = e.target.closest ? e.target.closest('.inv-pick-btn') : null;
+      if (!btn) return;
+      e.preventDefault();
+      var cell = btn.closest('td').querySelector('[data-field="itemName"]');
+      if (picker.cell === cell && picker.el && !picker.el.hidden) { closePicker(); return; }
+      placeCaretAtEnd(cell);
+      openPicker(cell, true);
+    });
+    // 키보드 — capture 단계에서 먼저 받아, 목록이 열려 있을 때의 Enter가
+    // "다음 칸으로 이동"(아래 wireEvents의 keydown)보다 먼저 처리되게 합니다.
+    document.addEventListener('keydown', function (e) {
+      if (!picker.cell || e.target !== picker.cell || !picker.el || picker.el.hidden) return;
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); moveActive(1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); moveActive(-1); }
+      else if (e.key === 'Escape') { e.preventDefault(); closePicker(); }
+      else if (e.key === 'Enter' && picker.active >= 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        choose(picker.active);
+      } else if (e.key === 'Enter' || e.key === 'Tab') { closePicker(); } // 직접 입력으로 확정
+    }, true);
+    window.addEventListener('resize', positionPicker);
+    window.addEventListener('scroll', positionPicker, true);
+    window.addEventListener('beforeprint', closePicker);
+  }
+
   /* ---------- 이벤트 ---------- */
   function wireEvents() {
     // 머리 부분 칸들을 편집 가능하게
@@ -490,6 +705,7 @@
 
   function init() {
     wireEvents();
+    wirePicker();
     renderItems([]); // 데이터가 오기 전에도 바로 입력할 수 있도록 빈 행 하나
     markRendered();
 
@@ -499,6 +715,7 @@
       return;
     }
 
+    loadMasterItems();
     setStatus('송장 목록을 불러오는 중…');
     fetchJson(API_URL + '?action=list&company=' + encodeURIComponent(COMPANY))
       .then(function (list) {
