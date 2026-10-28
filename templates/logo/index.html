@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>회사 로고 | 다이즈하이미디어 그룹 공식 문서 시스템</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Asta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/styles/variables.css">
+<!-- ============================================================
+     회사 로고 다운로드 (디자인 양식 > 회사 로고, 2026-10-28)
+     ?company=<key>
+     파일 규칙(shared/assets/logos/README.md 참고):
+       {key}/{key}-mark.svg                 단색 원본(SVG)
+       docLogo(company-info.js)             컬러 원본(SVG, 있는 회사만)
+       {key}/download/{key}-{color|black|white}.{png|jpg}  미리 만든 이미지(긴 변 약 2,000px)
+       logoAi(company-info.js)              일러스트레이터 원본(.ai) — 받으면 경로만 추가
+     ============================================================ -->
+<style>
+  html{background:#f4f6fa;}
+  body{background:#f4f6fa;font-family:var(--font-kr);color:var(--ink);padding:28px 20px 60px;}
+  .wrap{max-width:900px;margin:0 auto;}
+  .back{font-size:13px;color:var(--sub);text-decoration:none;}
+  .back:hover{color:var(--navy);}
+  h1{font-size:22px;color:var(--navy);margin:14px 0 4px;}
+  .lead{font-size:13.5px;color:var(--sub);margin:0 0 22px;}
+  .ai-box{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    background:#fff;border:1px solid #e2e6ee;border-radius:12px;padding:16px 18px;margin-bottom:18px;}
+  .ai-box b{font-size:14px;} .ai-box span{font-size:12.5px;color:#888;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}
+  .card{background:#fff;border:1px solid #e2e6ee;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
+  .prev{height:170px;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .prev img{max-width:80%;max-height:110px;}
+  .prev.light{background:#fff;border-bottom:1px solid #eef0f4;}
+  .prev.dark{background:#1d1d1d;}
+  .prev.check{background-color:#fff;background-image:linear-gradient(45deg,#eee 25%,transparent 25%),linear-gradient(-45deg,#eee 25%,transparent 25%),
+    linear-gradient(45deg,transparent 75%,#eee 75%),linear-gradient(-45deg,transparent 75%,#eee 75%);
+    background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;}
+  .info{padding:14px 16px 16px;}
+  .info h3{margin:0 0 2px;font-size:14.5px;}
+  .info p{margin:0 0 12px;font-size:12px;color:#888;}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;}
+  .btn{font-family:var(--font-en);font-size:12px;font-weight:600;text-decoration:none;color:var(--navy);
+    border:1px solid #d3d9e6;border-radius:999px;padding:6px 12px;background:#fff;}
+  .btn:hover{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .btn.off{color:#bbb;border-style:dashed;pointer-events:none;}
+  .note{font-size:12px;color:#999;margin-top:20px;line-height:1.7;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="../../index.html" id="backLink">← 문서 시스템으로</a>
+    <h1 id="pageTitle">회사 로고</h1>
+    <p class="lead">용도에 맞는 파일을 내려받아 사용하세요. PNG는 배경이 투명하고, JPG는 흰 배경입니다.</p>
+    <div class="ai-box" id="aiBox"></div>
+    <div class="grid" id="grid"></div>
+    <p class="note">
+      · 인쇄물·간판 등 고해상도 작업에는 AI(일러스트레이터) 또는 SVG 원본을 사용하세요.<br>
+      · 웹·문서·메신저에는 PNG(투명 배경), 배경이 꼭 필요한 곳(일부 업로드 양식 등)에는 JPG를 사용하세요.<br>
+      · 로고의 비율·색을 임의로 바꾸지 마세요.
+    </p>
+  </div>
+
+  <script src="../../shared/scripts/company-info.js"></script>
+  <script>
+    (function () {
+      var m = /[?&]company=([^&]+)/.exec(location.search);
+      var key = m ? decodeURIComponent(m[1]) : 'disehimedia';
+      var c = DISE.companies[key] || DISE.companies.disehimedia;
+      if (!DISE.companies[key]) key = 'disehimedia';
+      var ROOT = '../../shared/assets/logos/';
+      var dl = ROOT + key + '/download/' + key + '-';
+      document.getElementById('pageTitle').textContent = c.nameKr + ' (' + c.nameEn + ') 로고';
+      document.getElementById('backLink').href = '../../index.html?company=' + encodeURIComponent(key);
+      document.title = c.nameKr + ' 로고 | 다이즈하이미디어 그룹 공식 문서 시스템';
+
+      // AI 원본
+      document.getElementById('aiBox').innerHTML = c.logoAi ?
+        '<div><b>원본 파일 (AI)</b><br><span>일러스트레이터 원본 — 인쇄·간판·영상 작업용</span></div>' +
+          '<a class="btn" href="' + ROOT + c.logoAi + '" download>AI 다운로드</a>' :
+        '<div><b>원본 파일 (AI)</b><br><span>준비 중입니다. 원본이 등록되면 이 자리에서 내려받을 수 있습니다.</span></div>' +
+          '<span class="btn off">AI 준비 중</span>';
+
+      if (!c.logoMark) {
+        document.getElementById('grid').innerHTML = '<p>로고 파일이 아직 등록되지 않았습니다.</p>';
+        return;
+      }
+      var cards = [];
+      if (c.docLogo) cards.push({ v: 'color', name: '컬러', desc: '기본 로고 — 흰 배경·밝은 배경용', svg: c.docLogo, bg: 'light', jpg: true });
+      cards.push({ v: 'black', name: '검정 단색', desc: '흑백 인쇄·밝은 배경용', svg: c.logoMark, bg: 'check', jpg: true });
+      cards.push({ v: 'white', name: '흰색 단색', desc: '어두운 배경·사진 위 사용(PNG만 제공)', svg: null, bg: 'dark', jpg: false });
+
+      document.getElementById('grid').innerHTML = cards.map(function (k) {
+        var png = dl + k.v + '.png';
+        return '<div class="card">' +
+          '<div class="prev ' + k.bg + '"><img src="' + png + '" alt="' + c.nameKr + ' ' + k.name + ' 로고"></div>' +
+          '<div class="info"><h3>' + k.name + '</h3><p>' + k.desc + '</p><div class="btns">' +
+            '<a class="btn" href="' + png + '" download>PNG</a>' +
+            (k.jpg ? '<a class="btn" href="' + dl + k.v + '.jpg" download>JPG</a>' : '') +
+            (k.svg ? '<a class="btn" href="' + ROOT + k.svg + '" download>SVG</a>' : '') +
+          '</div></div></div>';
+      }).join('');
+    })();
+  </script>
+</body>
+</html>

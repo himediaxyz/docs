@@ -29,3 +29,22 @@ logos/{계열사-slug}/{계열사-slug}-mark-gradient.svg   그라데이션 등 
 1. 이 규칙대로 `logos/{새-slug}/{새-slug}-mark.svg`를 추가합니다(폴더가 비어 있으면 이 규칙에 맞는 파일이 아직 없다는 뜻입니다).
 2. `shared/scripts/company-info.js`의 `DISE.companies`에 항목을 추가합니다(로고 경로, `logoRatio`, 주소·연락처).
 3. 위 표에 행을 추가합니다.
+
+## 로고 다운로드 파일 (2026-10-28, 포털 > 디자인 양식 > 회사 로고)
+
+```
+logos/{slug}/download/{slug}-color.png|jpg   컬러(docLogo가 있는 회사만)
+logos/{slug}/download/{slug}-black.png|jpg   검정 단색
+logos/{slug}/download/{slug}-white.png       흰색 단색(투명 배경)
+```
+- 긴 변 약 2,000px, PNG는 투명 배경, JPG는 흰 배경. SVG에서 만든 파일이라 SVG를 바꾸면 다시 만들어야 합니다.
+- AI(일러스트레이터) 원본은 `logos/{slug}/` 에 넣고 `company-info.js`의 해당 회사에 `logoAi: '{slug}/파일명.ai'` 한 줄을 추가하면 다운로드 버튼이 켜집니다.
+
+## 새 회사 추가 체크리스트 (예: HRA, 창업지장 신숭겸 장학재단)
+1. `company-info.js` — `DISE.companies`에 항목 추가(key·국문/영문명·badgeColor·주소/연락처·docNoPrefix 등). 로고가 없어도 포털 카드는 회사명 글자로 표시됩니다.
+2. 로고 — `logos/{key}/{key}-mark.svg`(+ 컬러 `docLogo`) 추가, `download/` 이미지 생성, AI 원본 등록.
+3. 레터헤드 디자인 — `shared/styles/letterhead-companies.css`에 `body.lh[data-company="{key}"]` 규칙(없으면 기본 무채색 레터헤드).
+4. 표 색 — `document.css`의 `body[data-company="{key}"]` 변수(없으면 기본 블루그레이).
+5. 계약서(필요 시) — `shared/scripts/contracts/{key}.js` + script 한 줄.
+6. 프리젠테이션 양식 — `shared/assets/presentations/{key}/`에 파일, `company-info.js`에 `pptTemplates` 등록.
+포털의 레터헤드·송장·견적서·로고·프리젠테이션 항목은 1번만 하면 자동으로 생깁니다.

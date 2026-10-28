@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>프리젠테이션 양식 | 다이즈하이미디어 그룹 공식 문서 시스템</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Asta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/styles/variables.css">
+<!-- ============================================================
+     프리젠테이션 양식 다운로드 (디자인 양식 > 프리젠테이션, 2026-10-28)
+     ?company=<key>
+     양식 파일은 shared/assets/presentations/{key}/ 에 두고,
+     company-info.js의 해당 회사에 pptTemplates 배열로 등록합니다:
+       pptTemplates: [
+         { title: '회사 소개서 양식', desc: '16:9', file: 'r2v/R2V_회사소개_양식.pptx', thumb: 'r2v/thumb.png' }
+       ]
+     (thumb는 선택 — 표지 미리보기 이미지)
+     ============================================================ -->
+<style>
+  html{background:#f4f6fa;}
+  body{background:#f4f6fa;font-family:var(--font-kr);color:var(--ink);padding:28px 20px 60px;}
+  .wrap{max-width:900px;margin:0 auto;}
+  .back{font-size:13px;color:var(--sub);text-decoration:none;}
+  h1{font-size:22px;color:var(--navy);margin:14px 0 4px;}
+  .lead{font-size:13.5px;color:var(--sub);margin:0 0 22px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}
+  .card{background:#fff;border:1px solid #e2e6ee;border-radius:12px;overflow:hidden;}
+  .thumb{aspect-ratio:16/9;background:#eef1f7;display:flex;align-items:center;justify-content:center;color:#aab;font-size:12px;}
+  .thumb img{width:100%;height:100%;object-fit:cover;}
+  .info{padding:14px 16px 16px;}
+  .info h3{margin:0 0 2px;font-size:14.5px;} .info p{margin:0 0 12px;font-size:12px;color:#888;}
+  .btn{font-family:var(--font-en);font-size:12px;font-weight:600;text-decoration:none;color:var(--navy);
+    border:1px solid #d3d9e6;border-radius:999px;padding:6px 12px;background:#fff;}
+  .btn:hover{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .empty{background:#fff;border:1px dashed #d3d9e6;border-radius:12px;padding:40px 20px;text-align:center;color:#888;font-size:14px;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="../../index.html" id="backLink">← 문서 시스템으로</a>
+    <h1 id="pageTitle">프리젠테이션 양식</h1>
+    <p class="lead">양식 파일을 내려받아 PowerPoint·Keynote·구글 프레젠테이션에서 열어 사용하세요.</p>
+    <div id="list"></div>
+  </div>
+  <script src="../../shared/scripts/company-info.js"></script>
+  <script>
+    (function () {
+      var m = /[?&]company=([^&]+)/.exec(location.search);
+      var key = m && DISE.companies[decodeURIComponent(m[1])] ? decodeURIComponent(m[1]) : 'disehimedia';
+      var c = DISE.companies[key];
+      var ROOT = '../../shared/assets/presentations/';
+      document.getElementById('pageTitle').textContent = c.nameKr + ' 프리젠테이션 양식';
+      document.getElementById('backLink').href = '../../index.html?company=' + encodeURIComponent(key);
+      var list = c.pptTemplates || [];
+      document.getElementById('list').innerHTML = list.length ?
+        '<div class="grid">' + list.map(function (t) {
+          var ext = (t.file.split('.').pop() || '').toUpperCase();
+          return '<div class="card"><div class="thumb">' + (t.thumb ? '<img src="' + ROOT + t.thumb + '" alt="">' : '미리보기 없음') + '</div>' +
+            '<div class="info"><h3>' + t.title + '</h3><p>' + (t.desc || '') + '</p>' +
+            '<a class="btn" href="' + ROOT + t.file + '" download>' + ext + ' 다운로드</a></div></div>';
+        }).join('') + '</div>' :
+        '<div class="empty">' + c.nameKr + '의 프리젠테이션 양식은 준비 중입니다.</div>';
+    })();
+  </script>
+</body>
+</html>
