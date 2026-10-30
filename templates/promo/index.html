@@ -16,6 +16,8 @@
      파일 위치: shared/assets/promo/{회사}/
      파일이 아직 없으면(서버가 404) 자동으로 "준비 중" 표시 — 파일만
      정해진 이름으로 넣으면 설정을 고칠 필요 없이 다운로드가 켜집니다.
+     미리보기 사진도 같은 폴더에 '{항목 key}.jpg'(예: envelope-large.jpg,
+     post-it.jpg)로 넣으면 자동 표시 — 권장 1200×900px(4:3) JPG.
      ============================================================ -->
 <style>
   html{background:#f4f6fa;}
@@ -28,7 +30,7 @@
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
   .card{background:#fff;border:1px solid #e2e6ee;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
   .thumb{aspect-ratio:4/3;background:#eef1f7;display:flex;align-items:center;justify-content:center;color:#9aa3b5;font-size:34px;}
-  .thumb img{width:100%;height:100%;object-fit:contain;background:#fff;}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}  /* 권장 1200×900(4:3) JPG — README 참고 */
   .info{padding:14px 16px 16px;}
   .info h3{margin:0 0 4px;font-size:15px;}
   .info p{margin:0 0 12px;font-size:12px;color:#888;min-height:1.2em;}
@@ -77,7 +79,9 @@
       list.innerHTML = '<div class="grid">' + items.map(function (it) {
         var fs = filesOf(it);
         return '<div class="card">' +
-          '<div class="thumb">' + (it.thumb ? '<img src="' + ROOT + it.thumb + '" alt="">' : '✉') + '</div>' +
+          // 미리보기: thumb 지정이 없으면 '{회사}/{항목 key}.jpg'를 찾고, 없으면 아이콘
+          '<div class="thumb"><img src="' + ROOT + (it.thumb || key + '/' + it.key + '.jpg') + '" alt="' + it.title + ' 미리보기"' +
+            ' onerror="this.parentNode.innerHTML=\'✉\'"></div>' +
           '<div class="info"><h3>' + it.title + '</h3>' +
           (fs.length > 1 ? '<p>AI 원본 ' + fs.length + '개</p>' : '<p>AI 원본</p>') +
           '<div class="files">' + fs.map(function (f) {
