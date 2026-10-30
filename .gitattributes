@@ -1,0 +1,8 @@
+# 디자인 원본은 바이너리로 취급 — 줄바꿈 변환(특히 Windows)으로 파일이 깨지지 않도록 (2026-10-30)
+*.ai binary
+*.eps binary
+*.psd binary
+*.pdf binary
+*.pptx binary
+*.key binary
+*.indd binary
