@@ -84,7 +84,16 @@ DISE.companies = {
     phoneIntl: '+82-32-573-3114',      // 해외에서 걸 때
     phoneDomestic: '032-573-3114',      // 국내에서 걸 때
     email: 'hidise@disehimedia.com',
-    website: 'www.disehimedia.com'
+    website: 'www.disehimedia.com',
+    // 판촉물 발주 파일(디자인 양식 > 판촉물 발주, 2026-10-30) — AI 원본은
+    // shared/assets/promo/{회사}/ 에 아래 file 이름 그대로 넣으면 다운로드가
+    // 켜집니다(파일이 없으면 "준비 중"). thumb(선택)는 미리보기 이미지.
+    promoItems: [
+      { key: 'envelope-large', title: '대봉투', file: 'disehimedia/envelope-large.ai' },
+      { key: 'envelope-small', title: '소봉투', file: 'disehimedia/envelope-small.ai' },
+      { key: 'pp-holder', title: 'PP홀더', file: 'disehimedia/pp-holder.ai' },
+      { key: 'post-it', title: '사각 포스트잇', file: 'disehimedia/post-it.ai' }
+    ]
   },
 
   r2v: {
@@ -95,6 +104,10 @@ DISE.companies = {
     docLogo: 'r2v/r2v-mark-gradient.svg',          // 문서 헤더: 그라데이션 원색
     docNoPrefix: 'R2V',
     lhShowName: true,                              // 레터헤드 B안: 로고 오른쪽에 R2V / 알투뷔
+    promoItems: [                                  // 판촉물 발주 파일(위 disehimedia 설명 참고)
+      { key: 'envelope-large', title: '대봉투', file: 'r2v/envelope-large.ai' },
+      { key: 'envelope-small', title: '소봉투', file: 'r2v/envelope-small.ai' }
+    ],
     logoRatio: 200 / 108,
     badgeColor: '#DA4F1E'                // R2V오렌지
     // TODO: 주소·전화·이메일 확정되면 disehimedia 항목과 동일한 형식으로 추가

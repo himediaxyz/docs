@@ -334,7 +334,7 @@
     // ============================================================
     var GROUPS = [
       { key: 'design', label: '디자인 양식', hint: '파일 내려받기', thumb: 'design',
-        subs: [{ key: 'logo', label: '회사 로고' }, { key: 'businesscard', label: '명함 서식' }, { key: 'presentation', label: '프리젠테이션' }] },
+        subs: [{ key: 'logo', label: '회사 로고' }, { key: 'businesscard', label: '명함 서식' }, { key: 'presentation', label: '프리젠테이션' }, { key: 'promo', label: '판촉물 발주' }] },
       { key: 'docs', label: '공식 문서', hint: '워드처럼 작성', thumb: 'doc',
         subs: [{ key: 'letterhead', label: '레터헤드' }, { key: 'contract', label: '계약서' }] },
       { key: 'sheets', label: '송장·견적서', hint: '엑셀처럼 계산', thumb: 'sheet',
@@ -372,13 +372,18 @@
         { title: '명함 서식', desc: '준비 중입니다.', href: '', category: 'businesscard', soon: true },
         { title: '프리젠테이션 양식', desc: '회사 프리젠테이션 양식 파일을 내려받습니다.', href: 'templates/presentation/index.html' + q, category: 'presentation',
           soon: !(c.pptTemplates && c.pptTemplates.length) },
+        // 판촉물 발주 — company-info.js에 promoItems가 있는 회사만(현재 다이즈·R2V)
+      ].concat(c.promoItems && c.promoItems.length ? [
+        { title: '판촉물 발주', desc: c.promoItems.map(function (p) { return p.title; }).join(' · ') + ' AI 원본 파일을 내려받습니다.',
+          href: 'templates/promo/index.html' + q, category: 'promo' }
+      ] : []).concat([
         // 공식 문서
         { title: '레터헤드 (국문)', desc: LH_DESC[co] || '회사 레터헤드 디자인의 국문 공식 문서입니다.', href: 'templates/gongmun-premium/index.html' + q, category: 'letterhead' },
         { title: '레터헤드 (영문)', desc: '"레터헤드 (국문)"과 같은 디자인의 영문 레터헤드입니다.', href: 'templates/gongmun/index.html' + q, category: 'letterhead' },
         // 송장·견적서
         { title: '송장 (인보이스)', desc: '구글 시트의 송장 데이터를 불러와 화면에서 고치고 인쇄·PDF로 내보냅니다.', href: 'templates/invoice/index.html' + q, category: 'invoice' },
         { title: '견적서', desc: '품목을 입력하면 공급가액·부가세·합계(한글 금액)가 자동 계산되는 표준 견적서입니다.', href: 'templates/quote/index.html' + q, category: 'quote' }
-      ];
+      ]);
       ((DISE.contracts && DISE.contracts[co] && DISE.contracts[co].items) || []).forEach(function (it) {
         TEMPLATES_BY_COMPANY[co].push({
           title: it.title, desc: it.desc,
@@ -450,7 +455,7 @@
       if (kind === 'design') {
         var icon = cat === 'logo' && c.logoMark ?
           '<span class="dz-logo" style="' + maskStyle(c.logoMark, 30, c.logoRatio) + '"></span>' :
-          '<span class="dz-icon">' + (cat === 'businesscard' ? '▭' : cat === 'presentation' ? '▶' : '◆') + '</span>';
+          '<span class="dz-icon">' + (cat === 'businesscard' ? '▭' : cat === 'presentation' ? '▶' : cat === 'promo' ? '✉' : '◆') + '</span>';
         return '<span class="tile-thumb design" style="background:' + (c.badgeColor || 'var(--navy)') + '">' + icon + '</span>';
       }
       if (kind === 'sheet') {

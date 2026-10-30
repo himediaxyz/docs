@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>판촉물 발주 파일 | 다이즈하이미디어 그룹 공식 문서 시스템</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Asta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/styles/variables.css">
+<!-- ============================================================
+     판촉물 발주 파일 (디자인 양식 > 판촉물 발주, 2026-10-30)
+     ?company=<key>
+     항목 목록: company-info.js의 promoItems
+       { key, title, file: '{회사}/파일명.ai', thumb?: '{회사}/파일명.png' }
+     파일 위치: shared/assets/promo/{회사}/
+     파일이 아직 없으면(서버가 404) 자동으로 "준비 중" 표시 — 파일만
+     정해진 이름으로 넣으면 설정을 고칠 필요 없이 다운로드가 켜집니다.
+     ============================================================ -->
+<style>
+  html{background:#f4f6fa;}
+  body{background:#f4f6fa;font-family:var(--font-kr);color:var(--ink);padding:28px 20px 60px;}
+  .wrap{max-width:900px;margin:0 auto;}
+  .back{font-size:13px;color:var(--sub);text-decoration:none;}
+  .back:hover{color:var(--navy);}
+  h1{font-size:22px;color:var(--navy);margin:14px 0 4px;}
+  .lead{font-size:13.5px;color:var(--sub);margin:0 0 22px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
+  .card{background:#fff;border:1px solid #e2e6ee;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
+  .thumb{aspect-ratio:4/3;background:#eef1f7;display:flex;align-items:center;justify-content:center;color:#9aa3b5;font-size:34px;}
+  .thumb img{width:100%;height:100%;object-fit:contain;background:#fff;}
+  .info{padding:14px 16px 16px;}
+  .info h3{margin:0 0 4px;font-size:15px;}
+  .info p{margin:0 0 12px;font-size:12px;color:#888;min-height:1.2em;}
+  .btn{display:inline-block;font-family:var(--font-en);font-size:12px;font-weight:600;text-decoration:none;color:var(--navy);
+    border:1px solid #d3d9e6;border-radius:999px;padding:6px 12px;background:#fff;}
+  .btn:hover{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .btn.off{color:#bbb;border-style:dashed;pointer-events:none;}
+  .note{font-size:12px;color:#999;margin-top:20px;line-height:1.7;}
+  .empty{background:#fff;border:1px dashed #d3d9e6;border-radius:12px;padding:40px 20px;text-align:center;color:#888;font-size:14px;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="../../index.html" id="backLink">← 문서 시스템으로</a>
+    <h1 id="pageTitle">판촉물 발주 파일</h1>
+    <p class="lead">인쇄소·판촉물 업체에 발주할 때 전달하는 AI(일러스트레이터) 원본 파일입니다.</p>
+    <div id="list"></div>
+    <p class="note">
+      · 파일을 열 때 글꼴이 없다는 경고가 나오면 글꼴이 윤곽선으로 변환된 파일인지 확인하세요.<br>
+      · 수량·용지·후가공 등 발주 사양은 업체와 별도로 협의하세요.
+    </p>
+  </div>
+  <script src="../../shared/scripts/company-info.js"></script>
+  <script>
+    (function () {
+      var m = /[?&]company=([^&]+)/.exec(location.search);
+      var key = m && DISE.companies[decodeURIComponent(m[1])] ? decodeURIComponent(m[1]) : 'disehimedia';
+      var c = DISE.companies[key];
+      var ROOT = '../../shared/assets/promo/';
+      document.getElementById('pageTitle').textContent = c.nameKr + ' 판촉물 발주 파일';
+      document.getElementById('backLink').href = '../../index.html?company=' + encodeURIComponent(key);
+      document.title = c.nameKr + ' 판촉물 발주 파일 | 다이즈하이미디어 그룹 공식 문서 시스템';
+
+      var items = c.promoItems || [];
+      var list = document.getElementById('list');
+      if (!items.length) { list.innerHTML = '<div class="empty">' + c.nameKr + '의 판촉물 발주 파일은 없습니다.</div>'; return; }
+
+      list.innerHTML = '<div class="grid">' + items.map(function (it, i) {
+        return '<div class="card">' +
+          '<div class="thumb">' + (it.thumb ? '<img src="' + ROOT + it.thumb + '" alt="">' : '✉') + '</div>' +
+          '<div class="info"><h3>' + it.title + '</h3><p id="st' + i + '">파일 확인 중…</p>' +
+          '<span id="bt' + i + '"><span class="btn off">AI</span></span></div></div>';
+      }).join('') + '</div>';
+
+      // 파일이 실제로 올라와 있는지 확인해서 버튼을 켭니다
+      items.forEach(function (it, i) {
+        var url = ROOT + it.file;
+        fetch(url, { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+          var ok = r.ok;
+          var size = ok ? Number(r.headers.get('content-length')) : 0;
+          document.getElementById('st' + i).textContent = ok ?
+            'AI 원본' + (size ? ' · ' + (size / 1048576).toFixed(1) + 'MB' : '') : '준비 중';
+          document.getElementById('bt' + i).innerHTML = ok ?
+            '<a class="btn" href="' + url + '" download>AI 다운로드</a>' : '<span class="btn off">AI 준비 중</span>';
+        }).catch(function () {
+          document.getElementById('st' + i).textContent = '준비 중';
+          document.getElementById('bt' + i).innerHTML = '<span class="btn off">AI 준비 중</span>';
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
