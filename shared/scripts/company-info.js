@@ -88,11 +88,17 @@ DISE.companies = {
     // 판촉물 발주 파일(디자인 양식 > 판촉물 발주, 2026-10-30) — AI 원본은
     // shared/assets/promo/{회사}/ 에 아래 file 이름 그대로 넣으면 다운로드가
     // 켜집니다(파일이 없으면 "준비 중"). thumb(선택)는 미리보기 이미지.
+    // 파일이 여러 개면 file 대신 files: [{ label, file }, ...].
     promoItems: [
       { key: 'envelope-large', title: '대봉투', file: 'disehimedia/envelope-large.ai' },
       { key: 'envelope-small', title: '소봉투', file: 'disehimedia/envelope-small.ai' },
       { key: 'pp-holder', title: 'PP홀더', file: 'disehimedia/pp-holder.ai' },
-      { key: 'post-it', title: '사각 포스트잇', file: 'disehimedia/post-it.ai' }
+      // 파일이 여러 개인 항목은 files 배열(label별 버튼)
+      { key: 'post-it', title: '사각 포스트잇', files: [
+        { label: '내지', file: 'disehimedia/post-it-pad.ai' },
+        { label: '커버(겉)', file: 'disehimedia/post-it-cover-out.ai' },
+        { label: '커버(안)', file: 'disehimedia/post-it-cover-in.ai' }
+      ] }
     ]
   },
 

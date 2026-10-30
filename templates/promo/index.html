@@ -36,6 +36,11 @@
     border:1px solid #d3d9e6;border-radius:999px;padding:6px 12px;background:#fff;}
   .btn:hover{background:var(--navy);color:#fff;border-color:var(--navy);}
   .btn.off{color:#bbb;border-style:dashed;pointer-events:none;}
+  .files{display:flex;flex-direction:column;gap:6px;}
+  .frow{display:flex;align-items:center;gap:8px;}
+  .flabel{font-size:12px;color:#666;min-width:0;}
+  .flabel:empty{display:none;}
+  .fsize{font-family:var(--font-en);font-size:11px;color:#999;margin-left:6px;}
   .note{font-size:12px;color:#999;margin-top:20px;line-height:1.7;}
   .empty{background:#fff;border:1px dashed #d3d9e6;border-radius:12px;padding:40px 20px;text-align:center;color:#888;font-size:14px;}
 </style>
@@ -66,26 +71,35 @@
       var list = document.getElementById('list');
       if (!items.length) { list.innerHTML = '<div class="empty">' + c.nameKr + '의 판촉물 발주 파일은 없습니다.</div>'; return; }
 
-      list.innerHTML = '<div class="grid">' + items.map(function (it, i) {
+      // 항목마다 파일 1개(file) 또는 여러 개(files: [{label, file}])
+      function filesOf(it) { return it._files || (it._files = it.files || [{ label: '', file: it.file }]); }
+      var n = 0;
+      list.innerHTML = '<div class="grid">' + items.map(function (it) {
+        var fs = filesOf(it);
         return '<div class="card">' +
           '<div class="thumb">' + (it.thumb ? '<img src="' + ROOT + it.thumb + '" alt="">' : '✉') + '</div>' +
-          '<div class="info"><h3>' + it.title + '</h3><p id="st' + i + '">파일 확인 중…</p>' +
-          '<span id="bt' + i + '"><span class="btn off">AI</span></span></div></div>';
+          '<div class="info"><h3>' + it.title + '</h3>' +
+          (fs.length > 1 ? '<p>AI 원본 ' + fs.length + '개</p>' : '<p>AI 원본</p>') +
+          '<div class="files">' + fs.map(function (f) {
+            var id = 'f' + (n++);
+            f._id = id;
+            return '<div class="frow" id="' + id + '"><span class="btn off">확인 중…</span></div>';
+          }).join('') + '</div></div></div>';
       }).join('') + '</div>';
 
       // 파일이 실제로 올라와 있는지 확인해서 버튼을 켭니다
-      items.forEach(function (it, i) {
-        var url = ROOT + it.file;
-        fetch(url, { method: 'HEAD', cache: 'no-store' }).then(function (r) {
-          var ok = r.ok;
-          var size = ok ? Number(r.headers.get('content-length')) : 0;
-          document.getElementById('st' + i).textContent = ok ?
-            'AI 원본' + (size ? ' · ' + (size / 1048576).toFixed(1) + 'MB' : '') : '준비 중';
-          document.getElementById('bt' + i).innerHTML = ok ?
-            '<a class="btn" href="' + url + '" download>AI 다운로드</a>' : '<span class="btn off">AI 준비 중</span>';
-        }).catch(function () {
-          document.getElementById('st' + i).textContent = '준비 중';
-          document.getElementById('bt' + i).innerHTML = '<span class="btn off">AI 준비 중</span>';
+      items.forEach(function (it) {
+        filesOf(it).forEach(function (f) {
+          var url = ROOT + f.file;
+          var el = document.getElementById(f._id);
+          var label = (f.label ? f.label + ' ' : '') + 'AI';
+          fetch(url, { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+            var size = r.ok ? Number(r.headers.get('content-length')) : 0;
+            el.innerHTML = r.ok ?
+              '<a class="btn" href="' + url + '" download>' + label + ' 다운로드</a>' +
+                (size ? '<span class="fsize">' + (size / 1048576).toFixed(1) + 'MB</span>' : '') :
+              '<span class="btn off">' + label + ' 준비 중</span>';
+          }).catch(function () { el.innerHTML = '<span class="btn off">' + label + ' 준비 중</span>'; });
         });
       });
     })();
