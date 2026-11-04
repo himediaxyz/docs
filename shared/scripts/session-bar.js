@@ -26,7 +26,8 @@
       who.textContent = (me.nameKr && me.nameKr !== me.email.split('@')[0] ? me.nameKr + ' · ' : '') + me.email;
       bar.appendChild(who);
       if (me.isAdmin) bar.appendChild(link('관리자 페이지', '/admin/'));
-      bar.appendChild(link('로그아웃', me.logoutUrl || '/cdn-cgi/access/logout'));
+      bar.appendChild(link('비밀번호 바꾸기', me.passwordUrl || '/account/password'));
+      bar.appendChild(link('로그아웃', me.logoutUrl || '/logout'));
       document.body.appendChild(bar);
     })
     .catch(function () { /* API 없음 — 표시 안 함 */ });

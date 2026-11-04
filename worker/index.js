@@ -4,17 +4,18 @@
    모든 요청이 이 Worker를 먼저 지나갑니다(wrangler.jsonc의
    assets.run_worker_first). 하는 일:
 
-   1) 로그인 확인 — Cloudflare Access가 붙여주는 JWT(Cf-Access-Jwt-Assertion)를
-      서명·만료·AUD까지 직접 검증합니다. Access 설정이 빠져 있으면 문을
-      열지 않습니다(fail closed).
-   2) 직원 명부(D1) 확인 — 허용 도메인 메일인지, 퇴사 처리된 사람인지,
-      관리자인지. 명부에 없는 회사 메일로 처음 들어오면 '일반'으로 자동 등록.
+   1) 로그인 — 메일(아이디)·비밀번호. 비밀번호는 PBKDF2로 해시해 D1에만 저장,
+      브라우저에는 무작위 세션 토큰 쿠키(HttpOnly·Secure)만 둡니다.
+      5번 틀리면 15분 잠금, 같은 IP에서 15분에 20번 넘게 틀리면 차단.
+      관리자가 정해 준 첫 비밀번호·초기화 비밀번호는 로그인 직후 바꿔야 합니다.
+   2) 직원 명부(D1) 확인 — 허용 도메인 메일인지, 퇴사 처리된 사람인지, 관리자인지.
    3) 사이트 파일 제공 — 기존 정적 사이트(템플릿·포털)를 그대로 내보냅니다.
    4) API
+        POST /api/login, /api/logout, /api/password, /api/setup(초기 관리자)
         GET  /api/me             로그인한 사람 정보
         GET  /api/senders.js     직원 명부의 발신인을 DISE.senders에 합쳐 주는 스크립트
         POST /api/pdf            문서 HTML → PDF (Cloudflare Browser Rendering)
-        /api/admin/*             관리자 전용(직원 명부·도메인·작업 기록·설정 상태)
+        /api/admin/*             관리자 전용(직원 명부·비밀번호 초기화·도메인·작업 기록)
    ============================================================ */
 
 import puppeteer from '@cloudflare/puppeteer';
@@ -23,12 +24,15 @@ const STATUSES = ['재직', '휴직', '퇴사'];
 const ROLES = ['admin', 'member'];
 const EMP_FIELDS = ['company', 'email', 'name_kr', 'name_en', 'dept', 'title_kr', 'title_en',
   'mobile', 'phone', 'hire_date', 'leave_date', 'status', 'role', 'is_sender', 'sort_order', 'memo'];
+const SESSION_COOKIE = 'dise_session';
+const SESSION_HOURS = 12;
+const PBKDF2_ITER = 100000; // Workers의 PBKDF2 최대 반복 횟수
+const MAX_FAILS = 5, LOCK_MIN = 15, IP_MAX_FAILS = 20;
 
 export default {
   async fetch(request, env, ctx) {
     try {
-      const res = await handle(request, env, ctx);
-      return withSecurityHeaders(res);
+      return withSecurityHeaders(await handle(request, env, ctx));
     } catch (err) {
       console.error(err);
       return withSecurityHeaders(json({ error: '서버 오류: ' + (err && err.message || err) }, 500));
@@ -38,30 +42,48 @@ export default {
 
 async function handle(request, env, ctx) {
   const url = new URL(request.url);
+  const path = url.pathname;
+  if (!env.DB) return htmlPage(503, '설정 오류', 'DB(D1)가 연결되지 않았습니다.', '');
 
-  // ---- 1) 로그인 확인 ----
-  const auth = await authenticate(request, env);
-  if (auth.response) return auth.response;
-  const email = auth.email;
-
-  // ---- 2) 직원 명부 확인 ----
-  const gate = await authorize(email, env);
-  if (gate.response) return gate.response;
-  const user = gate.user;
-
-  if (isNavigation(request) && user.id) {
-    ctx.waitUntil(env.DB.prepare(
-      "UPDATE employees SET last_seen_at = datetime('now') WHERE id = ? AND (last_seen_at IS NULL OR last_seen_at < datetime('now','-10 minutes'))"
-    ).bind(user.id).run().catch(() => {}));
-  }
-
-  // 쓰기 요청은 같은 사이트에서 온 것만(CSRF 방지)
+  // 쓰기 요청은 같은 사이트에서 온 것만(CSRF 방지) — 로그인 전 요청 포함
   if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
     const origin = request.headers.get('Origin');
     if (!origin || origin !== url.origin) return json({ error: '허용되지 않은 요청 출처입니다.' }, 403);
   }
 
-  const path = url.pathname;
+  // ---- 로그인 없이 열리는 곳 ----
+  if (path === '/login' || path === '/login/') return loginPage(env, url);
+  if (path === '/setup' || path === '/setup/') return setupPage(env);
+  if (path === '/api/login' && request.method === 'POST') return apiLogin(request, env);
+  if (path === '/api/setup' && request.method === 'POST') return apiSetup(request, env);
+  if (path === '/logout' || path === '/api/logout') return logout(request, env);
+  if (path === '/favicon.ico') return new Response(null, { status: 204 });
+
+  // ---- 1) 로그인 확인 ----
+  const user = await currentUser(request, env);
+  if (!user) {
+    if (path.startsWith('/api/')) return json({ error: '로그인이 필요합니다.' }, 401);
+    const next = path + url.search;
+    return Response.redirect(url.origin + '/login?next=' + encodeURIComponent(next), 302);
+  }
+
+  // ---- 2) 직원 상태 확인 ----
+  const block = await checkEmployee(user, env);
+  if (block) return block;
+
+  if (isNavigation(request)) {
+    ctx.waitUntil(env.DB.prepare(
+      "UPDATE employees SET last_seen_at = datetime('now') WHERE id = ? AND (last_seen_at IS NULL OR last_seen_at < datetime('now','-10 minutes'))"
+    ).bind(user.id).run().catch(() => {}));
+  }
+
+  // 첫 로그인·초기화 후에는 비밀번호부터 바꾸기
+  if (path === '/account/password' || path === '/account/password/') return passwordPage(user);
+  if (path === '/api/password' && request.method === 'POST') return apiPassword(request, env, user);
+  if (user.must_change_password) {
+    if (path.startsWith('/api/')) return json({ error: '비밀번호를 먼저 바꿔 주세요.' }, 403);
+    return Response.redirect(url.origin + '/account/password', 302);
+  }
 
   // ---- 3) API ----
   if (path === '/api/me') return json(publicUser(user));
@@ -83,110 +105,188 @@ async function handle(request, env, ctx) {
 }
 
 /* ------------------------------------------------------------
-   로그인 (Cloudflare Access JWT 검증)
+   비밀번호·세션
    ------------------------------------------------------------ */
-let certCache = { at: 0, keys: null, team: '' };
-
-async function authenticate(request, env) {
-  // 로컬 개발(wrangler dev)에서만 .dev.vars의 DEV_USER_EMAIL 사용
-  if (env.DEV_USER_EMAIL) {
-    const host = new URL(request.url).hostname;
-    if (host === 'localhost' || host === '127.0.0.1') return { email: env.DEV_USER_EMAIL.toLowerCase() };
-  }
-  const team = (env.ACCESS_TEAM_DOMAIN || '').replace(/\/+$/, '');
-  const aud = env.ACCESS_AUD || '';
-  if (!team || !aud) {
-    return { response: htmlPage(503, '로그인 설정 전', '아직 로그인(Cloudflare Access) 설정이 끝나지 않아 사이트를 열 수 없습니다.', '관리자: wrangler.jsonc의 ACCESS_TEAM_DOMAIN · ACCESS_AUD 값을 채워 다시 배포하세요.') };
-  }
-  const token = request.headers.get('Cf-Access-Jwt-Assertion') || readCookie(request, 'CF_Authorization');
-  if (!token) return { response: htmlPage(401, '로그인 필요', '회사 메일로 로그인한 뒤 이용할 수 있습니다.', '<a href="/">다시 시도</a>') };
-  try {
-    const payload = await verifyJwt(token, team, aud);
-    if (!payload.email) throw new Error('메일 정보 없음');
-    return { email: String(payload.email).toLowerCase() };
-  } catch (e) {
-    return { response: htmlPage(401, '로그인 확인 실패', '로그인 정보를 확인하지 못했습니다. 다시 로그인해 주세요.', '<a href="/cdn-cgi/access/logout">다시 로그인</a>') };
-  }
+async function hashPassword(password, saltB64) {
+  const salt = saltB64 ? b64ToBytes(saltB64) : crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: PBKDF2_ITER }, key, 256);
+  return `pbkdf2$${PBKDF2_ITER}$${bytesToB64(salt)}$${bytesToB64(new Uint8Array(bits))}`;
 }
 
-async function verifyJwt(token, team, aud) {
-  const parts = token.split('.');
-  if (parts.length !== 3) throw new Error('형식 오류');
-  const header = JSON.parse(b64urlToString(parts[0]));
-  const payload = JSON.parse(b64urlToString(parts[1]));
-  const now = Math.floor(Date.now() / 1000);
-  if (!payload.exp || payload.exp < now) throw new Error('만료');
-  if (payload.nbf && payload.nbf > now + 60) throw new Error('nbf');
-  const auds = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-  if (!auds.includes(aud)) throw new Error('aud');
-  if (payload.iss && payload.iss.replace(/\/+$/, '') !== team) throw new Error('iss');
-
-  let keys = await getCerts(team, false);
-  let jwk = keys.find(k => k.kid === header.kid);
-  if (!jwk) { keys = await getCerts(team, true); jwk = keys.find(k => k.kid === header.kid); }
-  if (!jwk) throw new Error('kid');
-  const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
-  const ok = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, b64urlToBytes(parts[2]),
-    new TextEncoder().encode(parts[0] + '.' + parts[1]));
-  if (!ok) throw new Error('서명');
-  return payload;
+async function verifyPassword(password, stored) {
+  const parts = String(stored || '').split('$');
+  if (parts.length !== 4 || parts[0] !== 'pbkdf2') return false;
+  const again = await hashPassword(password, parts[2]);
+  return timingSafeEqual(again, stored);
 }
 
-async function getCerts(team, force) {
-  if (!force && certCache.keys && certCache.team === team && Date.now() - certCache.at < 3600e3) return certCache.keys;
-  const res = await fetch(team + '/cdn-cgi/access/certs');
-  if (!res.ok) throw new Error('certs ' + res.status);
-  const data = await res.json();
-  certCache = { at: Date.now(), keys: data.keys || [], team };
-  return certCache.keys;
+function timingSafeEqual(a, b) {
+  a = String(a); b = String(b);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
 }
 
-/* ------------------------------------------------------------
-   직원 명부 확인
-   ------------------------------------------------------------ */
+function passwordProblem(pw, email) {
+  pw = String(pw || '');
+  if (pw.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
+  if (pw.length > 128) return '비밀번호가 너무 깁니다.';
+  if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) return '비밀번호에 영문과 숫자를 함께 넣어 주세요.';
+  if (email && pw.toLowerCase().includes(email.split('@')[0].toLowerCase())) return '비밀번호에 아이디(메일 앞부분)를 넣을 수 없습니다.';
+  return '';
+}
+
+function tempPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  const r = crypto.getRandomValues(new Uint8Array(12));
+  let s = '';
+  for (let i = 0; i < 10; i++) s += chars[r[i] % chars.length];
+  return s.slice(0, 5) + '-' + s.slice(5) + (r[10] % 10); // 예: Ab3kP-qR7mz4
+}
+
+async function sha256Hex(s) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function currentUser(request, env) {
+  const token = readCookie(request, SESSION_COOKIE);
+  if (!token || token.length < 30) return null;
+  const th = await sha256Hex(token);
+  return env.DB.prepare(
+    "SELECT e.* FROM sessions s JOIN employees e ON e.id = s.employee_id WHERE s.token_hash = ? AND s.expires_at > datetime('now')"
+  ).bind(th).first();
+}
+
 function adminEmails(env) {
   return String(env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 }
 
-async function authorize(email, env) {
-  if (!env.DB) return { response: htmlPage(503, '설정 오류', 'DB(D1)가 연결되지 않았습니다.', '') };
-  const domain = email.split('@')[1] || '';
-  const isBootstrapAdmin = adminEmails(env).includes(email);
+async function checkEmployee(emp, env) {
+  const isBootstrapAdmin = adminEmails(env).includes(emp.email.toLowerCase());
+  if (isBootstrapAdmin) { emp.role = 'admin'; return null; } // 초기 관리자는 잠기지 않도록
+  if (emp.status === '퇴사') return htmlPage(403, '접속이 차단된 계정', '퇴사 처리된 계정이라 문서 시스템을 사용할 수 없습니다.', '잘못 처리된 경우 관리자에게 문의하세요. <a href="/logout">로그아웃</a>');
+  const domain = emp.email.split('@')[1] || '';
+  const dom = await env.DB.prepare('SELECT 1 FROM allowed_domains WHERE domain = ? AND active = 1').bind(domain).first();
+  if (!dom) return htmlPage(403, '접속 권한 없음', '이 메일 도메인은 문서 시스템 사용이 허용되지 않았습니다.', '관리자에게 문의하세요. <a href="/logout">로그아웃</a>');
+  return null;
+}
 
-  const dom = await env.DB.prepare('SELECT domain, company FROM allowed_domains WHERE domain = ? AND active = 1').bind(domain).first();
-  if (!dom && !isBootstrapAdmin) {
-    return { response: htmlPage(403, '접속 권한 없음', email + ' 계정은 이 문서 시스템을 사용할 수 없습니다.', '회사 메일로 다시 로그인하거나 관리자에게 문의하세요. <a href="/cdn-cgi/access/logout">로그아웃</a>') };
+function clientIp(request) { return request.headers.get('CF-Connecting-IP') || ''; }
+
+async function apiLogin(request, env) {
+  let b; try { b = await request.json(); } catch (e) { return json({ error: '잘못된 요청입니다.' }, 400); }
+  const email = String(b.email || '').trim().toLowerCase();
+  const password = String(b.password || '');
+  const ip = clientIp(request);
+  const fail = msg => json({ error: msg || '메일 또는 비밀번호가 맞지 않습니다.' }, 401);
+
+  const ipFails = await env.DB.prepare(`SELECT COUNT(*) AS n FROM login_attempts WHERE ip = ? AND at > datetime('now','-${LOCK_MIN} minutes')`).bind(ip).first();
+  if (ipFails && ipFails.n >= IP_MAX_FAILS) return fail('로그인 시도가 너무 많습니다. 15분 뒤에 다시 시도해 주세요.');
+
+  const emp = email ? await env.DB.prepare('SELECT * FROM employees WHERE email = ?').bind(email).first() : null;
+  if (!emp || !emp.password_hash) {
+    await hashPassword(password || 'x'); // 응답 시간으로 계정 존재 여부를 알 수 없게
+    await env.DB.prepare('INSERT INTO login_attempts (ip) VALUES (?)').bind(ip).run();
+    if (emp && !emp.password_hash && adminEmails(env).includes(email)) return fail('처음 쓰는 관리자 계정입니다. 아래 "초기 관리자 설정"에서 비밀번호를 만들어 주세요.');
+    return fail(emp && !emp.password_hash ? '아직 비밀번호가 없는 계정입니다. 관리자에게 첫 비밀번호를 받아 주세요.' : '');
+  }
+  if (emp.locked_until && emp.locked_until > sqlNow()) return fail(`비밀번호를 여러 번 틀려 잠시 잠겼습니다. ${LOCK_MIN}분 뒤에 다시 시도하거나 관리자에게 초기화를 요청하세요.`);
+
+  const ok = await verifyPassword(password, emp.password_hash);
+  if (!ok) {
+    const n = (emp.failed_logins || 0) + 1;
+    const lock = n >= MAX_FAILS ? `datetime('now','+${LOCK_MIN} minutes')` : 'NULL';
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE employees SET failed_logins = ?, locked_until = ${lock} WHERE id = ?`).bind(n >= MAX_FAILS ? 0 : n, emp.id),
+      env.DB.prepare('INSERT INTO login_attempts (ip) VALUES (?)').bind(ip)
+    ]);
+    if (n >= MAX_FAILS) await log(env, email, '로그인 잠금', email, `${MAX_FAILS}회 실패`);
+    return fail(n >= MAX_FAILS ? `비밀번호를 ${MAX_FAILS}번 틀려 ${LOCK_MIN}분 동안 잠겼습니다.` : `메일 또는 비밀번호가 맞지 않습니다. (${n}/${MAX_FAILS})`);
   }
 
-  let emp = await env.DB.prepare('SELECT * FROM employees WHERE email = ?').bind(email).first();
-  if (!emp) {
-    // 허용 도메인의 새 직원 — 일반 권한으로 자동 등록(관리자가 명부에서 정보 보완)
-    const company = dom ? dom.company : 'disehimedia';
-    await env.DB.prepare("INSERT OR IGNORE INTO employees (company, email, name_kr, role, status, memo) VALUES (?, ?, ?, ?, '재직', '첫 접속 시 자동 등록')")
-      .bind(company, email, email.split('@')[0], isBootstrapAdmin ? 'admin' : 'member').run();
-    await log(env, email, '자동 등록', email, '첫 접속');
-    emp = await env.DB.prepare('SELECT * FROM employees WHERE email = ?').bind(email).first();
-  }
+  const block = await checkEmployee(emp, env);
+  if (block) return json({ error: emp.status === '퇴사' ? '퇴사 처리된 계정입니다.' : '이 메일 도메인은 사용이 허용되지 않았습니다.' }, 403);
 
-  if (isBootstrapAdmin) emp.role = 'admin'; // 초기 관리자는 잠기지 않도록 항상 관리자
-  if (emp.status === '퇴사' && !isBootstrapAdmin) {
-    return { response: htmlPage(403, '접속이 차단된 계정', '퇴사 처리된 계정이라 문서 시스템을 사용할 수 없습니다.', '잘못 처리된 경우 관리자에게 문의하세요. <a href="/cdn-cgi/access/logout">로그아웃</a>') };
+  const token = bytesToB64url(crypto.getRandomValues(new Uint8Array(32)));
+  await env.DB.batch([
+    env.DB.prepare(`INSERT INTO sessions (token_hash, employee_id, expires_at, ip, user_agent) VALUES (?, ?, datetime('now','+${SESSION_HOURS} hours'), ?, ?)`)
+      .bind(await sha256Hex(token), emp.id, ip, (request.headers.get('User-Agent') || '').slice(0, 200)),
+    env.DB.prepare("UPDATE employees SET failed_logins = 0, locked_until = NULL, last_seen_at = datetime('now') WHERE id = ?").bind(emp.id),
+    env.DB.prepare("DELETE FROM sessions WHERE expires_at < datetime('now')"),
+    env.DB.prepare("DELETE FROM login_attempts WHERE at < datetime('now','-1 day')")
+  ]);
+  const next = safeNext(b.next);
+  const res = json({ ok: true, next: emp.must_change_password ? '/account/password' : next });
+  res.headers.append('Set-Cookie', `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_HOURS * 3600}`);
+  return res;
+}
+
+async function logout(request, env) {
+  const token = readCookie(request, SESSION_COOKIE);
+  if (token) await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(await sha256Hex(token)).run();
+  const res = new Response(null, { status: 302, headers: { Location: '/login' } });
+  res.headers.append('Set-Cookie', `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+  return res;
+}
+
+async function apiPassword(request, env, user) {
+  let b; try { b = await request.json(); } catch (e) { return json({ error: '잘못된 요청입니다.' }, 400); }
+  if (!(await verifyPassword(String(b.current || ''), user.password_hash))) return json({ error: '지금 비밀번호가 맞지 않습니다.' }, 400);
+  const problem = passwordProblem(b.password, user.email);
+  if (problem) return json({ error: problem }, 400);
+  if (b.password === b.current) return json({ error: '지금과 다른 비밀번호로 바꿔 주세요.' }, 400);
+  const token = readCookie(request, SESSION_COOKIE);
+  await env.DB.batch([
+    env.DB.prepare("UPDATE employees SET password_hash = ?, must_change_password = 0, password_changed_at = datetime('now') WHERE id = ?").bind(await hashPassword(b.password), user.id),
+    // 다른 기기의 로그인은 모두 끊기(지금 기기만 유지)
+    env.DB.prepare('DELETE FROM sessions WHERE employee_id = ? AND token_hash != ?').bind(user.id, await sha256Hex(token || ''))
+  ]);
+  await log(env, user.email, '비밀번호 변경', user.email, '본인');
+  return json({ ok: true, next: '/' });
+}
+
+/* 초기 관리자(ADMIN_EMAILS) 첫 비밀번호 — 비밀값 SETUP_CODE를 아는 사람만, 비밀번호가 아직 없을 때만 */
+async function apiSetup(request, env) {
+  let b; try { b = await request.json(); } catch (e) { return json({ error: '잘못된 요청입니다.' }, 400); }
+  const email = String(b.email || '').trim().toLowerCase();
+  const ip = clientIp(request);
+  const ipFails = await env.DB.prepare(`SELECT COUNT(*) AS n FROM login_attempts WHERE ip = ? AND at > datetime('now','-${LOCK_MIN} minutes')`).bind(ip).first();
+  if (ipFails && ipFails.n >= IP_MAX_FAILS) return json({ error: '시도가 너무 많습니다. 15분 뒤에 다시 시도해 주세요.' }, 429);
+  if (!env.SETUP_CODE || String(env.SETUP_CODE).length < 8) return json({ error: '설정 코드가 아직 등록되지 않았습니다. PC에서 `npx wrangler secret put SETUP_CODE`로 먼저 등록하세요.' }, 400);
+  if (!adminEmails(env).includes(email)) return json({ error: '초기 관리자 메일이 아닙니다.' }, 400);
+  if (!timingSafeEqual(String(b.code || ''), String(env.SETUP_CODE))) {
+    await env.DB.prepare('INSERT INTO login_attempts (ip) VALUES (?)').bind(ip).run();
+    return json({ error: '설정 코드가 맞지 않습니다.' }, 400);
   }
-  return { user: emp };
+  const emp = await env.DB.prepare('SELECT * FROM employees WHERE email = ?').bind(email).first();
+  if (emp && emp.password_hash) return json({ error: '이미 비밀번호가 있는 계정입니다. 로그인 화면을 이용하세요.' }, 400);
+  const problem = passwordProblem(b.password, email);
+  if (problem) return json({ error: problem }, 400);
+  const hash = await hashPassword(b.password);
+  if (emp) await env.DB.prepare("UPDATE employees SET password_hash = ?, must_change_password = 0, password_changed_at = datetime('now') WHERE id = ?").bind(hash, emp.id).run();
+  else await env.DB.prepare("INSERT INTO employees (company, email, name_kr, role, password_hash, password_changed_at, memo) VALUES ('disehimedia', ?, ?, 'admin', ?, datetime('now'), '초기 관리자')").bind(email, email.split('@')[0], hash).run();
+  await log(env, email, '초기 관리자 비밀번호 설정', email, '');
+  return json({ ok: true });
+}
+
+function safeNext(n) {
+  n = String(n || '/');
+  return (n.startsWith('/') && !n.startsWith('//') && !n.startsWith('/login') && !n.startsWith('/setup')) ? n : '/';
 }
 
 function publicUser(u) {
   return {
     email: u.email, company: u.company, nameKr: u.name_kr, nameEn: u.name_en, dept: u.dept,
     titleKr: u.title_kr, titleEn: u.title_en, mobile: u.mobile, phone: u.phone,
-    status: u.status, role: u.role, isAdmin: u.role === 'admin', logoutUrl: '/cdn-cgi/access/logout'
+    status: u.status, role: u.role, isAdmin: u.role === 'admin', logoutUrl: '/logout',
+    passwordUrl: '/account/password'
   };
 }
 
 /* ------------------------------------------------------------
    발신인 스크립트 — 기존 sender-info.js 목록 위에 직원 명부를 합칩니다.
-   같은 메일은 명부 값으로 갱신(기본 발신인 표시·id는 유지), 새 사람은 추가,
-   퇴사자는 목록에서 제거.
    ------------------------------------------------------------ */
 async function sendersScript(env) {
   const { results: rows } = await env.DB.prepare(
@@ -195,19 +295,16 @@ async function sendersScript(env) {
   const add = {};
   for (const r of rows) {
     (add[r.company] = add[r.company] || []).push({
-      id: 'emp-' + r.id,
-      nameKr: r.name_kr,
-      nameEn: r.name_en,
+      id: 'emp-' + r.id, nameKr: r.name_kr, nameEn: r.name_en,
       title: [r.title_kr, r.title_en].filter(Boolean).join(' | '),
-      phone: r.mobile || r.phone,
-      email: r.email
+      phone: r.mobile || r.phone, email: r.email
     });
   }
   const js = `/* 직원 명부(관리자 페이지)에서 자동 생성 */
 (function () {
   var D = window.DISE = window.DISE || {}; D.senders = D.senders || {};
-  var add = ${JSON.stringify(add)};
-  var gone = ${JSON.stringify(gone.map(g => g.email.toLowerCase()))};
+  var add = ${JSON.stringify(add).replace(/</g, '\\u003c')};
+  var gone = ${JSON.stringify(gone.map(g => g.email.toLowerCase())).replace(/</g, '\\u003c')};
   function key(p) { return (p && p.email || '').toLowerCase(); }
   Object.keys(D.senders).forEach(function (co) {
     D.senders[co] = D.senders[co].filter(function (p) { return !key(p) || gone.indexOf(key(p)) < 0; });
@@ -227,9 +324,7 @@ async function sendersScript(env) {
 }
 
 /* ------------------------------------------------------------
-   PDF — 기존 Vercel pdf-service와 같은 방식(요청 가로채기)으로
-   Cloudflare Browser Rendering에서 렌더링. 사이트 파일은 로그인 관문을
-   거치지 않고 ASSETS에서 직접 읽어 넣습니다.
+   PDF — Cloudflare Browser Rendering. 사이트 파일은 ASSETS에서 직접 넣습니다.
    ------------------------------------------------------------ */
 async function handlePdf(request, env, url) {
   if (request.method !== 'POST') return json({ error: 'POST 요청만 지원합니다.' }, 405);
@@ -245,7 +340,9 @@ async function handlePdf(request, env, url) {
   if (!baseHref) return json({ error: '허용되지 않은 문서 출처입니다.' }, 400);
   const fileName = String(body.fileName || 'document').replace(/[\\/:*?"<>|\r\n]/g, '').trim() || 'document';
 
-  const browser = await puppeteer.launch(env.BROWSER);
+  let browser;
+  try { browser = await puppeteer.launch(env.BROWSER); }
+  catch (e) { return json({ error: 'PDF 서버가 바쁘거나 오늘 무료 사용량을 다 썼습니다. 잠시 뒤 다시 하거나 "인쇄하기"를 이용해 주세요.' }, 503); }
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1400, height: 1600 });
@@ -254,9 +351,7 @@ async function handlePdf(request, env, url) {
     page.on('request', async req => {
       try {
         const u = req.url();
-        if (u === baseHref) {
-          return req.respond({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
-        }
+        if (u === baseHref) return req.respond({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
         const ru = new URL(u);
         if (ru.origin === url.origin) {
           if (ru.pathname.startsWith('/api/')) return req.respond({ status: 204, body: '' });
@@ -289,37 +384,42 @@ async function handlePdf(request, env, url) {
 /* ------------------------------------------------------------
    관리자 API
    ------------------------------------------------------------ */
+const EMP_COLUMNS = 'id, company, email, name_kr, name_en, dept, title_kr, title_en, mobile, phone, hire_date, leave_date, status, role, is_sender, sort_order, memo, created_at, updated_at, last_seen_at, must_change_password, locked_until, password_changed_at, (password_hash IS NOT NULL) AS has_password';
+
 async function handleAdmin(request, env, url, user) {
   const path = url.pathname.replace(/^\/api\/admin/, '');
   const method = request.method;
   const actor = user.email;
 
-  // 설정 상태
   if (path === '/status' && method === 'GET') {
-    const counts = await env.DB.prepare("SELECT status, COUNT(*) AS n FROM employees GROUP BY status").all();
-    return json({
-      access: !!(env.ACCESS_TEAM_DOMAIN && env.ACCESS_AUD),
-      accessTeam: env.ACCESS_TEAM_DOMAIN || '',
-      pdf: !!env.BROWSER,
-      accessSync: !!(env.CF_API_TOKEN && env.CF_ACCOUNT_ID && env.ACCESS_POLICY_ID),
-      adminEmails: adminEmails(env),
-      counts: counts.results,
-      me: publicUser(user)
-    });
+    const counts = await env.DB.prepare('SELECT status, COUNT(*) AS n FROM employees GROUP BY status').all();
+    const nopw = await env.DB.prepare("SELECT COUNT(*) AS n FROM employees WHERE password_hash IS NULL AND status != '퇴사'").first();
+    return json({ pdf: !!env.BROWSER, counts: counts.results, noPassword: nopw.n, adminEmails: adminEmails(env), me: publicUser(user) });
   }
 
   // 직원 명부
   if (path === '/employees' && method === 'GET') {
-    const { results } = await env.DB.prepare('SELECT * FROM employees ORDER BY company, CASE status WHEN \'재직\' THEN 0 WHEN \'휴직\' THEN 1 ELSE 2 END, sort_order, name_kr').all();
+    const { results } = await env.DB.prepare(`SELECT ${EMP_COLUMNS} FROM employees ORDER BY company, CASE status WHEN '재직' THEN 0 WHEN '휴직' THEN 1 ELSE 2 END, sort_order, name_kr`).all();
     return json(results);
   }
   if (path === '/employees' && method === 'POST') {
-    const data = cleanEmployee(await request.json(), true);
+    const raw = await request.json();
+    const data = cleanEmployee(raw, true);
     if (data.error) return json(data, 400);
+    const domErr = await domainError(env, data.email);
+    if (domErr) return json({ error: domErr }, 400);
+    let temp = '';
+    if (raw.password) {
+      const problem = passwordProblem(raw.password, data.email);
+      if (problem) return json({ error: problem }, 400);
+      temp = raw.password;
+    } else temp = tempPassword();
+    data.password_hash = await hashPassword(temp);
+    data.must_change_password = 1;
     try {
       const r = await insertEmployee(env, data);
       await log(env, actor, '직원 추가', data.email, data.name_kr);
-      return json({ ok: true, id: r.meta.last_row_id });
+      return json({ ok: true, id: r.meta.last_row_id, tempPassword: raw.password ? '' : temp });
     } catch (e) {
       if (/UNIQUE/i.test(e.message)) return json({ error: '이미 등록된 메일입니다: ' + data.email }, 409);
       throw e;
@@ -328,18 +428,41 @@ async function handleAdmin(request, env, url, user) {
   if (path === '/employees/import' && method === 'POST') {
     const rows = await request.json();
     if (!Array.isArray(rows)) return json({ error: '목록 형식이 아닙니다.' }, 400);
-    let added = 0, updated = 0; const errors = [];
+    let added = 0, updated = 0; const errors = [], passwords = [];
     for (let i = 0; i < rows.length; i++) {
       const data = cleanEmployee(rows[i], true);
       if (data.error) { errors.push((i + 2) + '행: ' + data.error); continue; }
       const exist = await env.DB.prepare('SELECT id FROM employees WHERE email = ?').bind(data.email).first();
-      if (exist) { await updateEmployee(env, exist.id, data, actor, user); updated++; }
-      else { await insertEmployee(env, data); added++; }
+      if (exist) {
+        const r = await updateEmployee(env, exist.id, data, actor, user);
+        if (r.error) errors.push((i + 2) + '행: ' + r.error); else updated++;
+      } else {
+        const domErr = await domainError(env, data.email);
+        if (domErr) { errors.push((i + 2) + '행: ' + domErr); continue; }
+        const temp = tempPassword();
+        data.password_hash = await hashPassword(temp); data.must_change_password = 1;
+        await insertEmployee(env, data); added++;
+        passwords.push({ email: data.email, name: data.name_kr || '', tempPassword: temp });
+      }
     }
     await log(env, actor, '명부 가져오기', '', `추가 ${added} · 갱신 ${updated} · 오류 ${errors.length}`);
-    return json({ ok: true, added, updated, errors });
+    return json({ ok: true, added, updated, errors, passwords });
   }
-  let m = path.match(/^\/employees\/(\d+)$/);
+  let m = path.match(/^\/employees\/(\d+)\/reset-password$/);
+  if (m && method === 'POST') {
+    const id = Number(m[1]);
+    const emp = await env.DB.prepare('SELECT email, name_kr FROM employees WHERE id = ?').bind(id).first();
+    if (!emp) return json({ error: '없는 직원입니다.' }, 404);
+    if (emp.email === actor) return json({ error: '본인 비밀번호는 "비밀번호 바꾸기"에서 바꿔 주세요.' }, 400);
+    const temp = tempPassword();
+    await env.DB.batch([
+      env.DB.prepare('UPDATE employees SET password_hash = ?, must_change_password = 1, failed_logins = 0, locked_until = NULL WHERE id = ?').bind(await hashPassword(temp), id),
+      env.DB.prepare('DELETE FROM sessions WHERE employee_id = ?').bind(id)
+    ]);
+    await log(env, actor, '비밀번호 초기화', emp.email, emp.name_kr);
+    return json({ ok: true, tempPassword: temp });
+  }
+  m = path.match(/^\/employees\/(\d+)$/);
   if (m && method === 'PUT') {
     const id = Number(m[1]);
     const data = cleanEmployee(await request.json(), false);
@@ -353,7 +476,10 @@ async function handleAdmin(request, env, url, user) {
     if (!emp) return json({ error: '없는 직원입니다.' }, 404);
     if (emp.email === actor) return json({ error: '본인 계정은 삭제할 수 없습니다.' }, 400);
     if (adminEmails(env).includes(emp.email)) return json({ error: '초기 관리자(ADMIN_EMAILS)는 삭제할 수 없습니다.' }, 400);
-    await env.DB.prepare('DELETE FROM employees WHERE id = ?').bind(id).run();
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM sessions WHERE employee_id = ?').bind(id),
+      env.DB.prepare('DELETE FROM employees WHERE id = ?').bind(id)
+    ]);
     await log(env, actor, '직원 삭제', emp.email, emp.name_kr);
     return json({ ok: true });
   }
@@ -370,29 +496,29 @@ async function handleAdmin(request, env, url, user) {
     await env.DB.prepare('INSERT INTO allowed_domains (domain, company, active) VALUES (?, ?, 1) ON CONFLICT(domain) DO UPDATE SET company = excluded.company, active = 1')
       .bind(domain, String(b.company || '')).run();
     await log(env, actor, '도메인 허용', domain, b.company || '');
-    const sync = await syncAccessPolicy(env);
-    return json({ ok: true, sync });
+    return json({ ok: true });
   }
   m = path.match(/^\/domains\/(.+)$/);
   if (m && method === 'DELETE') {
     const domain = decodeURIComponent(m[1]).toLowerCase();
     if (domain === (actor.split('@')[1] || '')) return json({ error: '본인 메일 도메인은 삭제할 수 없습니다(잠김 방지).' }, 400);
     await env.DB.prepare('DELETE FROM allowed_domains WHERE domain = ?').bind(domain).run();
-    await log(env, actor, '도메인 삭제', domain, '');
-    const sync = await syncAccessPolicy(env);
-    return json({ ok: true, sync });
-  }
-  if (path === '/access-sync' && method === 'POST') {
-    return json(await syncAccessPolicy(env));
+    await log(env, actor, '도메인 삭제', domain, '그 도메인 직원 접속 차단');
+    return json({ ok: true });
   }
 
-  // 작업 기록
   if (path === '/audit' && method === 'GET') {
     const { results } = await env.DB.prepare('SELECT * FROM audit_log ORDER BY id DESC LIMIT 300').all();
     return json(results);
   }
 
   return json({ error: '없는 관리자 API입니다.' }, 404);
+}
+
+async function domainError(env, email) {
+  const domain = email.split('@')[1] || '';
+  const ok = await env.DB.prepare('SELECT 1 FROM allowed_domains WHERE domain = ? AND active = 1').bind(domain).first();
+  return ok ? '' : `@${domain} 은(는) 허용 도메인이 아닙니다. "로그인 허용 도메인"에 먼저 추가하세요.`;
 }
 
 function cleanEmployee(b, requireEmail) {
@@ -425,11 +551,16 @@ async function updateEmployee(env, id, d, actor, user) {
   if (before.email === user.email || protectedAdmin) {
     if (d.status === '퇴사' || d.role === 'member') return { error: (protectedAdmin ? '초기 관리자' : '본인 계정') + '은 퇴사·일반 권한으로 바꿀 수 없습니다(잠김 방지).' };
   }
+  if (d.email !== undefined && d.email !== before.email) {
+    const domErr = await domainError(env, d.email);
+    if (domErr) return { error: domErr };
+  }
   if (d.status === '퇴사' && !d.leave_date && !before.leave_date) d.leave_date = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
-  const cols = Object.keys(d).filter(c => c !== 'email' || d.email !== before.email);
+  const cols = Object.keys(d).filter(c => c !== 'email' || d.email !== before.email ? true : false);
   if (!cols.length) return { ok: true };
-  await env.DB.prepare(`UPDATE employees SET ${cols.map(c => c + ' = ?').join(', ')}, updated_at = datetime('now') WHERE id = ?`)
-    .bind(...cols.map(c => d[c]), id).run();
+  const stmts = [env.DB.prepare(`UPDATE employees SET ${cols.map(c => c + ' = ?').join(', ')}, updated_at = datetime('now') WHERE id = ?`).bind(...cols.map(c => d[c]), id)];
+  if (d.status === '퇴사') stmts.push(env.DB.prepare('DELETE FROM sessions WHERE employee_id = ?').bind(id)); // 즉시 로그아웃
+  await env.DB.batch(stmts);
   const changes = cols.filter(c => String(before[c] ?? '') !== String(d[c] ?? '')).map(c => `${c}: ${before[c] ?? ''} → ${d[c]}`);
   let action = '직원 수정';
   if (d.status === '퇴사' && before.status !== '퇴사') action = '퇴사 처리(접속 차단)';
@@ -439,30 +570,60 @@ async function updateEmployee(env, id, d, actor, user) {
   return { ok: true };
 }
 
-/* Cloudflare Access 정책의 "포함(include)" 규칙을 허용 도메인 목록과 맞춥니다.
-   필요한 값: CF_ACCOUNT_ID, ACCESS_POLICY_ID(재사용 정책 ID), 비밀 CF_API_TOKEN
-   (권한: Access: Apps and Policies — Edit). ACCESS_APP_ID가 있으면 앱 전용 정책 경로 사용. */
-async function syncAccessPolicy(env) {
-  if (!(env.CF_API_TOKEN && env.CF_ACCOUNT_ID && env.ACCESS_POLICY_ID)) {
-    return { synced: false, message: 'Access 자동 갱신이 설정되지 않았습니다 — Cloudflare 대시보드의 Access 정책에 도메인을 직접 추가해 주세요.' };
-  }
-  const { results } = await env.DB.prepare('SELECT domain FROM allowed_domains WHERE active = 1').all();
-  const base = `https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/access`;
-  const endpoint = env.ACCESS_APP_ID ? `${base}/apps/${env.ACCESS_APP_ID}/policies/${env.ACCESS_POLICY_ID}` : `${base}/policies/${env.ACCESS_POLICY_ID}`;
-  const headers = { Authorization: 'Bearer ' + env.CF_API_TOKEN, 'Content-Type': 'application/json' };
-  const cur = await (await fetch(endpoint, { headers })).json();
-  if (!cur.success) return { synced: false, message: 'Access 정책을 읽지 못했습니다: ' + JSON.stringify(cur.errors || '') };
-  const p = cur.result;
-  const keepAdmins = adminEmails(env).map(e => ({ email: { email: e } }));
-  const body = {
-    name: p.name, decision: p.decision || 'allow',
-    include: [...results.map(r => ({ email_domain: { domain: r.domain } })), ...keepAdmins],
-    exclude: p.exclude || [], require: p.require || []
-  };
-  if (p.session_duration) body.session_duration = p.session_duration;
-  const put = await (await fetch(endpoint, { method: 'PUT', headers, body: JSON.stringify(body) })).json();
-  if (!put.success) return { synced: false, message: 'Access 정책 갱신 실패: ' + JSON.stringify(put.errors || '') };
-  return { synced: true, message: 'Cloudflare Access 로그인 허용 목록도 갱신했습니다(' + results.length + '개 도메인).' };
+/* ------------------------------------------------------------
+   로그인·비밀번호 화면 (Worker가 직접 그림 — 로그인 전에도 열려야 하므로)
+   ------------------------------------------------------------ */
+const AUTH_CSS = `*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4f5f8;color:#1a1a1a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR","Malgun Gothic",sans-serif}
+.box{background:#fff;border-radius:16px;padding:34px 30px 28px;width:100%;max-width:400px;margin:16px;box-shadow:0 10px 36px rgba(11,35,79,.10)}
+.brand{font-size:12px;letter-spacing:.18em;color:#5b6476;margin:0 0 6px}h1{font-size:21px;margin:0 0 22px;color:#0b234f}
+label{display:block;font-size:13px;color:#5b6476;margin:14px 0 6px}input{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1px solid #cfd4df;border-radius:9px}
+input:focus{outline:2px solid #2f5fd0;outline-offset:-1px;border-color:#2f5fd0}button{width:100%;margin-top:22px;font:inherit;font-size:15px;font-weight:700;padding:12px;border:0;border-radius:9px;background:#0b234f;color:#fff;cursor:pointer}
+button[disabled]{opacity:.6}.err{color:#c0392b;font-size:13.5px;margin:14px 0 0;min-height:1em;line-height:1.5}.hint{font-size:12.5px;color:#7a8191;line-height:1.6;margin:16px 0 0}a{color:#2f5fd0}`;
+
+function authShell(title, inner, script) {
+  return new Response(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>${esc(title)} · 다이즈하이미디어 문서 시스템</title><style>${AUTH_CSS}</style></head>
+<body><div class="box"><p class="brand">DISEHIMEDIA GROUP</p>${inner}</div><script>
+function post(u,b){return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(b)}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok)throw new Error(j.error||'요청 실패');return j;});});}
+${script}</script></body></html>`, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
+}
+
+function loginPage(env, url) {
+  const next = safeNext(url.searchParams.get('next'));
+  return authShell('로그인', `<h1>공식 문서 시스템 로그인</h1>
+<form id="f"><label for="email">회사 메일</label><input id="email" type="email" autocomplete="username" required placeholder="name@disehimedia.com">
+<label for="pw">비밀번호</label><input id="pw" type="password" autocomplete="current-password" required>
+<button id="btn">로그인</button><p class="err" id="err"></p></form>
+<p class="hint">비밀번호를 잊었거나 계정이 없으면 관리자에게 요청하세요.<br><a href="/setup">초기 관리자 설정</a></p>`,
+  `var NEXT=${JSON.stringify(next)};document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();var b=document.getElementById('btn');b.disabled=true;document.getElementById('err').textContent='';
+post('/api/login',{email:document.getElementById('email').value,password:document.getElementById('pw').value,next:NEXT}).then(function(j){location.href=j.next||'/';}).catch(function(x){document.getElementById('err').textContent=x.message;b.disabled=false;});});`);
+}
+
+function setupPage(env) {
+  return authShell('초기 관리자 설정', `<h1>초기 관리자 비밀번호 만들기</h1>
+<form id="f"><label for="email">관리자 메일</label><input id="email" type="email" required autocomplete="username">
+<label for="code">설정 코드</label><input id="code" type="password" required autocomplete="off">
+<label for="pw">새 비밀번호 (영문+숫자 8자 이상)</label><input id="pw" type="password" required autocomplete="new-password">
+<label for="pw2">새 비밀번호 확인</label><input id="pw2" type="password" required autocomplete="new-password">
+<button id="btn">비밀번호 만들기</button><p class="err" id="err"></p></form>
+<p class="hint">처음 한 번만 쓰는 화면입니다. 설정 코드는 PC에서 <code>npx wrangler secret put SETUP_CODE</code>로 직접 정한 값입니다. <a href="/login">로그인으로</a></p>`,
+  `document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();var err=document.getElementById('err');err.textContent='';
+var p=document.getElementById('pw').value;if(p!==document.getElementById('pw2').value){err.textContent='새 비밀번호가 서로 다릅니다.';return;}
+var b=document.getElementById('btn');b.disabled=true;post('/api/setup',{email:document.getElementById('email').value,code:document.getElementById('code').value,password:p}).then(function(){location.href='/login';}).catch(function(x){err.textContent=x.message;b.disabled=false;});});`);
+}
+
+function passwordPage(user) {
+  const forced = !!user.must_change_password;
+  return authShell('비밀번호 바꾸기', `<h1>비밀번호 바꾸기</h1>
+${forced ? '<p class="hint" style="margin:0 0 6px;color:#b26a00">처음 로그인했거나 관리자가 초기화한 비밀번호입니다. 새 비밀번호로 바꿔야 계속 쓸 수 있습니다.</p>' : ''}
+<form id="f"><p class="hint" style="margin:0">${esc(user.email)}</p><label for="cur">지금 비밀번호</label><input id="cur" type="password" required autocomplete="current-password">
+<label for="pw">새 비밀번호 (영문+숫자 8자 이상)</label><input id="pw" type="password" required autocomplete="new-password">
+<label for="pw2">새 비밀번호 확인</label><input id="pw2" type="password" required autocomplete="new-password">
+<button id="btn">바꾸기</button><p class="err" id="err"></p></form>
+<p class="hint">${forced ? '' : '<a href="/">문서 시스템으로</a> · '}<a href="/logout">로그아웃</a></p>`,
+  `document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();var err=document.getElementById('err');err.textContent='';
+var p=document.getElementById('pw').value;if(p!==document.getElementById('pw2').value){err.textContent='새 비밀번호가 서로 다릅니다.';return;}
+var b=document.getElementById('btn');b.disabled=true;post('/api/password',{current:document.getElementById('cur').value,password:p}).then(function(j){location.href=j.next||'/';}).catch(function(x){err.textContent=x.message;b.disabled=false;});});`);
 }
 
 /* ------------------------------------------------------------
@@ -482,10 +643,8 @@ function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<':
 
 function htmlPage(status, title, message, extraHtml) {
   const body = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(title)} · 다이즈하이미디어 문서 시스템</title>
-<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f4f5f7;color:#212B43;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif}
-.box{background:#fff;border-radius:14px;padding:36px 32px;max-width:440px;margin:16px;box-shadow:0 8px 30px rgba(33,43,67,.08)}h1{font-size:20px;margin:0 0 12px}p{line-height:1.6;margin:8px 0;color:#4a5368}a{color:#2f5fd0}</style></head>
-<body><div class="box"><h1>${esc(title)}</h1><p>${esc(message)}</p><p>${extraHtml || ''}</p></div></body></html>`;
+<title>${esc(title)} · 다이즈하이미디어 문서 시스템</title><style>${AUTH_CSS}p{line-height:1.6;color:#4a5368}</style></head>
+<body><div class="box"><p class="brand">DISEHIMEDIA GROUP</p><h1>${esc(title)}</h1><p>${esc(message)}</p><p>${extraHtml || ''}</p></div></body></html>`;
   return new Response(body, { status, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 
@@ -510,12 +669,7 @@ function readCookie(request, name) {
   return m ? m[1] : '';
 }
 
-function b64urlToBytes(s) {
-  s = s.replace(/-/g, '+').replace(/_/g, '/');
-  while (s.length % 4) s += '=';
-  const bin = atob(s);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-function b64urlToString(s) { return new TextDecoder().decode(b64urlToBytes(s)); }
+function sqlNow() { return new Date().toISOString().replace('T', ' ').slice(0, 19); }
+function bytesToB64(b) { let s = ''; for (const x of b) s += String.fromCharCode(x); return btoa(s); }
+function bytesToB64url(b) { return bytesToB64(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function b64ToBytes(s) { const bin = atob(s); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }

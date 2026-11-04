@@ -20,7 +20,7 @@
     {
       "binding": "DB",
       "database_name": "dise-docs",
-      "database_id": "REPLACE_WITH_D1_ID",
+      "database_id": "521332e4-5914-4eb3-b084-21c2dea219d0",
       "migrations_dir": "migrations"
     }
   ],
@@ -28,17 +28,13 @@
   // PDF 만들기(Cloudflare Browser Rendering)
   "browser": { "binding": "BROWSER" },
 
+  // 미리보기 주소(버전별 주소)는 끔 — 운영 주소 하나만
+  "preview_urls": false,
+
   "vars": {
-    // 항상 관리자(잠김 방지). 쉼표로 여러 명
-    "ADMIN_EMAILS": "charlie@disehimedia.com",
-    // Cloudflare Access 설정 후 채움 (Zero Trust > Access > Applications)
-    "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": "",
-    // (선택) 관리자 페이지에서 도메인 추가 시 Access 정책 자동 갱신
-    //  + 비밀값 CF_API_TOKEN 은 `npx wrangler secret put CF_API_TOKEN`
-    "CF_ACCOUNT_ID": "",
-    "ACCESS_POLICY_ID": "",
-    "ACCESS_APP_ID": ""
+    // 항상 관리자(잠김 방지). 쉼표로 여러 명.
+    // 첫 비밀번호는 /setup 에서 만듦 — 설정 코드: `npx wrangler secret put SETUP_CODE`
+    "ADMIN_EMAILS": "charlie@disehimedia.com"
   },
 
   "observability": { "enabled": true }

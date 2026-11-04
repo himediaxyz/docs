@@ -38,7 +38,7 @@
   button.small { padding:4px 9px; font-size:12.5px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:auto; }
   table { width:100%; border-collapse:collapse; }
-  th, td { padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th, td { padding:8px 8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; font-size:13.5px; }
   th { background:#f8f9fc; color:var(--sub); font-weight:600; font-size:12.5px; position:sticky; top:0; }
   tr.gone td { color:#9aa1b0; }
   td.actions { text-align:right; }
@@ -67,7 +67,8 @@
   <span class="sp"></span>
   <span id="meLabel"></span>
   <a href="/">문서 시스템으로</a>
-  <a href="/cdn-cgi/access/logout">로그아웃</a>
+  <a href="/account/password">비밀번호 바꾸기</a>
+  <a href="/logout">로그아웃</a>
 </header>
 
 <main>
@@ -92,21 +93,19 @@
       <button class="btn primary" id="btnAdd">+ 직원 추가</button>
     </div>
     <div class="card"><table>
-      <thead><tr><th>회사</th><th>이름</th><th>부서</th><th>직책</th><th>메일</th><th>휴대폰</th><th>입사일</th><th>상태</th><th>권한</th><th>발신인</th><th>최근 접속</th><th></th></tr></thead>
-      <tbody id="empBody"><tr><td colspan="12" class="empty">불러오는 중…</td></tr></tbody>
+      <thead><tr><th>회사</th><th>이름</th><th>부서</th><th>직책</th><th>메일</th><th>휴대폰</th><th>입사일</th><th>상태</th><th>권한</th><th>발신인</th><th>로그인</th><th>최근 접속</th><th></th></tr></thead>
+      <tbody id="empBody"><tr><td colspan="13" class="empty">불러오는 중…</td></tr></tbody>
     </table></div>
-    <p class="muted">· 퇴사 처리하면 그 즉시 문서 시스템 접속이 막힙니다. · 회사 메일로 처음 로그인한 직원은 "일반"으로 자동 등록되니 정보만 채워 주세요. · "발신인"에 표시한 직원은 레터헤드·계약서·견적서의 발신인 목록에 나타납니다.</p>
+    <p class="muted">· 퇴사 처리하면 그 즉시 문서 시스템 접속이 막힙니다. · 직원을 추가하면 임시 비밀번호가 나옵니다 — 본인에게 전달하면 첫 로그인 때 새 비밀번호로 바꿉니다. 비밀번호를 잊으면 "수정 → 비밀번호 초기화". · "발신인"에 표시한 직원은 레터헤드·계약서·견적서의 발신인 목록에 나타납니다.</p>
   </section>
 
   <!-- 도메인 -->
   <section class="panel" id="tab-dom">
-    <div class="note">이 목록에 있는 메일 도메인을 쓰는 사람만 로그인할 수 있습니다. 계열사를 추가할 때 그 회사의 메일 도메인을 등록하세요.<br><span id="syncInfo" class="muted"></span></div>
+    <div class="note">이 목록에 있는 메일 도메인의 직원만 등록·로그인할 수 있습니다. 계열사를 추가할 때 그 회사의 메일 도메인을 먼저 등록하세요. 도메인을 삭제하면 그 도메인 직원은 모두 접속이 막힙니다.</div>
     <div class="bar">
       <input id="newDomain" placeholder="예: r2v.co.kr">
       <select id="newDomainCompany"></select>
       <button class="btn primary" id="btnAddDomain">도메인 추가</button>
-      <span class="sp"></span>
-      <button class="btn" id="btnSync">Access 정책 다시 맞추기</button>
     </div>
     <div class="card"><table>
       <thead><tr><th>도메인</th><th>회사</th><th>등록일</th><th></th></tr></thead>
@@ -142,13 +141,27 @@
       <label>퇴사일 <input name="leave_date" type="date"></label>
       <label>권한 <select name="role"><option value="member">일반</option><option value="admin">관리자</option></select></label>
       <label>발신인 순서 <input name="sort_order" type="number" value="100"></label>
+      <label class="full" id="pwRow">첫 비밀번호 <input name="password" type="text" autocomplete="off" placeholder="비워 두면 자동으로 만들어 저장 후 한 번 보여 줍니다"></label>
       <label class="check full"><input type="checkbox" name="is_sender"> 문서 발신인 목록에 표시(레터헤드·계약서·견적서)</label>
       <label class="full">메모 <textarea name="memo" rows="2"></textarea></label>
     </div>
     <div class="dlg-foot">
-      <button type="button" class="btn danger" id="btnDelete" style="margin-right:auto">삭제</button>
+      <button type="button" class="btn danger" id="btnDelete">삭제</button>
+      <button type="button" class="btn" id="btnResetPw" style="margin-right:auto">비밀번호 초기화</button>
       <button type="button" class="btn" id="btnCancel">취소</button>
       <button type="submit" class="btn primary">저장</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="pwDlg">
+  <form method="dialog">
+    <h2>임시 비밀번호</h2>
+    <p class="muted" style="margin:0 0 10px">이 창을 닫으면 다시 볼 수 없습니다. 본인에게 직접 전달하세요(메신저·구두). 처음 로그인하면 새 비밀번호로 바꾸게 됩니다.</p>
+    <div class="card"><table><thead><tr><th>이름</th><th>메일(아이디)</th><th>임시 비밀번호</th></tr></thead><tbody id="pwBody"></tbody></table></div>
+    <div class="dlg-foot">
+      <button type="button" class="btn" id="btnPwCopy">복사</button>
+      <button type="submit" class="btn primary">확인</button>
     </div>
   </form>
 </dialog>
@@ -204,12 +217,8 @@
       var c = {}; (s.counts || []).forEach(function (r) { c[r.status] = r.n; });
       $('status').innerHTML =
         chip(c['재직'] || 0, '재직') + chip(c['휴직'] || 0, '휴직') + chip(c['퇴사'] || 0, '퇴사(차단)') +
-        chip(s.access ? '켜짐' : '꺼짐', '로그인 관문', s.access ? 'ok' : 'warn') +
-        chip(s.pdf ? '연결됨' : '없음', 'PDF 만들기', s.pdf ? 'ok' : 'warn') +
-        chip(s.accessSync ? '자동' : '수동', '도메인 → Access', s.accessSync ? 'ok' : 'warn');
-      $('syncInfo').textContent = s.accessSync
-        ? '도메인을 추가·삭제하면 Cloudflare Access 로그인 허용 목록도 자동으로 바뀝니다.'
-        : '지금은 Access 자동 갱신이 꺼져 있습니다. 도메인을 추가한 뒤 Cloudflare 대시보드 > Zero Trust > Access 정책에도 같은 도메인을 넣어 주세요.';
+        chip(s.noPassword || 0, '비밀번호 미발급', s.noPassword ? 'warn' : 'ok') +
+        chip(s.pdf ? '연결됨' : '없음', 'PDF 만들기', s.pdf ? 'ok' : 'warn');
     }).catch(function (e) { toast(e.message); });
   }
   function chip(v, label, cls) { return '<div class="chip ' + (cls || '') + '"><b>' + esc(v) + '</b><small>' + esc(label) + '</small></div>'; }
@@ -227,7 +236,7 @@
       if (q && [e.name_kr, e.name_en, e.email, e.dept, e.title_kr].join(' ').toLowerCase().indexOf(q) < 0) return false;
       return true;
     });
-    if (!rows.length) { $('empBody').innerHTML = '<tr><td colspan="12" class="empty">표시할 직원이 없습니다.</td></tr>'; return; }
+    if (!rows.length) { $('empBody').innerHTML = '<tr><td colspan="13" class="empty">표시할 직원이 없습니다.</td></tr>'; return; }
     $('empBody').innerHTML = rows.map(function (e) {
       var gone = e.status === '퇴사';
       return '<tr class="' + (gone ? 'gone' : '') + '">' +
@@ -241,12 +250,27 @@
         '<td><span class="badge b-' + esc(e.status) + '">' + esc(e.status) + '</span></td>' +
         '<td>' + (e.role === 'admin' ? '<span class="badge b-admin">관리자</span>' : '일반') + '</td>' +
         '<td>' + (e.is_sender ? '✓' : '') + '</td>' +
+        '<td>' + loginState(e) + '</td>' +
         '<td class="muted">' + esc(kst(e.last_seen_at)) + '</td>' +
         '<td class="actions"><button class="btn small" data-edit="' + e.id + '">수정</button> ' +
         (gone ? '<button class="btn small" data-rehire="' + e.id + '">복직</button>'
               : '<button class="btn small danger" data-leave="' + e.id + '">퇴사 처리</button>') + '</td></tr>';
     }).join('');
   }
+  function loginState(e) {
+    if (!e.has_password) return '<span class="muted">비밀번호 없음</span>';
+    if (e.locked_until && e.locked_until > new Date().toISOString().replace('T', ' ').slice(0, 19)) return '<span class="badge b-휴직">잠김</span>';
+    if (e.must_change_password) return '<span class="muted">첫 로그인 전</span>';
+    return '사용 중';
+  }
+  function showPasswords(list) {
+    $('pwBody').innerHTML = list.map(function (p) { return '<tr><td>' + esc(p.name) + '</td><td>' + esc(p.email) + '</td><td><b style="font-family:monospace;font-size:15px">' + esc(p.tempPassword) + '</b></td></tr>'; }).join('');
+    $('pwDlg')._text = list.map(function (p) { return p.name + '\t' + p.email + '\t' + p.tempPassword; }).join('\n');
+    $('pwDlg').showModal();
+  }
+  $('btnPwCopy').addEventListener('click', function () {
+    navigator.clipboard.writeText($('pwDlg')._text || '').then(function () { toast('복사했습니다.'); }, function () { toast('복사하지 못했습니다 — 직접 선택해 복사하세요.'); });
+  });
   ['q', 'fCompany', 'fStatus'].forEach(function (id) { $(id).addEventListener('input', renderEmployees); });
 
   $('empBody').addEventListener('click', function (ev) {
@@ -268,6 +292,9 @@
     var f = $('empForm'); f.reset();
     $('dlgTitle').textContent = e ? '직원 정보 수정' : '직원 추가';
     $('btnDelete').style.display = e ? '' : 'none';
+    $('btnResetPw').style.display = e ? '' : 'none';
+    $('btnResetPw').textContent = e && e.has_password ? '비밀번호 초기화' : '첫 비밀번호 발급';
+    $('pwRow').style.display = e ? 'none' : '';
     FIELDS.forEach(function (k) { if (f.elements[k]) f.elements[k].value = e ? (e[k] == null ? '' : e[k]) : (k === 'company' ? ($('fCompany').value || 'disehimedia') : (k === 'status' ? '재직' : (k === 'role' ? 'member' : (k === 'sort_order' ? 100 : '')))); });
     f.elements.is_sender.checked = !!(e && e.is_sender);
     $('dlg').showModal();
@@ -279,8 +306,19 @@
     var f = ev.target, body = {};
     FIELDS.forEach(function (k) { body[k] = f.elements[k].value; });
     body.is_sender = f.elements.is_sender.checked ? 1 : 0;
+    if (!editingId && f.elements.password.value) body.password = f.elements.password.value;
     var p = editingId ? api('/employees/' + editingId, { method: 'PUT', body: body }) : api('/employees', { method: 'POST', body: body });
-    p.then(function () { $('dlg').close(); toast('저장했습니다.'); refresh(); }).catch(function (x) { toast(x.message); });
+    p.then(function (r) {
+      $('dlg').close(); toast('저장했습니다.'); refresh();
+      if (r.tempPassword) showPasswords([{ name: body.name_kr, email: body.email.toLowerCase(), tempPassword: r.tempPassword }]);
+    }).catch(function (x) { toast(x.message); });
+  });
+  $('btnResetPw').addEventListener('click', function () {
+    var e = employees.find(function (x) { return x.id === editingId; }); if (!e) return;
+    if (!confirm(e.name_kr + ' 님의 임시 비밀번호를 새로 만들까요?\n지금 쓰던 비밀번호는 바로 쓸 수 없게 되고, 로그인된 기기는 모두 로그아웃됩니다.')) return;
+    api('/employees/' + editingId + '/reset-password', { method: 'POST' }).then(function (r) {
+      $('dlg').close(); refresh(); showPasswords([{ name: e.name_kr, email: e.email, tempPassword: r.tempPassword }]);
+    }).catch(function (x) { toast(x.message); });
   });
   $('btnDelete').addEventListener('click', function () {
     var e = employees.find(function (x) { return x.id === editingId; });
@@ -322,6 +360,7 @@
         toast('추가 ' + r.added + '명 · 갱신 ' + r.updated + '명' + (r.errors.length ? ' · 오류 ' + r.errors.length + '건' : ''));
         if (r.errors.length) alert('가져오지 못한 행:\n' + r.errors.join('\n'));
         refresh();
+        if (r.passwords && r.passwords.length) showPasswords(r.passwords.map(function (p) { return { name: p.name, email: p.email, tempPassword: p.tempPassword }; }));
       });
     }).catch(function (x) { toast(x.message); });
   });
@@ -351,20 +390,16 @@
   }
   $('btnAddDomain').addEventListener('click', function () {
     api('/domains', { method: 'POST', body: { domain: $('newDomain').value, company: $('newDomainCompany').value } })
-      .then(function (r) { $('newDomain').value = ''; toast('추가했습니다. ' + (r.sync ? r.sync.message : '')); loadDomains(); })
+      .then(function () { $('newDomain').value = ''; toast('추가했습니다.'); loadDomains(); })
       .catch(function (x) { toast(x.message); });
   });
   $('domBody').addEventListener('click', function (ev) {
     var b = ev.target.closest('button[data-del]'); if (!b) return;
-    if (!confirm('@' + b.dataset.del + ' 메일의 로그인을 막을까요?')) return;
+    if (!confirm('@' + b.dataset.del + ' 도메인을 삭제할까요?\n이 도메인 메일을 쓰는 직원은 모두 접속이 막힙니다.')) return;
     api('/domains/' + encodeURIComponent(b.dataset.del), { method: 'DELETE' })
-      .then(function (r) { toast('삭제했습니다. ' + (r.sync ? r.sync.message : '')); loadDomains(); })
+      .then(function () { toast('삭제했습니다.'); loadDomains(); })
       .catch(function (x) { toast(x.message); });
   });
-  $('btnSync').addEventListener('click', function () {
-    api('/access-sync', { method: 'POST' }).then(function (r) { toast(r.message); }).catch(function (x) { toast(x.message); });
-  });
-
   // ---- 기록 ----
   function loadLog() {
     api('/audit').then(function (rows) {
