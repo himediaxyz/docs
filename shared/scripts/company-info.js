@@ -147,7 +147,7 @@ DISE.companies = {
   hra: {
     nameKr: '에이치알에이',
     nameEn: 'HRA',                       // 로고 문구: HJ.KIM & R2V ASSOCIATION
-    logoMark: 'hra/hra-mark.svg',        // 단색(노랑 부분은 투명으로 뚫음) — AI 원본에서 변환
+    logoMark: 'hra/hra-mark.svg',        // 단색 — 사용자 제공 HRA_Logo_Black.svg(테두리 선·글씨 채움)
     docLogo: 'hra/hra-mark-color.svg',   // 문서 헤더: 원색 엠블럼
     logoAi: 'hra/HRA_Logo_Original.ai',
     logoRatio: 1,                        // 원형 엠블럼
@@ -168,7 +168,7 @@ DISE.companies = {
   haetteure: {
     nameKr: '제주 햇뜨르',
     nameEn: 'Jeju Haetteure',            // 로고 문구: JEJU HAETTEURE · FARMING ASSOCIATION CORP. · EST. 2002
-    logoMark: 'haetteure/haetteure-mark.svg',        // 단색(어두운 선·테두리만, 밝은 면은 투명) — AI 원본에서 변환
+    logoMark: 'haetteure/haetteure-mark.svg',        // 단색 — 사용자 제공 Jeju-Haetteure_Logo_Black.svg(선화·글씨 채움)
     docLogo: 'haetteure/haetteure-mark-color.svg',   // 문서 헤더: 원색 엠블럼
     logoAi: 'haetteure/Jeju-Haetteure_Logo_Original.ai',
     logoRatio: 1,                        // 원형 엠블럼
@@ -177,7 +177,8 @@ DISE.companies = {
     docNoPrefix: 'HTR',
     lhShowName: true,
     // lhDesign: 'a',                    // 레터헤드 시안 확정 시 a|b|c (미리보기 ?design=)
-    badgeColor: '#3AB1C2',               // 햇뜨르 메인(하늘 청록). 서브 #F3C010(햇살 노랑)
+    badgeColor: '#1B7F8E',               // 포털 카드용 진한 청록(흰 로고가 잘 보이게). 브랜드 메인은 #3AB1C2
+    brandMain: '#3AB1C2',                // 햇뜨르 메인(하늘 청록). 서브 #F3C010(햇살 노랑)
     brandSub: '#F3C010'
     // TODO: 주소·전화·이메일·사업자 정보
   },

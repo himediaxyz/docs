@@ -21,8 +21,8 @@ logos/{계열사-slug}/{계열사-slug}-mark-gradient.svg   그라데이션 등 
 | r2v | ✅ | ✅ | ⬜ |
 | bic | ✅ | — (`bic-mark-color.svg` 있음) | ⬜ |
 | axis-one | ✅ | — | ⬜ |
-| hra | ✅ (AI에서 변환, 노랑 부분 투명) | — (`hra-mark-color.svg` 원색) | ⬜ |
-| haetteure | ✅ (AI에서 변환, 어두운 선만 남김) | — (`haetteure-mark-color.svg` 원색) | ⬜ |
+| hra | ✅ (사용자 제공 Black.svg) | — (`hra-mark-color.svg` 원색) | ⬜ |
+| haetteure | ✅ (사용자 제공 Black.svg) | — (`haetteure-mark-color.svg` 원색) | ⬜ |
 | ssg-scholarship | ⬜ | — | ⬜ |
 
 "문서 템플릿에 연결됨"이 ⬜인 계열사는 로고는 준비됐지만 아직 `company-info.js`에 주소·연락처 정보가 없어서 문서 푸터를 완성할 수 없는 상태입니다 — 정보가 확정되면 `company-info.js`의 해당 계열사 항목에 채워 넣고 새 템플릿(또는 기존 템플릿의 `company` 옵션)에 연결하면 됩니다.
