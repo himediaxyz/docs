@@ -255,7 +255,7 @@ async function apiSetup(request, env) {
   const ip = clientIp(request);
   const ipFails = await env.DB.prepare(`SELECT COUNT(*) AS n FROM login_attempts WHERE ip = ? AND at > datetime('now','-${LOCK_MIN} minutes')`).bind(ip).first();
   if (ipFails && ipFails.n >= IP_MAX_FAILS) return json({ error: '시도가 너무 많습니다. 15분 뒤에 다시 시도해 주세요.' }, 429);
-  if (!env.SETUP_CODE || String(env.SETUP_CODE).length < 8) return json({ error: '설정 코드가 아직 등록되지 않았습니다. PC에서 `npx wrangler secret put SETUP_CODE`로 먼저 등록하세요.' }, 400);
+  if (!env.SETUP_CODE || String(env.SETUP_CODE).length < 8) return json({ error: '설정 코드가 아직 적용되지 않았습니다. PC에서 `npx wrangler pages secret put SETUP_CODE`로 등록(8자 이상)한 뒤 `npm run deploy`로 다시 배포하세요.' }, 400);
   if (!adminEmails(env).includes(email)) return json({ error: '초기 관리자 메일이 아닙니다.' }, 400);
   if (!timingSafeEqual(String(b.code || ''), String(env.SETUP_CODE))) {
     await env.DB.prepare('INSERT INTO login_attempts (ip) VALUES (?)').bind(ip).run();
@@ -607,7 +607,7 @@ function setupPage(env) {
 <label for="pw">새 비밀번호 (영문+숫자 8자 이상)</label><input id="pw" type="password" required autocomplete="new-password">
 <label for="pw2">새 비밀번호 확인</label><input id="pw2" type="password" required autocomplete="new-password">
 <button id="btn">비밀번호 만들기</button><p class="err" id="err"></p></form>
-<p class="hint">처음 한 번만 쓰는 화면입니다. 설정 코드는 PC에서 <code>npx wrangler secret put SETUP_CODE</code>로 직접 정한 값입니다. <a href="/login">로그인으로</a></p>`,
+<p class="hint">처음 한 번만 쓰는 화면입니다. 설정 코드는 PC에서 <code>npx wrangler pages secret put SETUP_CODE</code>로 직접 정한 값입니다. <a href="/login">로그인으로</a></p>`,
   `document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();var err=document.getElementById('err');err.textContent='';
 var p=document.getElementById('pw').value;if(p!==document.getElementById('pw2').value){err.textContent='새 비밀번호가 서로 다릅니다.';return;}
 var b=document.getElementById('btn');b.disabled=true;post('/api/setup',{email:document.getElementById('email').value,code:document.getElementById('code').value,password:p}).then(function(){location.href='/login';}).catch(function(x){err.textContent=x.message;b.disabled=false;});});`);
