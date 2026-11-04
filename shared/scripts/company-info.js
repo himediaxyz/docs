@@ -155,6 +155,8 @@ DISE.companies = {
     docLogoScale: 1.3,                   // 문서 헤더 로고 56px → 73px
     docNoPrefix: 'HRA',
     lhShowName: true,
+    headerHideNameKr: true,              // 문서 맨 위 로고 옆 국문명(에이치알에이) 숨김 — 사용자 요청
+    // lhDesign: 'a',                    // 레터헤드 시안 확정 시 a|b|c (미리보기는 ?design=)
     badgeColor: '#DA251D',               // HRA 메인(빨강). 서브 #FFFF01(노랑)
     brandSub: '#FFFF01'
     // TODO: 주소·전화·이메일·사업자 정보

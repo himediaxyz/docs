@@ -526,7 +526,7 @@ DISE.components = {
     var showTextBlock = showCompanyName || docTypeTag;
     var textBlockHtml = showTextBlock ?
       '<div class="doc-header-text">' +
-        (showCompanyName ? '<div class="brand-kr">' + c.nameKr + '</div>' : '') +
+        (showCompanyName && !c.headerHideNameKr ? '<div class="brand-kr">' + c.nameKr + '</div>' : '') +
         (showCompanyName && c.nameEn && c.nameEn !== c.nameKr ? '<div class="brand-en">' + DISE.components.diseWordmarkHTML(c.nameEn) + '</div>' : '') +
         (docTypeTag ? '<div class="brand-tag">' + docTypeTag + '</div>' : '') +
       '</div>' : '';
@@ -588,6 +588,11 @@ DISE.components = {
     var key = opts.company || 'disehimedia';
     var c = DISE.companies[key];
     document.body.classList.add('lh');
+    // 레터헤드 디자인 시안: ?design=a|b|c 로 미리보기, 확정되면 company-info의 lhDesign
+    // (letterhead-companies.css의 body.lh[data-lh-design=...] 규칙)
+    var dm = /[?&]design=([a-z0-9-]+)/i.exec(location.search);
+    var design = dm ? dm[1].toLowerCase() : (c && c.lhDesign) || '';
+    if (design) document.body.setAttribute('data-lh-design', design);
     if (!c || key === 'disehimedia') return;
 
     var docNo = document.getElementById('docNo');
