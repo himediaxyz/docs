@@ -89,7 +89,7 @@
       var cards = [];
       if (c.docLogo) cards.push({ v: 'color', name: '컬러', desc: '기본 로고 — 흰 배경·밝은 배경용', svg: c.docLogo, bg: 'light', jpg: true });
       cards.push({ v: 'black', name: '검정 단색', desc: '흑백 인쇄·밝은 배경용', svg: c.logoMark, bg: 'check', jpg: true });
-      cards.push({ v: 'white', name: '흰색 단색', desc: '어두운 배경·사진 위 사용(PNG만 제공)', svg: null, bg: 'dark', jpg: false });
+      if (!c.noWhiteLogo) cards.push({ v: 'white', name: '흰색 단색', desc: '어두운 배경·사진 위 사용(PNG만 제공)', svg: null, bg: 'dark', jpg: false });
 
       document.getElementById('grid').innerHTML = cards.map(function (k) {
         var png = dl + k.v + '.png';

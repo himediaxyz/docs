@@ -326,6 +326,7 @@ body[data-company="bic"]{--co-tbl-border:#b3d1c1;--co-tbl-head:#edf5f0;}
 body[data-company="axis-one"]{--co-tbl-border:#cdbdd6;--co-tbl-head:#f4eff7;}
 body[data-company="hra"]{--co-tbl-border:#f0b5b2;--co-tbl-head:#fdeeed;}  /* HRA 빨강 #DA251D 계열 */
 body[data-company="haetteure"]{--co-tbl-border:#a8dce3;--co-tbl-head:#eaf7f9;}  /* 햇뜨르 청록 #3AB1C2 계열 */
+body[data-company="ssg-scholarship"]{--co-tbl-border:#b9c5dc;--co-tbl-head:#eef2f8;}  /* 장학재단 청남 #40609B 계열 */
 
 /* 본문에 삽입된 그림 — 인쇄/화면 모두 문서 폭을 넘지 않도록 고정.
    구체적인 폭(25/50/75/100%)은 사용자가 이미지를 클릭해 여는 작은

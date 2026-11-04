@@ -308,3 +308,89 @@ body.lh[data-company="haetteure"][data-lh-design="c"] .doc-footer-band{backgroun
 body.lh[data-company="haetteure"][data-lh-design="c"] .doc-footer-band .l1{color:#fff;}
 body.lh[data-company="haetteure"][data-lh-design="c"] .doc-footer-band .l2{color:#f3f8e4;}
 body.lh[data-company="haetteure"][data-lh-design="c"] .doc-footer-missing{color:#f3f8e4 !important;}
+
+
+/* ================================================================
+   창업지장 신숭겸 장학재단(SSG Scholarship) — 레터헤드 시안 3종 (2026-11-04, 확정 전)
+   주제: 권위·신뢰·공신력 있는 장학재단 문서 — 심플·단정·균형·편안함
+   미리보기: templates/gongmun-premium/?company=ssg-scholarship&design=a|b|c
+   색: 적갈 #A14341 · 청남 #40609B. 재단명·제목 명조(Noto Serif KR), 본문은 기존 고딕(읽기 편하게)
+   ================================================================ */
+body.lh[data-company="ssg-scholarship"][data-lh-design]{
+  --ssg-red:#A14341;--ssg-navy:#40609B;--ssg-navy-d:#2c4570;--ssg-ink:#1f2430;
+  --ssg-serif:'Noto Serif KR','Nanum Myeongjo','Batang',serif;
+}
+body.lh[data-company="ssg-scholarship"][data-lh-design] .brand-kr{font-family:var(--ssg-serif);font-weight:700;color:var(--ssg-ink);}
+body.lh[data-company="ssg-scholarship"][data-lh-design] .brand-en{font-family:var(--ssg-serif);font-weight:600;text-transform:uppercase;color:var(--ssg-navy);}
+body.lh[data-company="ssg-scholarship"][data-lh-design] .title-placeholder{font-family:var(--ssg-serif);font-weight:700;color:var(--ssg-ink);}
+body.lh[data-company="ssg-scholarship"][data-lh-design] .sign-left .name-kr{font-family:var(--ssg-serif);}
+
+/* ---------- A안 "정통 증서형" — 가운데 심볼·재단명, 청남·적갈 이중선 가운데 ◆ ---------- */
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .doc-header-band{
+  flex-direction:column;justify-content:center;text-align:center;gap:12px;background:transparent;padding:40px 50px 10px;min-height:0;
+}
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .doc-header-text{text-align:center;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .brand-kr{font-size:24px;letter-spacing:4px;padding-left:4px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .brand-en{font-size:11px;letter-spacing:5px;margin-top:6px;padding-left:5px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .page-header::after{
+  content:'◆';display:block;margin:12px 50px 0;text-align:center;color:var(--ssg-red);font-size:9px;line-height:10px;
+  background:
+    linear-gradient(var(--ssg-navy),var(--ssg-navy)) left 3px/calc(50% - 14px) 1px no-repeat,
+    linear-gradient(var(--ssg-navy),var(--ssg-navy)) right 3px/calc(50% - 14px) 1px no-repeat,
+    linear-gradient(var(--ssg-red),var(--ssg-red)) left 6px/calc(50% - 14px) 1px no-repeat,
+    linear-gradient(var(--ssg-red),var(--ssg-red)) right 6px/calc(50% - 14px) 1px no-repeat;
+}
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .meta-line{justify-content:center;gap:28px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .meta-docno{margin-left:0;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .cell-title{text-align:center;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .title-placeholder{font-size:23px;letter-spacing:1px;margin:6px 0 22px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .sign-left .role::after{background:var(--ssg-red);}
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .doc-footer-band{background:transparent;border-top:1px solid var(--ssg-navy);margin:0 50px;padding:12px 0 18px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="a"] .doc-footer-band .l1{color:var(--ssg-navy-d);}
+
+/* ---------- B안 "기관 공문형" — 왼쪽 심볼·재단명, 청남 가는 선 + 적갈 짧은 굵은 선, 청남 푸터 ---------- */
+body.lh[data-company="ssg-scholarship"][data-lh-design="b"] .doc-header-band{background:transparent;padding:38px 50px 16px;min-height:0;gap:20px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="b"] .brand-kr{font-size:23px;letter-spacing:1.5px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="b"] .brand-en{font-size:11px;letter-spacing:4px;margin-top:6px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="b"] .doc-header-band::after{
+  content:'OFFICIAL DOCUMENT';margin-left:auto;align-self:flex-end;
+  font:600 10px var(--ssg-serif);letter-spacing:3px;color:#8a93a6;
+}
+body.lh[data-company="ssg-scholarship"][data-lh-design="b"] .page-header::after{
+  content:'';display:block;margin:0 50px;height:3px;
+  background:linear-gradient(var(--ssg-red),var(--ssg-red)) left top/110px 3px no-repeat,
+             linear-gradient(var(--ssg-navy),var(--ssg-navy)) left bottom/100% 1px no-repeat;
+}
+body.lh[data-company="ssg-scholarship"][data-lh-design="b"] .title-placeholder{font-size:23px;margin:4px 0 18px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="b"] .sign-left .role::after{background:var(--ssg-navy);}
+body.lh[data-company="ssg-scholarship"][data-lh-design="b"] .doc-footer-band{background:var(--ssg-navy-d);border-top:3px solid var(--ssg-red);padding:16px 40px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="b"] .doc-footer-band .l1{color:#fff;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="b"] .doc-footer-band .l2{color:#c9d4ea;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="b"] .doc-footer-missing{color:#c9d4ea !important;}
+
+/* ---------- C안 "단정한 테두리" — 가는 청남 테두리 + 적갈 안쪽 실선, 가운데 심볼, 짧은 적갈 선 ---------- */
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .page::before{
+  content:'';position:absolute;inset:20px;border:1px solid var(--ssg-navy);pointer-events:none;z-index:1;
+}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .page::after{
+  content:'';position:absolute;inset:25px;border:.6px solid var(--ssg-red);pointer-events:none;z-index:1;
+}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .doc-header-band{
+  flex-direction:column;justify-content:center;text-align:center;gap:10px;background:transparent;padding:46px 60px 8px;min-height:0;
+}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .doc-header-text{text-align:center;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .brand-kr{font-size:22px;letter-spacing:6px;padding-left:6px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .brand-en{font-size:10.5px;letter-spacing:5px;margin-top:5px;padding-left:5px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .page-header::after{
+  content:'';display:block;width:56px;height:2px;margin:14px auto 0;background:var(--ssg-red);
+}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .cell-meta,
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .cell-title,
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .cell-to,
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .cell-note,
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .cell-guide{padding-left:64px;padding-right:64px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .cell-title{text-align:center;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .title-placeholder{font-size:22px;letter-spacing:1px;margin:6px 0 20px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .sign-left .role::after{background:var(--ssg-navy);}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .doc-footer-band{background:transparent;padding:10px 64px 40px;}
+body.lh[data-company="ssg-scholarship"][data-lh-design="c"] .doc-footer-band .l1{color:var(--ssg-navy-d);}

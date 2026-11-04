@@ -193,10 +193,20 @@ DISE.companies = {
   'ssg-scholarship': {
     nameKr: '창업지장 신숭겸 장학재단',
     nameEn: 'SSG Scholarship',           // 공식 영문명 없음 — 사용자 지정 표기
+    logoMark: 'ssg-scholarship/ssg-scholarship-mark.svg',        // 단색 — 사용자 제공 SSG-Scholarship_Symbol_Black.svg
+    docLogo: 'ssg-scholarship/ssg-scholarship-mark-color.svg',   // 문서 헤더: 원색 심볼(AI에서 변환)
+    logoAi: 'ssg-scholarship/SSG-Scholarship_Symbol.ai',
+    logoRatio: 722 / 756,                // 붓 원 + 장수 얼굴 심볼(약간 세로로 김)
+    portalLogoScale: 1.6,
+    docLogoScale: 1.3,
+    portalLogoColor: '#111111',          // 사람 얼굴 심볼 — 흰색이면 실루엣이 안 살아서 검정(사용자 요청)
+    noWhiteLogo: true,                   // 같은 이유로 흰색 단색 다운로드 없음
     docNoPrefix: 'SSG',
     lhShowName: true,
-    badgeColor: '#5B5470'                // 임시(브랜드 색 받으면 교체)
-    // TODO: logoMark·logoRatio·주소·전화·이메일·사업자 정보
+    // lhDesign: 'a',                    // 레터헤드 시안 확정 시 a|b|c (미리보기 ?design=)
+    badgeColor: '#A14341',               // 장학재단 메인(적갈색). 서브 #40609B(청남)
+    brandSub: '#40609B'
+    // TODO: 주소·전화·이메일·사업자 정보
   }
 };
 
