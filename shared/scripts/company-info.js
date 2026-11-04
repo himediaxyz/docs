@@ -176,8 +176,15 @@ DISE.companies = {
     docLogoScale: 1.3,
     docNoPrefix: 'HTR',
     lhShowName: true,
-    // lhDesign: 'a',                    // 레터헤드 시안 확정 시 a|b|c (미리보기 ?design=)
-    badgeColor: '#1B7F8E',               // 포털 카드용 진한 청록(흰 로고가 잘 보이게). 브랜드 메인은 #3AB1C2
+    lhDesign: 'a',                       // 레터헤드 기본: A안 "들녘 띠"(2026-11-04 — A·B·C 모두 사용)
+    lhDesignLabel: '들녘 띠',
+    lhDesigns: [
+      { key: 'b', label: '상장 테두리', desc: '둥근 청록 테두리와 노랑 점선, 가운데 로고의 증서 느낌 디자인입니다.' },
+      { key: 'c', label: '햇살 들판', desc: '하늘색 띠에 노란 해, 초록 들판 띠를 둔 밝은 디자인입니다.' }
+    ],
+    // docStyle: 'htr-a',                // 송장·견적서 — 샘플 확인 후 적용(미리보기 ?docstyle=htr-a)
+    badgeColor: '#3AB1C2',               // 포털 카드: 브랜드 청록 그대로
+    portalLogoColor: '#1a1a1a',          // 이례적으로 포털 카드 로고를 검정으로(사용자 요청 — 밝은 청록 위 흰 선이 약해서)
     brandMain: '#3AB1C2',                // 햇뜨르 메인(하늘 청록). 서브 #F3C010(햇살 노랑)
     brandSub: '#F3C010'
     // TODO: 주소·전화·이메일·사업자 정보

@@ -523,7 +523,9 @@ DISE.components = {
     // 회사명 글자를 보여줍니다 — 깨진 이미지가 인쇄되지 않도록.
     var hasLogo = !!(c.docLogo || c.logoMark);
     // 송장·견적서 등 레터헤드가 아닌 문서의 회사별 스타일(company-info docStyle → document.css body[data-doc-style])
-    if (c.docStyle && !/^gongmun/.test(window.DISE_CURRENT_TEMPLATE || '')) document.body.setAttribute('data-doc-style', c.docStyle);
+    var dsm = /[?&]docstyle=([a-z0-9-]+)/i.exec(location.search); // 샘플 미리보기용
+    var docStyle = dsm ? dsm[1].toLowerCase() : c.docStyle;
+    if (docStyle && !/^gongmun/.test(window.DISE_CURRENT_TEMPLATE || '')) document.body.setAttribute('data-doc-style', docStyle);
     else document.body.removeAttribute('data-doc-style');
     if (!hasLogo) showCompanyName = true;
     var showTextBlock = showCompanyName || docTypeTag;

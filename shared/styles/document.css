@@ -1,5 +1,5 @@
 /* 명조(Noto Serif KR) — HRA 문서 스타일용. 글꼴 파일은 실제로 쓰일 때만 내려받습니다. */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700;900&family=Gowun+Batang:wght@400;700&family=Jua&display=swap');
 /* ============================================================
    document.css
    A4 문서 본문 레이아웃 — 종이(.sheet), 표 구조, 헤더/푸터 밴드,
@@ -437,3 +437,36 @@ body[data-doc-style="hra-b"] .page-header::after{
 body[data-doc-style="hra-b"] .inv-title,
 body[data-doc-style="hra-b"] .q-title{font-family:var(--hra-serif);color:#111;}
 body[data-doc-style="hra-b"] .doc-footer-band{border-top:1px solid #bbb;margin:0 50px;padding:12px 0 18px;}
+
+
+/* 제주 햇뜨르 — 레터헤드 A안 "들녘 띠"와 같은 분위기(샘플, ?docstyle=htr-a) */
+body[data-doc-style="htr-a"]{--ht-teal:#3AB1C2;--ht-teal-d:#1f7f8c;--ht-sun:#F3C010;--ht-green:#95B03E;--ht-ink:#2f2a25;
+  --ht-round:'Jua',sans-serif;--ht-serif:'Gowun Batang','Noto Serif KR',serif;}
+body[data-doc-style="htr-a"] .page{background:#fffcf2;}
+body[data-doc-style="htr-a"] .doc-header-band{
+  display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:20px;align-items:center;
+  background:transparent;padding:36px 50px 16px;min-height:0;
+}
+body[data-doc-style="htr-a"] .doc-logo{grid-column:1;grid-row:1 / span 2;}
+body[data-doc-style="htr-a"] .doc-header-text{display:none;}
+body[data-doc-style="htr-a"] .doc-header-band::before{
+  content:'제주 햇뜨르';grid-column:2;grid-row:1;align-self:end;font:400 30px/1.15 var(--ht-round);color:var(--ht-teal-d);letter-spacing:1px;
+}
+body[data-doc-style="htr-a"] .doc-header-band::after{
+  content:'Jeju Haetteure  ·  FARMING ASSOCIATION CORP.  ·  EST. 2002';grid-column:2;grid-row:2;align-self:start;margin-top:6px;
+  font:700 11.5px var(--ht-serif);letter-spacing:1.5px;color:#7c8f3a;
+}
+body[data-doc-style="htr-a"] .page-header::after{
+  content:'';display:block;margin:0 50px;height:9px;
+  background:linear-gradient(var(--ht-teal),var(--ht-teal)) top/100% 4px no-repeat,
+             linear-gradient(var(--ht-sun),var(--ht-sun)) bottom/100% 2px no-repeat;
+}
+body[data-doc-style="htr-a"] .inv-title,
+body[data-doc-style="htr-a"] .q-title{font-family:var(--ht-round);font-weight:400;color:var(--ht-teal-d);}
+body[data-doc-style="htr-a"] .page-footer{display:flex;flex-direction:column-reverse;}
+body[data-doc-style="htr-a"] .page-footer::before{
+  content:'';display:block;height:16px;border-top:3px solid var(--ht-sun);
+  background:repeating-linear-gradient(115deg,var(--ht-green) 0 16px,#86a036 16px 32px);
+}
+body[data-doc-style="htr-a"] .doc-footer-band{background:transparent;padding:12px 40px 14px;}
+body[data-doc-style="htr-a"] .doc-footer-band .l1{color:var(--ht-ink);}

@@ -362,7 +362,8 @@
       r2v: '왼쪽 가장자리에 R2V 그라데이션 세로 띠를 둔 디자인입니다.',
       bic: '하단에 BIC 그린 밴드를 둔 디자인입니다.',
       'axis-one': '모서리에 AXIS ONE 퍼플 삼각형 포인트를 둔 디자인입니다.',
-      hra: '왼쪽 로고, 오른쪽 기관명과 "공식 문서", 붉은 이중선을 둔 공문식 디자인입니다.'
+      hra: '왼쪽 로고, 오른쪽 기관명과 "공식 문서", 붉은 이중선을 둔 공문식 디자인입니다.',
+      haetteure: '크림색 종이에 청록·노랑 줄, 아래 초록 밭고랑 띠를 둔 정겨운 디자인입니다.'
     };
 
     // 회사별 템플릿 목록 — 모든 회사에 공통으로 만들고(새 회사도 company-info.js에
@@ -439,7 +440,7 @@
       card.style.backgroundColor = c.badgeColor || 'var(--navy)';
       card.innerHTML =
         (c.logoMark ?
-          '<span class="company-logo" style="' + maskStyle(c.logoMark, Math.round(46 * (c.portalLogoScale || 1)), c.logoRatio) + '"></span>' :
+          '<span class="company-logo" style="' + maskStyle(c.logoMark, Math.round(46 * (c.portalLogoScale || 1)), c.logoRatio) + (c.portalLogoColor ? ';background-color:' + c.portalLogoColor : '') + '"></span>' :
           // 로고 파일이 아직 없는 회사(새로 추가 중)는 회사명 글자로 표시
           '<span class="company-text">' + (c.nameKr || c.nameEn) + '</span>') +
         '<span class="company-name sr-only">' + c.nameEn +
@@ -466,7 +467,7 @@
       var c = DISE.companies[currentCompanyKey];
       if (kind === 'design') {
         var icon = cat === 'logo' && c.logoMark ?
-          '<span class="dz-logo" style="' + maskStyle(c.logoMark, Math.round(30 * (c.portalLogoScale || 1)), c.logoRatio) + '"></span>' :
+          '<span class="dz-logo" style="' + maskStyle(c.logoMark, Math.round(30 * (c.portalLogoScale || 1)), c.logoRatio) + (c.portalLogoColor ? ';background:' + c.portalLogoColor : '') + '"></span>' :
           '<span class="dz-icon">' + (cat === 'businesscard' ? '▭' : cat === 'presentation' ? '▶' : cat === 'promo' ? '✉' : '◆') + '</span>';
         return '<span class="tile-thumb design" style="background:' + (c.badgeColor || 'var(--navy)') + '">' + icon + '</span>';
       }
