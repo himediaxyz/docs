@@ -1,6 +1,6 @@
 # Cloudflare 배포 안내 (로그인 · 직원 명부 · PDF)
 
-github.io(공개 사이트)를 Cloudflare Worker로 옮기면서 다음이 추가됩니다. **Zero Trust·카드 등록 없이** 무료 요금제만 씁니다.
+github.io(공개 사이트)를 Cloudflare Pages(+ Worker 코드 `_worker.js`)로 옮기면서 다음이 추가됩니다. **Zero Trust·카드 등록 없이** 무료 요금제만 씁니다.
 
 | 기능 | 설명 |
 |---|---|
@@ -16,31 +16,33 @@ github.io 주소는 지금처럼 그대로 동작합니다(PDF는 Vercel, 송장
 
 ## 주소
 
-- 운영: https://dise-docs.charlie-6fb.workers.dev
+- 운영: https://disedocs.pages.dev
 - 로그인 `/login` · 관리자 `/admin/` · 비밀번호 바꾸기 `/account/password` · 로그아웃 `/logout` · 초기 관리자 설정 `/setup`
 
 ## 파일
 
-- `wrangler.jsonc` — Worker 설정(D1 `dise-docs`, Browser, `ADMIN_EMAILS`)
+- `wrangler.jsonc` — Pages 설정(프로젝트 `disedocs`, D1 `dise-docs`, Browser, `ADMIN_EMAILS`)
+- `scripts/build-pages.mjs` — `dist/` 만들기(사이트 파일 + `worker/index.js` → `_worker.js` + 404.html)
 - `worker/index.js` — 로그인·API
 - `migrations/` — DB 구조와 초기 데이터(다이즈 도메인, 관리자, 기존 발신인 3명, 비밀번호·세션)
 - `admin/index.html` — 관리자 페이지
-- `.assetsignore` — 사이트 파일로 올리지 않을 것(코드·설정·md)
+- `.assetsignore` — `dist/`에 넣지 않을 것(코드·설정·md)
 
 ## 배포 (Windows PC `C:\Users\himed\Projects\docs`, PowerShell)
 
 ```
 git switch dev; git pull; npm install
 npx wrangler d1 migrations apply dise-docs --remote
-npx wrangler deploy
+npm run deploy          # = 빌드 + npx wrangler pages deploy --branch main
 ```
+처음 한 번만: `npx wrangler pages project create disedocs --production-branch main`
 
 ## 초기 관리자 (처음 한 번)
 
-1. PC에서 `npx wrangler secret put SETUP_CODE` → 설정 코드를 직접 입력(8자 이상, 본인만 아는 값)
-2. https://dise-docs.charlie-6fb.workers.dev/setup 에서 관리자 메일·설정 코드·새 비밀번호 입력
+1. PC에서 `npx wrangler pages secret put SETUP_CODE` → 설정 코드를 직접 입력(8자 이상, 본인만 아는 값)
+2. https://disedocs.pages.dev/setup 에서 관리자 메일·설정 코드·새 비밀번호 입력
 3. `/login`에서 로그인 → 포털 오른쪽 위 "관리자 페이지"
-4. (선택) 설정이 끝나면 `npx wrangler secret delete SETUP_CODE` — 비밀번호가 이미 있는 계정에는 어차피 다시 쓸 수 없습니다.
+4. (선택) 설정이 끝나면 `npx wrangler pages secret delete SETUP_CODE` — 비밀번호가 이미 있는 계정에는 어차피 다시 쓸 수 없습니다.
 
 ## 직원 등록
 
@@ -49,7 +51,8 @@ npx wrangler deploy
 
 ## 이후
 
-- **미리보기 후 공개:** 대시보드 > dise-docs > 설정 > 빌드 > GitHub 연결(저장소 `himediaxyz/docs`, 프로덕션 브랜치 `main`). 지금은 `preview_urls: false`라 운영 주소 하나만 열려 있습니다.
+- **미리보기 후 공개:** `npx wrangler pages deploy --branch dev` → `https://dev.disedocs.pages.dev`(로그인 필요)에서 확인 후 `npm run deploy`로 운영 반영.
+- **회사 도메인 주소(선택):** Pages는 `docs.disehimedia.com` 같은 주소를 DNS에 CNAME 한 줄만 추가해 연결할 수 있습니다(메일 설정은 그대로).
 - **PDF:** Browser Rendering은 무료 요금제에서 하루 사용 시간 제한이 있습니다. 넘으면 "인쇄하기"를 쓰거나 유료(월 $5)로 전환.
 - **정리:** Cloudflare 확인 후 GitHub Pages 끄기 → 저장소 비공개 → Vercel PDF 서버·Apps Script 웹 앱 배포 중지.
 
@@ -58,9 +61,9 @@ npx wrangler deploy
 ```
 copy .dev.vars.example .dev.vars
 npx wrangler d1 migrations apply dise-docs --local
-npx wrangler dev
+npm run dev
 ```
-http://localhost:8787/setup 에서 `.dev.vars`의 SETUP_CODE로 관리자 비밀번호를 만든 뒤 로그인.
+http://localhost:8788/setup 에서 `.dev.vars`의 SETUP_CODE로 관리자 비밀번호를 만든 뒤 로그인.
 
 ## 안전장치
 

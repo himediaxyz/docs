@@ -1,21 +1,15 @@
-// 다이즈하이미디어 공식 문서 시스템 — Cloudflare Worker 설정
-// 배포 안내: worker/README.md
+// 다이즈하이미디어 공식 문서 시스템 — Cloudflare Pages 설정
+// 주소: https://disedocs.pages.dev   배포 안내: worker/README.md
+//   npm run build  →  dist/ (사이트 파일 + _worker.js)
+//   npx wrangler pages deploy --branch main
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "dise-docs",
-  "main": "worker/index.js",
+  "name": "disedocs",
+  "pages_build_output_dir": "./dist",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  // 저장소 전체가 사이트(포털·템플릿). 제외할 파일은 .assetsignore
-  "assets": {
-    "directory": "./",
-    "binding": "ASSETS",
-    "run_worker_first": true,
-    "html_handling": "auto-trailing-slash"
-  },
-
-  // 직원 명부·허용 도메인·작업 기록
+  // 직원 명부·허용 도메인·작업 기록·로그인 세션
   "d1_databases": [
     {
       "binding": "DB",
@@ -28,14 +22,9 @@
   // PDF 만들기(Cloudflare Browser Rendering)
   "browser": { "binding": "BROWSER" },
 
-  // 미리보기 주소(버전별 주소)는 끔 — 운영 주소 하나만
-  "preview_urls": false,
-
   "vars": {
     // 항상 관리자(잠김 방지). 쉼표로 여러 명.
-    // 첫 비밀번호는 /setup 에서 만듦 — 설정 코드: `npx wrangler secret put SETUP_CODE`
+    // 첫 비밀번호는 /setup 에서 — 설정 코드: npx wrangler pages secret put SETUP_CODE
     "ADMIN_EMAILS": "charlie@disehimedia.com"
-  },
-
-  "observability": { "enabled": true }
+  }
 }

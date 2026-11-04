@@ -1,8 +1,8 @@
 /* ============================================================
-   worker/index.js — 다이즈하이미디어 공식 문서 시스템 (Cloudflare Worker)
+   worker/index.js — 다이즈하이미디어 공식 문서 시스템 (Cloudflare Pages의 _worker.js)
 
-   모든 요청이 이 Worker를 먼저 지나갑니다(wrangler.jsonc의
-   assets.run_worker_first). 하는 일:
+   빌드 때 dist/_worker.js로 복사되어(scripts/build-pages.mjs) 모든 요청을
+   먼저 받습니다(Pages advanced mode). 하는 일:
 
    1) 로그인 — 메일(아이디)·비밀번호. 비밀번호는 PBKDF2로 해시해 D1에만 저장,
       브라우저에는 무작위 세션 토큰 쿠키(HttpOnly·Secure)만 둡니다.
@@ -58,6 +58,7 @@ async function handle(request, env, ctx) {
   if (path === '/api/setup' && request.method === 'POST') return apiSetup(request, env);
   if (path === '/logout' || path === '/api/logout') return logout(request, env);
   if (path === '/favicon.ico') return new Response(null, { status: 204 });
+  if (path.startsWith('/_worker') || path === '/_routes.json') return new Response('Not found', { status: 404 });
 
   // ---- 1) 로그인 확인 ----
   const user = await currentUser(request, env);

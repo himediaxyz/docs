@@ -11,3 +11,6 @@ node_modules/
 # Cloudflare Worker 로컬 개발
 .wrangler/
 .dev.vars
+
+# Pages 빌드 결과
+dist/
