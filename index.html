@@ -75,7 +75,10 @@
     justify-content:center;
     border:none;
     border-radius:16px;
-    padding:30px 16px;
+    /* 카드 높이 고정 — 로고를 키운 회사(portalLogoScale)가 있어도 줄 높이가 같도록 */
+    box-sizing:border-box;
+    height:106px;
+    padding:10px 16px;
     cursor:pointer;
     font-family:inherit;
     overflow:hidden;
@@ -428,7 +431,7 @@
       card.style.backgroundColor = c.badgeColor || 'var(--navy)';
       card.innerHTML =
         (c.logoMark ?
-          '<span class="company-logo" style="' + maskStyle(c.logoMark, 46, c.logoRatio) + '"></span>' :
+          '<span class="company-logo" style="' + maskStyle(c.logoMark, Math.round(46 * (c.portalLogoScale || 1)), c.logoRatio) + '"></span>' :
           // 로고 파일이 아직 없는 회사(새로 추가 중)는 회사명 글자로 표시
           '<span class="company-text">' + (c.nameKr || c.nameEn) + '</span>') +
         '<span class="company-name sr-only">' + c.nameEn +
@@ -455,7 +458,7 @@
       var c = DISE.companies[currentCompanyKey];
       if (kind === 'design') {
         var icon = cat === 'logo' && c.logoMark ?
-          '<span class="dz-logo" style="' + maskStyle(c.logoMark, 30, c.logoRatio) + '"></span>' :
+          '<span class="dz-logo" style="' + maskStyle(c.logoMark, Math.round(30 * (c.portalLogoScale || 1)), c.logoRatio) + '"></span>' :
           '<span class="dz-icon">' + (cat === 'businesscard' ? '▭' : cat === 'presentation' ? '▶' : cat === 'promo' ? '✉' : '◆') + '</span>';
         return '<span class="tile-thumb design" style="background:' + (c.badgeColor || 'var(--navy)') + '">' + icon + '</span>';
       }

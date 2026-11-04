@@ -29,7 +29,18 @@
       else if (me.isHR) bar.appendChild(link('인사 관리', '/admin/'));
       bar.appendChild(link('비밀번호 바꾸기', me.passwordUrl || '/account/password'));
       bar.appendChild(link('로그아웃', me.logoutUrl || '/logout'));
-      document.body.appendChild(bar);
+      // 휴대폰처럼 좁은 화면에서는 고정 띠가 제목을 가리므로 맨 위 줄로 내려 놓습니다
+      if (window.matchMedia && window.matchMedia('(max-width: 640px)').matches) {
+        bar.style.position = 'static';
+        bar.style.margin = '10px 12px 0';
+        bar.style.flexWrap = 'wrap';
+        bar.style.justifyContent = 'center';
+        bar.style.borderRadius = '14px';
+        Array.prototype.forEach.call(bar.children, function (el) { el.style.whiteSpace = 'nowrap'; });
+        document.body.insertBefore(bar, document.body.firstChild);
+      } else {
+        document.body.appendChild(bar);
+      }
     })
     .catch(function () { /* API 없음 — 표시 안 함 */ });
 })();
