@@ -47,6 +47,12 @@
   .b-재직 { background:#e6f4ec; color:var(--ok); } .b-휴직 { background:#fff3e0; color:var(--warn); } .b-퇴사 { background:#f1f2f5; color:#7a8191; }
   .b-admin { background:#e8eefc; color:var(--accent); }
   .b-hr { background:#f1ebfa; color:#6a3fa0; }
+  .name-cell { display:flex; align-items:center; gap:9px; }
+  .thumb { width:32px; height:32px; border-radius:50%; object-fit:cover; background:#e9ecf3; flex:none; }
+  .thumb-none { display:inline-flex; align-items:center; justify-content:center; color:#9aa1b0; font-size:13px; font-weight:700; }
+  .photo-row { grid-column:1 / -1; display:flex; gap:16px; align-items:center; }
+  .photo-box { width:96px; height:120px; border-radius:10px; background:#eef0f5 center/cover no-repeat; border:1px solid var(--line); flex:none; display:flex; align-items:center; justify-content:center; color:#9aa1b0; font-size:12.5px; }
+  .photo-row .muted { margin:6px 0 0; }
   .muted { color:var(--sub); font-size:12.5px; }
   .empty { padding:40px; text-align:center; color:var(--sub); }
   dialog { border:0; border-radius:14px; padding:0; width:min(680px, calc(100vw - 32px)); box-shadow:0 20px 60px rgba(0,0,0,.25); }
@@ -129,6 +135,15 @@
   <form method="dialog" id="empForm">
     <h2 id="dlgTitle">직원 추가</h2>
     <div class="grid">
+      <div class="photo-row">
+        <div class="photo-box" id="photoBox">사진 없음</div>
+        <div>
+          <button type="button" class="btn small" id="btnPhoto">사진 선택</button>
+          <button type="button" class="btn small danger" id="btnPhotoDel">사진 삭제</button>
+          <input type="file" id="photoFile" accept="image/jpeg,image/png,image/webp" hidden>
+          <p class="muted">정면 상반신 사진을 권장합니다. 큰 사진도 자동으로 줄여서 저장합니다(JPG·PNG).<br>저장 버튼을 눌러야 반영됩니다.</p>
+        </div>
+      </div>
       <label>회사 <select name="company" id="empCompany"></select></label>
       <label>상태 <select name="status"><option>재직</option><option>휴직</option><option>퇴사</option></select></label>
       <label>이름(국문) * <input name="name_kr" required></label>
@@ -255,7 +270,10 @@
       var gone = e.status === '퇴사';
       return '<tr class="' + (gone ? 'gone' : '') + '">' +
         '<td>' + esc(coName(e.company)) + '</td>' +
-        '<td><b>' + esc(e.name_kr) + '</b>' + (e.name_en ? '<div class="muted">' + esc(e.name_en) + '</div>' : '') + '</td>' +
+        '<td><div class="name-cell">' + (e.photo_updated_at
+          ? '<img class="thumb" alt="" loading="lazy" src="/api/photo/' + e.id + '?v=' + encodeURIComponent(e.photo_updated_at) + '">'
+          : '<span class="thumb thumb-none">' + esc((e.name_kr || '?').slice(0, 1)) + '</span>') +
+        '<div><b>' + esc(e.name_kr) + '</b>' + (e.name_en ? '<div class="muted">' + esc(e.name_en) + '</div>' : '') + '</div></div></td>' +
         '<td>' + esc(e.dept) + '</td>' +
         '<td>' + esc(e.title_kr) + '</td>' +
         '<td>' + esc(e.email) + '</td>' +
@@ -312,7 +330,57 @@
     $('pwRow').style.display = e ? 'none' : '';
     FIELDS.forEach(function (k) { if (f.elements[k]) f.elements[k].value = e ? (e[k] == null ? '' : e[k]) : (k === 'company' ? ($('fCompany').value || 'disehimedia') : (k === 'status' ? '재직' : (k === 'role' ? 'member' : (k === 'sort_order' ? 100 : '')))); });
     f.elements.is_sender.checked = !!(e && e.is_sender);
+    pendingPhoto = null; deletePhoto = false;
+    setPhotoBox(e && e.photo_updated_at ? '/api/photo/' + e.id + '?v=' + encodeURIComponent(e.photo_updated_at) : '');
     $('dlg').showModal();
+  }
+
+  // ---- 사진 ----
+  var pendingPhoto = null, deletePhoto = false, previewUrl = '';
+  function setPhotoBox(src) {
+    var box = $('photoBox');
+    box.style.backgroundImage = src ? 'url("' + src + '")' : '';
+    box.textContent = src ? '' : '사진 없음';
+    $('btnPhotoDel').style.display = src ? '' : 'none';
+  }
+  // 긴 변 1200px JPEG로 줄이기(1.4MB 넘으면 화질을 낮춰 다시)
+  function shrinkImage(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var max = 1200, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, max / Math.max(w, h));
+        var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+        var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        (function tryQ(q) {
+          c.toBlob(function (blob) {
+            if (!blob) return reject(new Error('사진을 처리하지 못했습니다.'));
+            if (blob.size > 1.4 * 1024 * 1024 && q > 0.5) return tryQ(q - 0.1);
+            resolve(blob);
+          }, 'image/jpeg', q);
+        })(0.88);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('이 사진 형식은 열 수 없습니다. JPG나 PNG로 저장해서 올려 주세요(아이폰 HEIC는 안 됨).')); };
+      img.src = url;
+    });
+  }
+  $('btnPhoto').addEventListener('click', function () { $('photoFile').click(); });
+  $('photoFile').addEventListener('change', function () {
+    var file = this.files[0]; this.value = ''; if (!file) return;
+    shrinkImage(file).then(function (blob) {
+      pendingPhoto = blob; deletePhoto = false;
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(blob); setPhotoBox(previewUrl);
+    }).catch(function (x) { toast(x.message); });
+  });
+  $('btnPhotoDel').addEventListener('click', function () { pendingPhoto = null; deletePhoto = true; setPhotoBox(''); });
+  function savePhoto(id) {
+    if (pendingPhoto) {
+      return fetch('/api/admin/employees/' + id + '/photo', { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: pendingPhoto, credentials: 'same-origin' })
+        .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error('사진: ' + (j.error || r.status)); }); });
+    }
+    if (deletePhoto && editingId) return api('/employees/' + id + '/photo', { method: 'DELETE' });
+    return Promise.resolve();
   }
   $('btnAdd').addEventListener('click', function () { openForm(null); });
   $('btnCancel').addEventListener('click', function () { $('dlg').close(); });
@@ -323,8 +391,12 @@
     body.is_sender = f.elements.is_sender.checked ? 1 : 0;
     if (!editingId && f.elements.password.value) body.password = f.elements.password.value;
     var p = editingId ? api('/employees/' + editingId, { method: 'PUT', body: body }) : api('/employees', { method: 'POST', body: body });
+    var savedId = editingId;
     p.then(function (r) {
-      $('dlg').close(); toast('저장했습니다.'); refresh();
+      savedId = savedId || r.id;
+      return savePhoto(savedId).then(function () { return r; }, function (x) { toast(x.message); return r; });
+    }).then(function (r) {
+      $('dlg').close(); if (!$('toast').style.display || $('toast').style.display === 'none') toast('저장했습니다.'); refresh();
       if (r.tempPassword) showPasswords([{ name: body.name_kr, email: body.email.toLowerCase(), tempPassword: r.tempPassword }]);
     }).catch(function (x) { toast(x.message); });
   });

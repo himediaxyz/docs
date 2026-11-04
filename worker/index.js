@@ -91,6 +91,8 @@ async function handle(request, env, ctx) {
 
   // ---- 3) API ----
   if (path === '/api/me') return json(publicUser(user));
+  let pm = path.match(/^\/api\/photo\/(\d+)$/);
+  if (pm && request.method === 'GET') return getPhoto(env, user, Number(pm[1]));
   if (path === '/api/senders.js') return sendersScript(env);
   if (path === '/api/pdf') return handlePdf(request, env, url);
   if (path.startsWith('/api/admin/')) {
@@ -390,7 +392,7 @@ async function handlePdf(request, env, url) {
 /* ------------------------------------------------------------
    관리자 API
    ------------------------------------------------------------ */
-const EMP_COLUMNS = 'id, company, email, name_kr, name_en, dept, title_kr, title_en, mobile, phone, hire_date, leave_date, status, role, is_sender, sort_order, memo, created_at, updated_at, last_seen_at, must_change_password, locked_until, password_changed_at, (password_hash IS NOT NULL) AS has_password';
+const EMP_COLUMNS = 'id, company, email, name_kr, name_en, dept, title_kr, title_en, mobile, phone, hire_date, leave_date, status, role, is_sender, sort_order, memo, created_at, updated_at, last_seen_at, must_change_password, locked_until, password_changed_at, (password_hash IS NOT NULL) AS has_password, (SELECT updated_at FROM employee_photos p WHERE p.employee_id = employees.id) AS photo_updated_at';
 
 /* 인사담당이 할 수 없는 일 — 관리자면 항상 통과('' 반환) */
 function staffGuard(env, user, target, data) {
@@ -483,6 +485,29 @@ async function handleAdmin(request, env, url, user) {
     await log(env, actor, '비밀번호 초기화', emp.email, emp.name_kr);
     return json({ ok: true, tempPassword: temp });
   }
+  m = path.match(/^\/employees\/(\d+)\/photo$/);
+  if (m && (method === 'PUT' || method === 'DELETE')) {
+    const id = Number(m[1]);
+    const emp = await env.DB.prepare('SELECT id, email, name_kr, role FROM employees WHERE id = ?').bind(id).first();
+    if (!emp) return json({ error: '없는 직원입니다.' }, 404);
+    const g = staffGuard(env, user, emp, null);
+    if (g) return json({ error: g }, 403);
+    if (method === 'DELETE') {
+      await env.DB.prepare('DELETE FROM employee_photos WHERE employee_id = ?').bind(id).run();
+      await log(env, actor, '사진 삭제', emp.email, emp.name_kr);
+      return json({ ok: true });
+    }
+    const mime = (request.headers.get('Content-Type') || '').split(';')[0].trim();
+    if (!PHOTO_TYPES.includes(mime)) return json({ error: '사진은 JPG·PNG·WEBP만 올릴 수 있습니다.' }, 400);
+    const buf = new Uint8Array(await request.arrayBuffer());
+    if (!buf.length) return json({ error: '사진 파일이 비어 있습니다.' }, 400);
+    if (buf.length > PHOTO_MAX_BYTES) return json({ error: '사진이 너무 큽니다(최대 1.5MB). 다시 선택해 주세요.' }, 413);
+    if (!looksLikeImage(buf, mime)) return json({ error: '사진 파일 형식이 올바르지 않습니다.' }, 400);
+    await env.DB.prepare("INSERT INTO employee_photos (employee_id, mime, data, bytes, updated_at, updated_by) VALUES (?, ?, ?, ?, datetime('now'), ?) ON CONFLICT(employee_id) DO UPDATE SET mime = excluded.mime, data = excluded.data, bytes = excluded.bytes, updated_at = excluded.updated_at, updated_by = excluded.updated_by")
+      .bind(id, mime, buf, buf.length, actor).run();
+    await log(env, actor, '사진 등록', emp.email, emp.name_kr + ' · ' + Math.round(buf.length / 1024) + 'KB');
+    return json({ ok: true });
+  }
   m = path.match(/^\/employees\/(\d+)$/);
   if (m && method === 'PUT') {
     const id = Number(m[1]);
@@ -505,6 +530,7 @@ async function handleAdmin(request, env, url, user) {
     if (adminEmails(env).includes(emp.email)) return json({ error: '초기 관리자(ADMIN_EMAILS)는 삭제할 수 없습니다.' }, 400);
     await env.DB.batch([
       env.DB.prepare('DELETE FROM sessions WHERE employee_id = ?').bind(id),
+      env.DB.prepare('DELETE FROM employee_photos WHERE employee_id = ?').bind(id),
       env.DB.prepare('DELETE FROM employees WHERE id = ?').bind(id)
     ]);
     await log(env, actor, '직원 삭제', emp.email, emp.name_kr);
@@ -540,6 +566,25 @@ async function handleAdmin(request, env, url, user) {
   }
 
   return json({ error: '없는 관리자 API입니다.' }, 404);
+}
+
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const PHOTO_MAX_BYTES = 1.5 * 1024 * 1024; // D1 한 칸 최대 2MB보다 작게
+
+function looksLikeImage(b, mime) {
+  if (mime === 'image/jpeg') return b[0] === 0xFF && b[1] === 0xD8;
+  if (mime === 'image/png') return b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47;
+  if (mime === 'image/webp') return b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45;
+  return false;
+}
+
+/* 직원 사진 보기 — 관리자·인사담당 또는 본인만 */
+async function getPhoto(env, user, id) {
+  if (!(canManageStaff(user) || user.id === id)) return json({ error: '볼 수 없는 사진입니다.' }, 403);
+  const row = await env.DB.prepare('SELECT mime, data FROM employee_photos WHERE employee_id = ?').bind(id).first();
+  if (!row) return new Response('없음', { status: 404 });
+  const bytes = row.data instanceof ArrayBuffer ? new Uint8Array(row.data) : new Uint8Array(row.data);
+  return new Response(bytes, { headers: { 'Content-Type': row.mime, 'Cache-Control': 'private, max-age=300', 'Content-Disposition': 'inline' } });
 }
 
 async function domainError(env, email) {
