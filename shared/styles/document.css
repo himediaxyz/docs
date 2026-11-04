@@ -1,3 +1,5 @@
+/* 명조(Noto Serif KR) — HRA 문서 스타일용. 글꼴 파일은 실제로 쓰일 때만 내려받습니다. */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700;900&display=swap');
 /* ============================================================
    document.css
    A4 문서 본문 레이아웃 — 종이(.sheet), 표 구조, 헤더/푸터 밴드,
@@ -401,3 +403,36 @@ body[data-company="hra"]{--co-tbl-border:#f0b5b2;--co-tbl-head:#fdeeed;}  /* HRA
 .doc-footer-band .l2{
   font-family:var(--font-en);font-size:11px;color:#cfd7e8;letter-spacing:0.2px;
 }
+
+
+/* ================================================================
+   회사별 문서 스타일(송장·견적서 등 레터헤드가 아닌 문서) — 2026-11-04
+   components.js renderDocHeader가 company-info의 docStyle을
+   <body data-doc-style>로 붙입니다. 레터헤드는 letterhead-companies.css.
+   ================================================================ */
+/* HRA — 레터헤드 B안 "2단 머리 공문"과 같은 머리말 */
+body[data-doc-style="hra-b"]{--hra-red:#DA251D;--hra-serif:'Noto Serif KR','Nanum Myeongjo','Batang',serif;}
+body[data-doc-style="hra-b"] .doc-header-band{
+  display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:24px;
+  align-items:center;padding:40px 50px 18px;min-height:0;
+}
+body[data-doc-style="hra-b"] .doc-logo{grid-column:1;grid-row:1 / span 2;}
+body[data-doc-style="hra-b"] .doc-header-text{display:none;}
+body[data-doc-style="hra-b"] .doc-header-band::before,
+body[data-doc-style="hra-b"] .doc-header-band::after{grid-column:2;justify-self:end;width:330px;text-align:center;}
+body[data-doc-style="hra-b"] .doc-header-band::before{
+  content:'HJ.KIM & R2V ASSOCIATION';grid-row:1;align-self:end;padding-bottom:6px;
+  font:700 17px/1.3 var(--hra-serif);letter-spacing:1.5px;color:#111;
+}
+body[data-doc-style="hra-b"] .doc-header-band::after{
+  content:'공 식 문 서  ·  OFFICIAL DOCUMENT';grid-row:2;align-self:start;margin-top:0;padding-top:9px;
+  font:600 12px var(--hra-serif);letter-spacing:2px;color:#333;
+  background:linear-gradient(#111,#111) top center/110px 1px no-repeat;
+}
+body[data-doc-style="hra-b"] .page-header::after{
+  content:'';display:block;margin:0 50px;height:3px;
+  border-top:2.5px solid var(--hra-red);border-bottom:1px solid var(--hra-red);
+}
+body[data-doc-style="hra-b"] .inv-title,
+body[data-doc-style="hra-b"] .q-title{font-family:var(--hra-serif);color:#111;}
+body[data-doc-style="hra-b"] .doc-footer-band{border-top:1px solid #bbb;margin:0 50px;padding:12px 0 18px;}

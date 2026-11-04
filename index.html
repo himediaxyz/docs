@@ -361,7 +361,8 @@
       disehimedia: '헤더·푸터의 색을 빼고 다이즈블랙 로고만 남긴 국문 레터헤드입니다.',
       r2v: '왼쪽 가장자리에 R2V 그라데이션 세로 띠를 둔 디자인입니다.',
       bic: '하단에 BIC 그린 밴드를 둔 디자인입니다.',
-      'axis-one': '모서리에 AXIS ONE 퍼플 삼각형 포인트를 둔 디자인입니다.'
+      'axis-one': '모서리에 AXIS ONE 퍼플 삼각형 포인트를 둔 디자인입니다.',
+      hra: '왼쪽 로고, 오른쪽 기관명과 "공식 문서", 붉은 이중선을 둔 공문식 디자인입니다.'
     };
 
     // 회사별 템플릿 목록 — 모든 회사에 공통으로 만들고(새 회사도 company-info.js에
@@ -382,8 +383,15 @@
           href: 'templates/promo/index.html' + q, category: 'promo' }
       ] : []).concat([
         // 공식 문서
-        { title: '레터헤드 (국문)', desc: LH_DESC[co] || '회사 레터헤드 디자인의 국문 공식 문서입니다.', href: 'templates/gongmun-premium/index.html' + q, category: 'letterhead' },
-        { title: '레터헤드 (영문)', desc: '"레터헤드 (국문)"과 같은 디자인의 영문 레터헤드입니다.', href: 'templates/gongmun/index.html' + q, category: 'letterhead' },
+        { title: '레터헤드 (국문)' + (c.lhDesignLabel ? ' · ' + c.lhDesignLabel : ''), desc: LH_DESC[co] || '회사 레터헤드 디자인의 국문 공식 문서입니다.', href: 'templates/gongmun-premium/index.html' + q, category: 'letterhead' },
+        { title: '레터헤드 (영문)' + (c.lhDesignLabel ? ' · ' + c.lhDesignLabel : ''), desc: '"레터헤드 (국문)"과 같은 디자인의 영문 레터헤드입니다.', href: 'templates/gongmun/index.html' + q, category: 'letterhead' }
+      ]).concat((c.lhDesigns || []).reduce(function (arr, d) {
+        // 같은 회사의 두 번째 레터헤드 디자인(company-info lhDesigns)
+        return arr.concat([
+          { title: '레터헤드 (국문) · ' + d.label, desc: d.desc || '같은 회사의 다른 레터헤드 디자인(국문)입니다.', href: 'templates/gongmun-premium/index.html' + q + '&design=' + d.key, category: 'letterhead' },
+          { title: '레터헤드 (영문) · ' + d.label, desc: d.desc || '같은 회사의 다른 레터헤드 디자인(영문)입니다.', href: 'templates/gongmun/index.html' + q + '&design=' + d.key, category: 'letterhead' }
+        ]);
+      }, [])).concat([
         // 송장·견적서
         { title: '송장 (인보이스)', desc: '구글 시트의 송장 데이터를 불러와 화면에서 고치고 인쇄·PDF로 내보냅니다.', href: 'templates/invoice/index.html' + q, category: 'invoice' },
         { title: '견적서', desc: '품목을 입력하면 공급가액·부가세·합계(한글 금액)가 자동 계산되는 표준 견적서입니다.', href: 'templates/quote/index.html' + q, category: 'quote' }

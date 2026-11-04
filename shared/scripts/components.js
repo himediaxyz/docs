@@ -522,6 +522,9 @@ DISE.components = {
     // 로고 파일이 아직 없는 회사(2026-11-04 추가한 HRA 등)는 로고 자리 대신
     // 회사명 글자를 보여줍니다 — 깨진 이미지가 인쇄되지 않도록.
     var hasLogo = !!(c.docLogo || c.logoMark);
+    // 송장·견적서 등 레터헤드가 아닌 문서의 회사별 스타일(company-info docStyle → document.css body[data-doc-style])
+    if (c.docStyle && !/^gongmun/.test(window.DISE_CURRENT_TEMPLATE || '')) document.body.setAttribute('data-doc-style', c.docStyle);
+    else document.body.removeAttribute('data-doc-style');
     if (!hasLogo) showCompanyName = true;
     var showTextBlock = showCompanyName || docTypeTag;
     var textBlockHtml = showTextBlock ?
@@ -590,9 +593,12 @@ DISE.components = {
     document.body.classList.add('lh');
     // 레터헤드 디자인 시안: ?design=a|b|c 로 미리보기, 확정되면 company-info의 lhDesign
     // (letterhead-companies.css의 body.lh[data-lh-design=...] 규칙)
-    var dm = /[?&]design=([a-z0-9-]+)/i.exec(location.search);
-    var design = dm ? dm[1].toLowerCase() : (c && c.lhDesign) || '';
-    if (design) document.body.setAttribute('data-lh-design', design);
+    // (레터헤드 템플릿에서만 — 견적서·송장은 아래 renderDocHeader의 docStyle을 씀)
+    if (/^gongmun/.test(window.DISE_CURRENT_TEMPLATE || '')) {
+      var dm = /[?&]design=([a-z0-9-]+)/i.exec(location.search);
+      var design = dm ? dm[1].toLowerCase() : (c && c.lhDesign) || '';
+      if (design) document.body.setAttribute('data-lh-design', design);
+    }
     if (!c || key === 'disehimedia') return;
 
     var docNo = document.getElementById('docNo');

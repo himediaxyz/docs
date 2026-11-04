@@ -156,7 +156,10 @@ DISE.companies = {
     docNoPrefix: 'HRA',
     lhShowName: true,
     headerHideNameKr: true,              // 문서 맨 위 로고 옆 국문명(에이치알에이) 숨김 — 사용자 요청
-    // lhDesign: 'a',                    // 레터헤드 시안 확정 시 a|b|c (미리보기는 ?design=)
+    lhDesign: 'b',                       // 레터헤드 기본: B안 "2단 머리 공문"(2026-11-04 확정)
+    lhDesignLabel: '2단 머리',
+    lhDesigns: [{ key: 'c', label: '붉은 띠', desc: '빨강 헤더 띠·노랑 선·별 워터마크·직인 자리를 둔 강한 공문식 디자인입니다.' }], // 추가 레터헤드: C안(포털에 별도 항목, ?design=c)
+    docStyle: 'hra-b',                   // 송장·견적서도 B안 분위기(document.css)
     badgeColor: '#DA251D',               // HRA 메인(빨강). 서브 #FFFF01(노랑)
     brandSub: '#FFFF01'
     // TODO: 주소·전화·이메일·사업자 정보
