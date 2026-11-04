@@ -1,0 +1,3 @@
+# 로컬 개발(npx wrangler dev)용 — .dev.vars 로 복사해서 사용. 커밋 금지.
+# localhost 에서만 이 메일로 로그인한 것으로 간주합니다.
+DEV_USER_EMAIL=charlie@disehimedia.com

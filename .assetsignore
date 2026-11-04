@@ -1,0 +1,20 @@
+# Cloudflare에 "사이트 파일"로 올리지 않을 것(코드·설정·내부 문서)
+.git
+.git/
+.github/
+.wrangler/
+node_modules/
+worker/
+migrations/
+pdf-service/
+apps-script/
+wrangler.jsonc
+package.json
+package-lock.json
+.dev.vars*
+.assetsignore
+.gitignore
+.gitattributes
+.nojekyll
+*.md
+Claude outputs/

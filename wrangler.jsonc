@@ -1,0 +1,45 @@
+// 다이즈하이미디어 공식 문서 시스템 — Cloudflare Worker 설정
+// 배포 안내: worker/README.md
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dise-docs",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // 저장소 전체가 사이트(포털·템플릿). 제외할 파일은 .assetsignore
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "auto-trailing-slash"
+  },
+
+  // 직원 명부·허용 도메인·작업 기록
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dise-docs",
+      "database_id": "REPLACE_WITH_D1_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // PDF 만들기(Cloudflare Browser Rendering)
+  "browser": { "binding": "BROWSER" },
+
+  "vars": {
+    // 항상 관리자(잠김 방지). 쉼표로 여러 명
+    "ADMIN_EMAILS": "charlie@disehimedia.com",
+    // Cloudflare Access 설정 후 채움 (Zero Trust > Access > Applications)
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": "",
+    // (선택) 관리자 페이지에서 도메인 추가 시 Access 정책 자동 갱신
+    //  + 비밀값 CF_API_TOKEN 은 `npx wrangler secret put CF_API_TOKEN`
+    "CF_ACCOUNT_ID": "",
+    "ACCESS_POLICY_ID": "",
+    "ACCESS_APP_ID": ""
+  },
+
+  "observability": { "enabled": true }
+}

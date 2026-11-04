@@ -287,6 +287,8 @@
 
   <script src="../../shared/scripts/company-info.js"></script>
   <script src="../../shared/scripts/sender-info.js"></script>
+  <!-- Cloudflare 사이트: 관리자 페이지 직원 명부의 발신인을 합침 -->
+  <script>if (!/github\.io$/.test(location.hostname)) document.write('<script src="/api/senders.js"><\/script>');</script>
   <script src="../../shared/scripts/recipient-info.js"></script>
   <script src="../../shared/scripts/template-registry.js"></script>
   <script src="../../shared/scripts/components.js"></script>
@@ -305,9 +307,11 @@
     // ★ 마스터 데이터(구글 시트) API 주소 — 다이즈하이미디어_그룹_마스터데이터.xlsx에
     // 붙인 Apps Script를 웹 앱으로 배포해서 나온 URL입니다(2026-09-16 배포 완료).
     // pdf-export.js의 DISE_PDF_API_URL과 같은 방식의 설정값입니다.
-    window.DISE_INVOICE_API_URL = 'https://script.google.com/macros/s/AKfycbzuiZVaHkk18v0KSUHr61YBdyKTNJCbEJ3s3f3q2pX4sovX1g7h7BrYj6oDcNZScv4j/exec';
+    // Cloudflare 사이트는 "양식만 제공"(구글 시트 연결 안 함) — github.io에서만 기존 시트 사용
+    window.DISE_INVOICE_API_URL = /github\.io$/.test(location.hostname) ? 'https://script.google.com/macros/s/AKfycbzuiZVaHkk18v0KSUHr61YBdyKTNJCbEJ3s3f3q2pX4sovX1g7h7BrYj6oDcNZScv4j/exec' : '';
 
-    window.DISE_PDF_API_URL = 'https://docs-plum-ten-91.vercel.app/api/generate-pdf';
+    // github.io(이전 주소)는 Vercel PDF 서버, Cloudflare 사이트는 같은 사이트의 /api/pdf
+    window.DISE_PDF_API_URL = /github\.io$/.test(location.hostname) ? 'https://docs-plum-ten-91.vercel.app/api/generate-pdf' : '/api/pdf';
 
     DISE.components.renderSiteHeader({ portalHref: '../../index.html' });
     DISE.components.renderEditorUI({ templateKey: DISE_CURRENT_TEMPLATE, company: DISE_CURRENT_COMPANY });

@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>관리자 · 다이즈하이미디어 문서 시스템</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Asta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --navy:#0b234f; --ink:#1a1a1a; --sub:#5b6476; --line:#e3e6ee; --bg:#f4f5f8; --card:#fff;
+          --ok:#1f8a4c; --warn:#b26a00; --bad:#c0392b; --accent:#2f5fd0; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:'Asta Sans','Open Sans',-apple-system,'Noto Sans KR',sans-serif; font-size:14px; }
+  header { background:var(--navy); color:#fff; padding:14px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header h1 { font-size:17px; margin:0; font-weight:700; letter-spacing:-.2px; }
+  header .sp { flex:1; }
+  header a, header span { color:#cdd6ea; font-size:13px; text-decoration:none; }
+  header a:hover { color:#fff; }
+  main { max-width:1280px; margin:0 auto; padding:20px 16px 60px; }
+  .status { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .chip { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 14px; min-width:110px; }
+  .chip b { display:block; font-size:20px; }
+  .chip small { color:var(--sub); }
+  .chip.ok b { color:var(--ok); } .chip.warn b { color:var(--warn); }
+  nav.tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:16px; }
+  nav.tabs button { background:none; border:0; padding:10px 16px; font:inherit; color:var(--sub); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+  nav.tabs button.on { color:var(--navy); border-bottom-color:var(--navy); font-weight:700; }
+  .panel { display:none; } .panel.on { display:block; }
+  .bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  .bar .sp { flex:1; }
+  input, select, textarea { font:inherit; padding:7px 10px; border:1px solid #cfd4df; border-radius:7px; background:#fff; color:var(--ink); }
+  input[type=search] { min-width:220px; }
+  button.btn { font:inherit; padding:7px 14px; border-radius:7px; border:1px solid #cfd4df; background:#fff; cursor:pointer; color:var(--ink); }
+  button.btn:hover { border-color:var(--navy); }
+  button.primary { background:var(--navy); color:#fff; border-color:var(--navy); }
+  button.danger { color:var(--bad); }
+  button.small { padding:4px 9px; font-size:12.5px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:auto; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th { background:#f8f9fc; color:var(--sub); font-weight:600; font-size:12.5px; position:sticky; top:0; }
+  tr.gone td { color:#9aa1b0; }
+  td.actions { text-align:right; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:12px; font-weight:600; }
+  .b-재직 { background:#e6f4ec; color:var(--ok); } .b-휴직 { background:#fff3e0; color:var(--warn); } .b-퇴사 { background:#f1f2f5; color:#7a8191; }
+  .b-admin { background:#e8eefc; color:var(--accent); }
+  .muted { color:var(--sub); font-size:12.5px; }
+  .empty { padding:40px; text-align:center; color:var(--sub); }
+  dialog { border:0; border-radius:14px; padding:0; width:min(680px, calc(100vw - 32px)); box-shadow:0 20px 60px rgba(0,0,0,.25); }
+  dialog::backdrop { background:rgba(11,35,79,.35); }
+  dialog form { padding:22px 24px; }
+  dialog h2 { margin:0 0 16px; font-size:17px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; }
+  .grid label { display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--sub); }
+  .grid label.full { grid-column:1 / -1; }
+  .grid label.check { flex-direction:row; align-items:center; gap:8px; color:var(--ink); font-size:14px; }
+  .dlg-foot { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
+  .note { background:#fff; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; padding:10px 14px; margin:10px 0; line-height:1.6; color:#3c4456; }
+  #toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#212B43; color:#fff; padding:11px 18px; border-radius:10px; display:none; z-index:9; max-width:90vw; }
+  @media (max-width: 640px) { .grid { grid-template-columns:1fr; } input[type=search] { min-width:0; flex:1; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>문서 시스템 관리자</h1>
+  <span class="sp"></span>
+  <span id="meLabel"></span>
+  <a href="/">문서 시스템으로</a>
+  <a href="/cdn-cgi/access/logout">로그아웃</a>
+</header>
+
+<main>
+  <div class="status" id="status"></div>
+
+  <nav class="tabs">
+    <button data-tab="emp" class="on">직원 명부</button>
+    <button data-tab="dom">로그인 허용 도메인</button>
+    <button data-tab="log">작업 기록</button>
+  </nav>
+
+  <!-- 직원 명부 -->
+  <section class="panel on" id="tab-emp">
+    <div class="bar">
+      <input type="search" id="q" placeholder="이름·메일·부서 검색">
+      <select id="fCompany"><option value="">전체 회사</option></select>
+      <select id="fStatus"><option value="active">재직·휴직</option><option value="">전체</option><option>재직</option><option>휴직</option><option>퇴사</option></select>
+      <span class="sp"></span>
+      <button class="btn" id="btnExport">엑셀(CSV) 내려받기</button>
+      <button class="btn" id="btnImport">CSV 가져오기</button>
+      <input type="file" id="fileImport" accept=".csv,text/csv" hidden>
+      <button class="btn primary" id="btnAdd">+ 직원 추가</button>
+    </div>
+    <div class="card"><table>
+      <thead><tr><th>회사</th><th>이름</th><th>부서</th><th>직책</th><th>메일</th><th>휴대폰</th><th>입사일</th><th>상태</th><th>권한</th><th>발신인</th><th>최근 접속</th><th></th></tr></thead>
+      <tbody id="empBody"><tr><td colspan="12" class="empty">불러오는 중…</td></tr></tbody>
+    </table></div>
+    <p class="muted">· 퇴사 처리하면 그 즉시 문서 시스템 접속이 막힙니다. · 회사 메일로 처음 로그인한 직원은 "일반"으로 자동 등록되니 정보만 채워 주세요. · "발신인"에 표시한 직원은 레터헤드·계약서·견적서의 발신인 목록에 나타납니다.</p>
+  </section>
+
+  <!-- 도메인 -->
+  <section class="panel" id="tab-dom">
+    <div class="note">이 목록에 있는 메일 도메인을 쓰는 사람만 로그인할 수 있습니다. 계열사를 추가할 때 그 회사의 메일 도메인을 등록하세요.<br><span id="syncInfo" class="muted"></span></div>
+    <div class="bar">
+      <input id="newDomain" placeholder="예: r2v.co.kr">
+      <select id="newDomainCompany"></select>
+      <button class="btn primary" id="btnAddDomain">도메인 추가</button>
+      <span class="sp"></span>
+      <button class="btn" id="btnSync">Access 정책 다시 맞추기</button>
+    </div>
+    <div class="card"><table>
+      <thead><tr><th>도메인</th><th>회사</th><th>등록일</th><th></th></tr></thead>
+      <tbody id="domBody"></tbody>
+    </table></div>
+  </section>
+
+  <!-- 기록 -->
+  <section class="panel" id="tab-log">
+    <div class="card"><table>
+      <thead><tr><th>시각(UTC+9)</th><th>작업자</th><th>작업</th><th>대상</th><th>내용</th></tr></thead>
+      <tbody id="logBody"></tbody>
+    </table></div>
+    <p class="muted">최근 300건</p>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <form method="dialog" id="empForm">
+    <h2 id="dlgTitle">직원 추가</h2>
+    <div class="grid">
+      <label>회사 <select name="company" id="empCompany"></select></label>
+      <label>상태 <select name="status"><option>재직</option><option>휴직</option><option>퇴사</option></select></label>
+      <label>이름(국문) * <input name="name_kr" required></label>
+      <label>이름(영문) <input name="name_en" placeholder="Lee, Cha-woo | Charlie"></label>
+      <label>부서 <input name="dept"></label>
+      <label>메일 * <input name="email" type="email" required></label>
+      <label>직책(국문) <input name="title_kr" placeholder="팀장"></label>
+      <label>직책(영문) <input name="title_en" placeholder="Team Leader"></label>
+      <label>휴대폰 <input name="mobile" placeholder="010-0000-0000"></label>
+      <label>사무실 전화 <input name="phone" placeholder="032-573-3114"></label>
+      <label>입사일 <input name="hire_date" type="date"></label>
+      <label>퇴사일 <input name="leave_date" type="date"></label>
+      <label>권한 <select name="role"><option value="member">일반</option><option value="admin">관리자</option></select></label>
+      <label>발신인 순서 <input name="sort_order" type="number" value="100"></label>
+      <label class="check full"><input type="checkbox" name="is_sender"> 문서 발신인 목록에 표시(레터헤드·계약서·견적서)</label>
+      <label class="full">메모 <textarea name="memo" rows="2"></textarea></label>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn danger" id="btnDelete" style="margin-right:auto">삭제</button>
+      <button type="button" class="btn" id="btnCancel">취소</button>
+      <button type="submit" class="btn primary">저장</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast"></div>
+
+<script src="../shared/scripts/company-info.js"></script>
+<script>
+(function () {
+  var COMPANIES = (window.DISE && DISE.companies) || { disehimedia: { nameKr: '다이즈하이미디어' } };
+  var employees = [], domains = [], editingId = null;
+  var $ = function (id) { return document.getElementById(id); };
+  var FIELDS = ['company','status','name_kr','name_en','dept','email','title_kr','title_en','mobile','phone','hire_date','leave_date','role','sort_order','memo'];
+  var CSV_COLS = [['company','회사코드'],['name_kr','이름'],['name_en','영문이름'],['dept','부서'],['title_kr','직책'],['title_en','영문직책'],['email','메일'],['mobile','휴대폰'],['phone','전화'],['hire_date','입사일'],['leave_date','퇴사일'],['status','상태'],['role','권한'],['is_sender','발신인'],['sort_order','순서'],['memo','메모']];
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]; }); }
+  function coName(k) { return COMPANIES[k] ? COMPANIES[k].nameKr : (k || '-'); }
+  function kst(s) { if (!s) return ''; var d = new Date(s.replace(' ', 'T') + 'Z'); if (isNaN(d)) return s; d = new Date(d.getTime() + 9 * 3600e3); return d.toISOString().slice(0, 16).replace('T', ' '); }
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(function () { t.style.display = 'none'; }, 3800); }
+
+  function api(path, opts) {
+    opts = opts || {};
+    var init = { method: opts.method || 'GET', headers: {} , credentials: 'same-origin' };
+    if (opts.body !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
+    return fetch('/api/admin' + path, init).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.error || ('요청 실패 (' + r.status + ')'));
+        return j;
+      });
+    });
+  }
+
+  // 회사 선택 목록
+  Object.keys(COMPANIES).forEach(function (k) {
+    ['fCompany', 'empCompany', 'newDomainCompany'].forEach(function (id) {
+      var o = document.createElement('option'); o.value = k; o.textContent = COMPANIES[k].nameKr; $(id).appendChild(o);
+    });
+  });
+
+  // 탭
+  document.querySelectorAll('nav.tabs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('nav.tabs button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('on', p.id === 'tab-' + b.dataset.tab); });
+      if (b.dataset.tab === 'log') loadLog();
+      if (b.dataset.tab === 'dom') loadDomains();
+    });
+  });
+
+  function loadStatus() {
+    api('/status').then(function (s) {
+      $('meLabel').textContent = (s.me.nameKr || '') + ' · ' + s.me.email;
+      var c = {}; (s.counts || []).forEach(function (r) { c[r.status] = r.n; });
+      $('status').innerHTML =
+        chip(c['재직'] || 0, '재직') + chip(c['휴직'] || 0, '휴직') + chip(c['퇴사'] || 0, '퇴사(차단)') +
+        chip(s.access ? '켜짐' : '꺼짐', '로그인 관문', s.access ? 'ok' : 'warn') +
+        chip(s.pdf ? '연결됨' : '없음', 'PDF 만들기', s.pdf ? 'ok' : 'warn') +
+        chip(s.accessSync ? '자동' : '수동', '도메인 → Access', s.accessSync ? 'ok' : 'warn');
+      $('syncInfo').textContent = s.accessSync
+        ? '도메인을 추가·삭제하면 Cloudflare Access 로그인 허용 목록도 자동으로 바뀝니다.'
+        : '지금은 Access 자동 갱신이 꺼져 있습니다. 도메인을 추가한 뒤 Cloudflare 대시보드 > Zero Trust > Access 정책에도 같은 도메인을 넣어 주세요.';
+    }).catch(function (e) { toast(e.message); });
+  }
+  function chip(v, label, cls) { return '<div class="chip ' + (cls || '') + '"><b>' + esc(v) + '</b><small>' + esc(label) + '</small></div>'; }
+
+  // ---- 직원 명부 ----
+  function loadEmployees() {
+    return api('/employees').then(function (rows) { employees = rows; renderEmployees(); }).catch(function (e) { toast(e.message); });
+  }
+  function renderEmployees() {
+    var q = $('q').value.trim().toLowerCase(), co = $('fCompany').value, st = $('fStatus').value;
+    var rows = employees.filter(function (e) {
+      if (co && e.company !== co) return false;
+      if (st === 'active' && e.status === '퇴사') return false;
+      if (st && st !== 'active' && e.status !== st) return false;
+      if (q && [e.name_kr, e.name_en, e.email, e.dept, e.title_kr].join(' ').toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    if (!rows.length) { $('empBody').innerHTML = '<tr><td colspan="12" class="empty">표시할 직원이 없습니다.</td></tr>'; return; }
+    $('empBody').innerHTML = rows.map(function (e) {
+      var gone = e.status === '퇴사';
+      return '<tr class="' + (gone ? 'gone' : '') + '">' +
+        '<td>' + esc(coName(e.company)) + '</td>' +
+        '<td><b>' + esc(e.name_kr) + '</b>' + (e.name_en ? '<div class="muted">' + esc(e.name_en) + '</div>' : '') + '</td>' +
+        '<td>' + esc(e.dept) + '</td>' +
+        '<td>' + esc(e.title_kr) + '</td>' +
+        '<td>' + esc(e.email) + '</td>' +
+        '<td>' + esc(e.mobile) + '</td>' +
+        '<td>' + esc(e.hire_date) + (gone && e.leave_date ? '<div class="muted">퇴사 ' + esc(e.leave_date) + '</div>' : '') + '</td>' +
+        '<td><span class="badge b-' + esc(e.status) + '">' + esc(e.status) + '</span></td>' +
+        '<td>' + (e.role === 'admin' ? '<span class="badge b-admin">관리자</span>' : '일반') + '</td>' +
+        '<td>' + (e.is_sender ? '✓' : '') + '</td>' +
+        '<td class="muted">' + esc(kst(e.last_seen_at)) + '</td>' +
+        '<td class="actions"><button class="btn small" data-edit="' + e.id + '">수정</button> ' +
+        (gone ? '<button class="btn small" data-rehire="' + e.id + '">복직</button>'
+              : '<button class="btn small danger" data-leave="' + e.id + '">퇴사 처리</button>') + '</td></tr>';
+    }).join('');
+  }
+  ['q', 'fCompany', 'fStatus'].forEach(function (id) { $(id).addEventListener('input', renderEmployees); });
+
+  $('empBody').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    var id = Number(b.dataset.edit || b.dataset.leave || b.dataset.rehire);
+    var e = employees.find(function (x) { return x.id === id; }); if (!e) return;
+    if (b.dataset.edit) return openForm(e);
+    if (b.dataset.leave) {
+      if (!confirm(e.name_kr + ' (' + e.email + ') 님을 퇴사 처리할까요?\n문서 시스템 접속이 바로 차단되고 발신인 목록에서 빠집니다.')) return;
+      return api('/employees/' + id, { method: 'PUT', body: { status: '퇴사' } }).then(function () { toast('퇴사 처리했습니다 — 접속이 차단됩니다.'); refresh(); }).catch(function (x) { toast(x.message); });
+    }
+    if (b.dataset.rehire) {
+      return api('/employees/' + id, { method: 'PUT', body: { status: '재직', leave_date: '' } }).then(function () { toast('복직 처리했습니다.'); refresh(); }).catch(function (x) { toast(x.message); });
+    }
+  });
+
+  function openForm(e) {
+    editingId = e ? e.id : null;
+    var f = $('empForm'); f.reset();
+    $('dlgTitle').textContent = e ? '직원 정보 수정' : '직원 추가';
+    $('btnDelete').style.display = e ? '' : 'none';
+    FIELDS.forEach(function (k) { if (f.elements[k]) f.elements[k].value = e ? (e[k] == null ? '' : e[k]) : (k === 'company' ? ($('fCompany').value || 'disehimedia') : (k === 'status' ? '재직' : (k === 'role' ? 'member' : (k === 'sort_order' ? 100 : '')))); });
+    f.elements.is_sender.checked = !!(e && e.is_sender);
+    $('dlg').showModal();
+  }
+  $('btnAdd').addEventListener('click', function () { openForm(null); });
+  $('btnCancel').addEventListener('click', function () { $('dlg').close(); });
+  $('empForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var f = ev.target, body = {};
+    FIELDS.forEach(function (k) { body[k] = f.elements[k].value; });
+    body.is_sender = f.elements.is_sender.checked ? 1 : 0;
+    var p = editingId ? api('/employees/' + editingId, { method: 'PUT', body: body }) : api('/employees', { method: 'POST', body: body });
+    p.then(function () { $('dlg').close(); toast('저장했습니다.'); refresh(); }).catch(function (x) { toast(x.message); });
+  });
+  $('btnDelete').addEventListener('click', function () {
+    var e = employees.find(function (x) { return x.id === editingId; });
+    if (!e || !confirm(e.name_kr + ' 님을 명부에서 완전히 삭제할까요?\n보통은 "퇴사 처리"를 쓰세요(기록이 남습니다). 삭제하면 같은 회사 메일로 다시 로그인할 때 일반 권한으로 새로 등록됩니다.')) return;
+    api('/employees/' + editingId, { method: 'DELETE' }).then(function () { $('dlg').close(); toast('삭제했습니다.'); refresh(); }).catch(function (x) { toast(x.message); });
+  });
+
+  // CSV 내려받기 / 가져오기
+  function csvCell(v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  $('btnExport').addEventListener('click', function () {
+    var lines = [CSV_COLS.map(function (c) { return c[1]; }).join(',')];
+    employees.forEach(function (e) {
+      lines.push(CSV_COLS.map(function (c) {
+        var v = e[c[0]];
+        if (c[0] === 'role') v = v === 'admin' ? '관리자' : '일반';
+        if (c[0] === 'is_sender') v = v ? 'Y' : '';
+        return csvCell(v);
+      }).join(','));
+    });
+    var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = '직원명부_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  });
+  $('btnImport').addEventListener('click', function () { $('fileImport').click(); });
+  $('fileImport').addEventListener('change', function () {
+    var file = this.files[0]; this.value = ''; if (!file) return;
+    file.text().then(function (text) {
+      var rows = parseCsv(text.replace(/^﻿/, ''));
+      if (rows.length < 2) throw new Error('내용이 없습니다.');
+      var head = rows[0].map(function (h) { return h.trim(); });
+      var map = head.map(function (h) { var c = CSV_COLS.find(function (x) { return x[1] === h || x[0] === h; }); return c ? c[0] : null; });
+      if (map.indexOf('email') < 0) throw new Error('"메일" 열이 필요합니다. 먼저 "엑셀(CSV) 내려받기"로 양식을 받아 쓰세요.');
+      var list = rows.slice(1).filter(function (r) { return r.some(function (v) { return v.trim(); }); }).map(function (r) {
+        var o = {}; map.forEach(function (k, i) { if (k && r[i] !== undefined && r[i] !== '') o[k] = r[i]; }); return o;
+      });
+      if (!confirm(list.length + '명을 가져올까요? 같은 메일은 정보를 덮어씁니다.')) return;
+      return api('/employees/import', { method: 'POST', body: list }).then(function (r) {
+        toast('추가 ' + r.added + '명 · 갱신 ' + r.updated + '명' + (r.errors.length ? ' · 오류 ' + r.errors.length + '건' : ''));
+        if (r.errors.length) alert('가져오지 못한 행:\n' + r.errors.join('\n'));
+        refresh();
+      });
+    }).catch(function (x) { toast(x.message); });
+  });
+  function parseCsv(text) {
+    var rows = [], row = [], cell = '', q = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === ',') { row.push(cell); cell = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+      else cell += ch;
+    }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+
+  // ---- 도메인 ----
+  function loadDomains() {
+    api('/domains').then(function (rows) {
+      domains = rows;
+      $('domBody').innerHTML = rows.length ? rows.map(function (d) {
+        return '<tr><td><b>@' + esc(d.domain) + '</b></td><td>' + esc(coName(d.company)) + '</td><td class="muted">' + esc(kst(d.created_at)) + '</td>' +
+          '<td class="actions"><button class="btn small danger" data-del="' + esc(d.domain) + '">삭제</button></td></tr>';
+      }).join('') : '<tr><td colspan="4" class="empty">등록된 도메인이 없습니다.</td></tr>';
+    }).catch(function (e) { toast(e.message); });
+  }
+  $('btnAddDomain').addEventListener('click', function () {
+    api('/domains', { method: 'POST', body: { domain: $('newDomain').value, company: $('newDomainCompany').value } })
+      .then(function (r) { $('newDomain').value = ''; toast('추가했습니다. ' + (r.sync ? r.sync.message : '')); loadDomains(); })
+      .catch(function (x) { toast(x.message); });
+  });
+  $('domBody').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-del]'); if (!b) return;
+    if (!confirm('@' + b.dataset.del + ' 메일의 로그인을 막을까요?')) return;
+    api('/domains/' + encodeURIComponent(b.dataset.del), { method: 'DELETE' })
+      .then(function (r) { toast('삭제했습니다. ' + (r.sync ? r.sync.message : '')); loadDomains(); })
+      .catch(function (x) { toast(x.message); });
+  });
+  $('btnSync').addEventListener('click', function () {
+    api('/access-sync', { method: 'POST' }).then(function (r) { toast(r.message); }).catch(function (x) { toast(x.message); });
+  });
+
+  // ---- 기록 ----
+  function loadLog() {
+    api('/audit').then(function (rows) {
+      $('logBody').innerHTML = rows.length ? rows.map(function (r) {
+        return '<tr><td class="muted">' + esc(kst(r.at)) + '</td><td>' + esc(r.actor) + '</td><td><b>' + esc(r.action) + '</b></td><td>' + esc(r.target) + '</td><td class="muted" style="white-space:normal">' + esc(r.detail) + '</td></tr>';
+      }).join('') : '<tr><td colspan="5" class="empty">기록이 없습니다.</td></tr>';
+    }).catch(function (e) { toast(e.message); });
+  }
+
+  function refresh() { loadStatus(); loadEmployees(); }
+  refresh();
+})();
+</script>
+</body>
+</html>

@@ -710,8 +710,11 @@
     markRendered();
 
     if (!API_URL) {
-      setStatus('DISE_INVOICE_API_URL이 아직 설정되지 않았습니다 — 빈 양식으로 작성할 수 있습니다', true);
-      els.select.innerHTML = '<option value="">(API 주소 미설정)</option>';
+      // 양식 모드(Cloudflare 사이트) — 시트에서 불러올 송장이 없으므로
+      // "송장번호 선택" 칸을 숨기고 바로 빈 양식으로 작성합니다.
+      var selLabel = els.select.closest('label');
+      if (selLabel) selLabel.style.display = 'none';
+      setStatus('품목·금액을 직접 입력해 작성하세요');
       return;
     }
 

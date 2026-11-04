@@ -1,0 +1,17 @@
+{
+  "name": "dise-docs",
+  "private": true,
+  "description": "다이즈하이미디어 공식 문서 시스템 — Cloudflare Worker (로그인·직원 명부·PDF)",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply dise-docs --remote",
+    "db:migrate:local": "wrangler d1 migrations apply dise-docs --local"
+  },
+  "dependencies": {
+    "@cloudflare/puppeteer": "^1.4.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.157.0"
+  }
+}

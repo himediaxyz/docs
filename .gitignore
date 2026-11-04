@@ -7,3 +7,7 @@ Thumbs.db
 # 폴더 — 커밋해서는 안 됨(Vercel이 배포 시 자체적으로 설치함).
 node_modules/
 .vercel/
+
+# Cloudflare Worker 로컬 개발
+.wrangler/
+.dev.vars

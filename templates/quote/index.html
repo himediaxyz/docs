@@ -170,6 +170,8 @@
 
   <script src="../../shared/scripts/company-info.js"></script>
   <script src="../../shared/scripts/sender-info.js"></script>
+  <!-- Cloudflare 사이트: 관리자 페이지 직원 명부의 발신인을 합침 -->
+  <script>if (!/github\.io$/.test(location.hostname)) document.write('<script src="/api/senders.js"><\/script>');</script>
   <script src="../../shared/scripts/recipient-info.js"></script>
   <script src="../../shared/scripts/template-registry.js"></script>
   <script src="../../shared/scripts/components.js"></script>
@@ -183,8 +185,10 @@
     })();
     var DISE_LH_CO = DISE.companies[DISE_CURRENT_COMPANY];
     // 품목마스터(Apps Script) — 송장과 같은 주소
-    window.DISE_INVOICE_API_URL = 'https://script.google.com/macros/s/AKfycbzuiZVaHkk18v0KSUHr61YBdyKTNJCbEJ3s3f3q2pX4sovX1g7h7BrYj6oDcNZScv4j/exec';
-    window.DISE_PDF_API_URL = 'https://docs-plum-ten-91.vercel.app/api/generate-pdf';
+    // Cloudflare 사이트는 "양식만 제공"(구글 시트 연결 안 함) — github.io에서만 기존 시트 사용
+    window.DISE_INVOICE_API_URL = /github\.io$/.test(location.hostname) ? 'https://script.google.com/macros/s/AKfycbzuiZVaHkk18v0KSUHr61YBdyKTNJCbEJ3s3f3q2pX4sovX1g7h7BrYj6oDcNZScv4j/exec' : '';
+    // github.io(이전 주소)는 Vercel PDF 서버, Cloudflare 사이트는 같은 사이트의 /api/pdf
+    window.DISE_PDF_API_URL = /github\.io$/.test(location.hostname) ? 'https://docs-plum-ten-91.vercel.app/api/generate-pdf' : '/api/pdf';
 
     DISE.quote.init({ company: DISE_CURRENT_COMPANY });
     DISE.components.prepareLetterhead({ company: DISE_CURRENT_COMPANY });

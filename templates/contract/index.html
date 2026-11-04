@@ -100,6 +100,8 @@
 
   <script src="../../shared/scripts/company-info.js"></script>
   <script src="../../shared/scripts/sender-info.js"></script>
+  <!-- Cloudflare 사이트: 관리자 페이지 직원 명부의 발신인을 합침 -->
+  <script>if (!/github\.io$/.test(location.hostname)) document.write('<script src="/api/senders.js"><\/script>');</script>
   <script src="../../shared/scripts/recipient-info.js"></script>
   <script src="../../shared/scripts/template-registry.js"></script>
   <script src="../../shared/scripts/components.js"></script>
@@ -116,7 +118,8 @@
       return DISE.companies[key] ? key : 'disehimedia';
     })();
     var DISE_LH_CO = DISE.companies[DISE_CURRENT_COMPANY];
-    window.DISE_PDF_API_URL = 'https://docs-plum-ten-91.vercel.app/api/generate-pdf';
+    // github.io(이전 주소)는 Vercel PDF 서버, Cloudflare 사이트는 같은 사이트의 /api/pdf
+    window.DISE_PDF_API_URL = /github\.io$/.test(location.hostname) ? 'https://docs-plum-ten-91.vercel.app/api/generate-pdf' : '/api/pdf';
 
     // 본문을 먼저 그린 뒤(prepareLetterhead·editor.js보다 먼저) 공용 화면 요소를 붙입니다.
     DISE.contractRenderer.render({ company: DISE_CURRENT_COMPANY });
