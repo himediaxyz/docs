@@ -41,10 +41,12 @@
   th, td { padding:8px 8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; font-size:13.5px; }
   th { background:#f8f9fc; color:var(--sub); font-weight:600; font-size:12.5px; position:sticky; top:0; }
   tr.gone td { color:#9aa1b0; }
-  td.actions { text-align:right; }
+  td.actions, th:last-child { text-align:right; position:sticky; right:0; background:#fff; box-shadow:-8px 0 8px -8px rgba(11,35,79,.15); }
+  th:last-child { background:#f8f9fc; }
   .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:12px; font-weight:600; }
   .b-재직 { background:#e6f4ec; color:var(--ok); } .b-휴직 { background:#fff3e0; color:var(--warn); } .b-퇴사 { background:#f1f2f5; color:#7a8191; }
   .b-admin { background:#e8eefc; color:var(--accent); }
+  .b-hr { background:#f1ebfa; color:#6a3fa0; }
   .muted { color:var(--sub); font-size:12.5px; }
   .empty { padding:40px; text-align:center; color:var(--sub); }
   dialog { border:0; border-radius:14px; padding:0; width:min(680px, calc(100vw - 32px)); box-shadow:0 20px 60px rgba(0,0,0,.25); }
@@ -63,7 +65,7 @@
 </head>
 <body>
 <header>
-  <h1>문서 시스템 관리자</h1>
+  <h1 id="pageTitle">문서 시스템 관리자</h1>
   <span class="sp"></span>
   <span id="meLabel"></span>
   <a href="/">문서 시스템으로</a>
@@ -139,7 +141,7 @@
       <label>사무실 전화 <input name="phone" placeholder="032-573-3114"></label>
       <label>입사일 <input name="hire_date" type="date"></label>
       <label>퇴사일 <input name="leave_date" type="date"></label>
-      <label>권한 <select name="role"><option value="member">일반</option><option value="admin">관리자</option></select></label>
+      <label>권한 <select name="role"><option value="member">일반</option><option value="hr">인사담당</option><option value="admin">관리자</option></select></label>
       <label>발신인 순서 <input name="sort_order" type="number" value="100"></label>
       <label class="full" id="pwRow">첫 비밀번호 <input name="password" type="text" autocomplete="off" placeholder="비워 두면 자동으로 만들어 저장 후 한 번 보여 줍니다"></label>
       <label class="check full"><input type="checkbox" name="is_sender"> 문서 발신인 목록에 표시(레터헤드·계약서·견적서)</label>
@@ -172,7 +174,11 @@
 <script>
 (function () {
   var COMPANIES = (window.DISE && DISE.companies) || { disehimedia: { nameKr: '다이즈하이미디어' } };
-  var employees = [], domains = [], editingId = null;
+  var employees = [], domains = [], editingId = null, ME = null;
+  var ROLE_BADGE = { admin: '<span class="badge b-admin">관리자</span>', hr: '<span class="badge b-hr">인사담당</span>' };
+  function isPrivileged(e) { return e.role === 'admin' || e.role === 'hr'; }
+  // 인사담당은 관리자·다른 인사담당 계정을 바꿀 수 없음(서버도 막음) — 버튼을 숨김
+  function canTouch(e) { return !ME || ME.role === 'admin' || !isPrivileged(e) || e.email === ME.email; }
   var $ = function (id) { return document.getElementById(id); };
   var FIELDS = ['company','status','name_kr','name_en','dept','email','title_kr','title_en','mobile','phone','hire_date','leave_date','role','sort_order','memo'];
   var CSV_COLS = [['company','회사코드'],['name_kr','이름'],['name_en','영문이름'],['dept','부서'],['title_kr','직책'],['title_en','영문직책'],['email','메일'],['mobile','휴대폰'],['phone','전화'],['hire_date','입사일'],['leave_date','퇴사일'],['status','상태'],['role','권한'],['is_sender','발신인'],['sort_order','순서'],['memo','메모']];
@@ -213,7 +219,15 @@
 
   function loadStatus() {
     api('/status').then(function (s) {
-      $('meLabel').textContent = (s.me.nameKr || '') + ' · ' + s.me.email;
+      ME = s.me;
+      $('meLabel').textContent = (s.me.nameKr || '') + ' · ' + s.me.email + ' (' + (s.me.roleName || '') + ')';
+      if (s.me.role === 'hr') {
+        $('pageTitle').textContent = '인사 관리';
+        document.title = '인사 관리 · 다이즈하이미디어 문서 시스템';
+        var domTab = document.querySelector('nav.tabs button[data-tab="dom"]'); if (domTab) domTab.style.display = 'none';
+        $('empForm').elements.role.disabled = true;
+        renderEmployees();
+      }
       var c = {}; (s.counts || []).forEach(function (r) { c[r.status] = r.n; });
       $('status').innerHTML =
         chip(c['재직'] || 0, '재직') + chip(c['휴직'] || 0, '휴직') + chip(c['퇴사'] || 0, '퇴사(차단)') +
@@ -248,13 +262,14 @@
         '<td>' + esc(e.mobile) + '</td>' +
         '<td>' + esc(e.hire_date) + (gone && e.leave_date ? '<div class="muted">퇴사 ' + esc(e.leave_date) + '</div>' : '') + '</td>' +
         '<td><span class="badge b-' + esc(e.status) + '">' + esc(e.status) + '</span></td>' +
-        '<td>' + (e.role === 'admin' ? '<span class="badge b-admin">관리자</span>' : '일반') + '</td>' +
+        '<td>' + (ROLE_BADGE[e.role] || '일반') + '</td>' +
         '<td>' + (e.is_sender ? '✓' : '') + '</td>' +
         '<td>' + loginState(e) + '</td>' +
         '<td class="muted">' + esc(kst(e.last_seen_at)) + '</td>' +
-        '<td class="actions"><button class="btn small" data-edit="' + e.id + '">수정</button> ' +
-        (gone ? '<button class="btn small" data-rehire="' + e.id + '">복직</button>'
-              : '<button class="btn small danger" data-leave="' + e.id + '">퇴사 처리</button>') + '</td></tr>';
+        '<td class="actions">' + (!canTouch(e) ? '<span class="muted">관리자만</span>' :
+        '<button class="btn small" data-edit="' + e.id + '">수정</button> ' +
+        (e.email === (ME && ME.email) ? '' : gone ? '<button class="btn small" data-rehire="' + e.id + '">복직</button>'
+              : '<button class="btn small danger" data-leave="' + e.id + '">퇴사 처리</button>')) + '</td></tr>';
     }).join('');
   }
   function loginState(e) {

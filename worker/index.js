@@ -21,7 +21,10 @@
 import puppeteer from '@cloudflare/puppeteer';
 
 const STATUSES = ['재직', '휴직', '퇴사'];
-const ROLES = ['admin', 'member'];
+const ROLES = ['admin', 'hr', 'member'];
+const ROLE_NAMES = { admin: '관리자', hr: '인사담당', member: '일반' };
+// 관리자: 전부 / 인사담당: 직원 명부(추가·수정·퇴사·삭제·비밀번호 발급)만 — 도메인·권한 지정·관리자/인사담당 계정은 불가
+function canManageStaff(u) { return u && (u.role === 'admin' || u.role === 'hr'); }
 const EMP_FIELDS = ['company', 'email', 'name_kr', 'name_en', 'dept', 'title_kr', 'title_en',
   'mobile', 'phone', 'hire_date', 'leave_date', 'status', 'role', 'is_sender', 'sort_order', 'memo'];
 const SESSION_COOKIE = 'dise_session';
@@ -91,14 +94,15 @@ async function handle(request, env, ctx) {
   if (path === '/api/senders.js') return sendersScript(env);
   if (path === '/api/pdf') return handlePdf(request, env, url);
   if (path.startsWith('/api/admin/')) {
-    if (user.role !== 'admin') return json({ error: '관리자만 사용할 수 있습니다.' }, 403);
+    if (!canManageStaff(user)) return json({ error: '관리자·인사담당만 사용할 수 있습니다.' }, 403);
+    if (user.role !== 'admin' && path.startsWith('/api/admin/domains')) return json({ error: '로그인 허용 도메인은 관리자만 바꿀 수 있습니다.' }, 403);
     return handleAdmin(request, env, url, user);
   }
   if (path.startsWith('/api/')) return json({ error: '없는 API입니다.' }, 404);
 
   // ---- 관리자 페이지 ----
   if (path === '/admin' || path.startsWith('/admin/')) {
-    if (user.role !== 'admin') return htmlPage(403, '관리자 전용', '관리자 페이지는 관리자 권한이 있는 직원만 열 수 있습니다.', '<a href="/">문서 시스템으로 돌아가기</a>');
+    if (!canManageStaff(user)) return htmlPage(403, '관리자 전용', '관리자 페이지는 관리자·인사담당 직원만 열 수 있습니다.', '<a href="/">문서 시스템으로 돌아가기</a>');
   }
 
   // ---- 4) 사이트 파일 ----
@@ -281,7 +285,8 @@ function publicUser(u) {
   return {
     email: u.email, company: u.company, nameKr: u.name_kr, nameEn: u.name_en, dept: u.dept,
     titleKr: u.title_kr, titleEn: u.title_en, mobile: u.mobile, phone: u.phone,
-    status: u.status, role: u.role, isAdmin: u.role === 'admin', logoutUrl: '/logout',
+    status: u.status, role: u.role, roleName: ROLE_NAMES[u.role] || u.role,
+    isAdmin: u.role === 'admin', isHR: u.role === 'hr', canManageStaff: canManageStaff(u), logoutUrl: '/logout',
     passwordUrl: '/account/password'
   };
 }
@@ -387,6 +392,15 @@ async function handlePdf(request, env, url) {
    ------------------------------------------------------------ */
 const EMP_COLUMNS = 'id, company, email, name_kr, name_en, dept, title_kr, title_en, mobile, phone, hire_date, leave_date, status, role, is_sender, sort_order, memo, created_at, updated_at, last_seen_at, must_change_password, locked_until, password_changed_at, (password_hash IS NOT NULL) AS has_password';
 
+/* 인사담당이 할 수 없는 일 — 관리자면 항상 통과('' 반환) */
+function staffGuard(env, user, target, data) {
+  if (user.role === 'admin') return '';
+  if (data && data.role !== undefined && data.role !== (target ? target.role : 'member')) return '권한(관리자·인사담당) 지정은 관리자만 할 수 있습니다.';
+  if (target && target.email !== user.email && (target.role === 'admin' || target.role === 'hr' || adminEmails(env).includes(target.email)))
+    return '관리자·인사담당 계정은 관리자만 바꿀 수 있습니다.';
+  return '';
+}
+
 async function handleAdmin(request, env, url, user) {
   const path = url.pathname.replace(/^\/api\/admin/, '');
   const method = request.method;
@@ -407,6 +421,8 @@ async function handleAdmin(request, env, url, user) {
     const raw = await request.json();
     const data = cleanEmployee(raw, true);
     if (data.error) return json(data, 400);
+    const g = staffGuard(env, user, null, data);
+    if (g) return json({ error: g }, 403);
     const domErr = await domainError(env, data.email);
     if (domErr) return json({ error: domErr }, 400);
     let temp = '';
@@ -433,7 +449,9 @@ async function handleAdmin(request, env, url, user) {
     for (let i = 0; i < rows.length; i++) {
       const data = cleanEmployee(rows[i], true);
       if (data.error) { errors.push((i + 2) + '행: ' + data.error); continue; }
-      const exist = await env.DB.prepare('SELECT id FROM employees WHERE email = ?').bind(data.email).first();
+      const exist = await env.DB.prepare('SELECT id, email, role FROM employees WHERE email = ?').bind(data.email).first();
+      const g = staffGuard(env, user, exist, data);
+      if (g) { errors.push((i + 2) + '행: ' + g); continue; }
       if (exist) {
         const r = await updateEmployee(env, exist.id, data, actor, user);
         if (r.error) errors.push((i + 2) + '행: ' + r.error); else updated++;
@@ -452,9 +470,11 @@ async function handleAdmin(request, env, url, user) {
   let m = path.match(/^\/employees\/(\d+)\/reset-password$/);
   if (m && method === 'POST') {
     const id = Number(m[1]);
-    const emp = await env.DB.prepare('SELECT email, name_kr FROM employees WHERE id = ?').bind(id).first();
+    const emp = await env.DB.prepare('SELECT email, name_kr, role FROM employees WHERE id = ?').bind(id).first();
     if (!emp) return json({ error: '없는 직원입니다.' }, 404);
     if (emp.email === actor) return json({ error: '본인 비밀번호는 "비밀번호 바꾸기"에서 바꿔 주세요.' }, 400);
+    const g = staffGuard(env, user, emp, null);
+    if (g) return json({ error: g }, 403);
     const temp = tempPassword();
     await env.DB.batch([
       env.DB.prepare('UPDATE employees SET password_hash = ?, must_change_password = 1, failed_logins = 0, locked_until = NULL WHERE id = ?').bind(await hashPassword(temp), id),
@@ -468,14 +488,20 @@ async function handleAdmin(request, env, url, user) {
     const id = Number(m[1]);
     const data = cleanEmployee(await request.json(), false);
     if (data.error) return json(data, 400);
+    const target = await env.DB.prepare('SELECT id, email, role FROM employees WHERE id = ?').bind(id).first();
+    if (!target) return json({ error: '없는 직원입니다.' }, 404);
+    const g = staffGuard(env, user, target, data);
+    if (g) return json({ error: g }, 403);
     const res = await updateEmployee(env, id, data, actor, user);
     return res.error ? json(res, 400) : json({ ok: true });
   }
   if (m && method === 'DELETE') {
     const id = Number(m[1]);
-    const emp = await env.DB.prepare('SELECT email, name_kr FROM employees WHERE id = ?').bind(id).first();
+    const emp = await env.DB.prepare('SELECT email, name_kr, role FROM employees WHERE id = ?').bind(id).first();
     if (!emp) return json({ error: '없는 직원입니다.' }, 404);
     if (emp.email === actor) return json({ error: '본인 계정은 삭제할 수 없습니다.' }, 400);
+    const g = staffGuard(env, user, emp, null);
+    if (g) return json({ error: g }, 403);
     if (adminEmails(env).includes(emp.email)) return json({ error: '초기 관리자(ADMIN_EMAILS)는 삭제할 수 없습니다.' }, 400);
     await env.DB.batch([
       env.DB.prepare('DELETE FROM sessions WHERE employee_id = ?').bind(id),
@@ -531,8 +557,8 @@ function cleanEmployee(b, requireEmail) {
   if (d.email !== undefined && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)) return { error: '메일 형식이 올바르지 않습니다: ' + d.email };
   if (d.status !== undefined && !STATUSES.includes(d.status)) return { error: '상태는 재직/휴직/퇴사 중 하나입니다.' };
   if (d.role !== undefined) {
-    if (d.role === '관리자') d.role = 'admin'; if (d.role === '일반') d.role = 'member';
-    if (!ROLES.includes(d.role)) return { error: '권한은 관리자/일반 중 하나입니다.' };
+    if (d.role === '관리자') d.role = 'admin'; if (d.role === '일반') d.role = 'member'; if (d.role === '인사담당') d.role = 'hr';
+    if (!ROLES.includes(d.role)) return { error: '권한은 관리자/인사담당/일반 중 하나입니다.' };
   }
   if (d.is_sender !== undefined) d.is_sender = (d.is_sender === true || d.is_sender === 1 || /^(1|y|yes|o|예|true)$/i.test(String(d.is_sender))) ? 1 : 0;
   if (d.sort_order !== undefined) d.sort_order = parseInt(d.sort_order, 10) || 100;
@@ -550,7 +576,8 @@ async function updateEmployee(env, id, d, actor, user) {
   if (!before) return { error: '없는 직원입니다.' };
   const protectedAdmin = adminEmails(env).includes(before.email);
   if (before.email === user.email || protectedAdmin) {
-    if (d.status === '퇴사' || d.role === 'member') return { error: (protectedAdmin ? '초기 관리자' : '본인 계정') + '은 퇴사·일반 권한으로 바꿀 수 없습니다(잠김 방지).' };
+    if (d.status === '퇴사' || (d.role !== undefined && d.role !== before.role && !(protectedAdmin && d.role === 'admin')))
+      return { error: (protectedAdmin ? '초기 관리자' : '본인 계정') + '은 퇴사 처리나 권한 변경을 할 수 없습니다(잠김 방지).' };
   }
   if (d.email !== undefined && d.email !== before.email) {
     const domErr = await domainError(env, d.email);
