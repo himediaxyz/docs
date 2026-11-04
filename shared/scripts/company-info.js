@@ -139,6 +139,36 @@ DISE.companies = {
     logoRatio: 108 / 108,
     badgeColor: '#180E1C'                // AXIS다크
     // TODO: 주소·전화·이메일 확정되면 추가
+  },
+
+  /* ---- 2026-11-04 추가: 로고(SVG/AI)·브랜드 색·주소 등은 받는 대로 채움 ----
+     logoMark가 없으면 포털 카드는 회사명 글자로, 문서 헤더는 회사명 텍스트로 나옵니다.
+     badgeColor는 브랜드 색을 받기 전 임시 무채색입니다. */
+  hra: {
+    nameKr: '헤이치알에이',
+    nameEn: 'HRA',
+    docNoPrefix: 'HRA',
+    lhShowName: true,
+    badgeColor: '#4A5568'                // 임시(브랜드 색 받으면 교체)
+    // TODO: logoMark·logoRatio·주소·전화·이메일·사업자 정보
+  },
+
+  haetteure: {
+    nameKr: '제주 햇뜨르',
+    nameEn: 'Jeju Haetteure',
+    docNoPrefix: 'HTR',
+    lhShowName: true,
+    badgeColor: '#5A6B5D'                // 임시(브랜드 색 받으면 교체)
+    // TODO: logoMark·logoRatio·주소·전화·이메일·사업자 정보
+  },
+
+  'ssg-scholarship': {
+    nameKr: '창업지장 신숭겸 장학재단',
+    nameEn: 'SSG Scholarship',           // 공식 영문명 없음 — 사용자 지정 표기
+    docNoPrefix: 'SSG',
+    lhShowName: true,
+    badgeColor: '#5B5470'                // 임시(브랜드 색 받으면 교체)
+    // TODO: logoMark·logoRatio·주소·전화·이메일·사업자 정보
   }
 };
 

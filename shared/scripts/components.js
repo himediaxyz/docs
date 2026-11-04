@@ -519,6 +519,10 @@ DISE.components = {
     // 회사명·문서 종류 태그를 하나도 안 보여준다면 이 텍스트 블록
     // 자체를 아예 만들지 않습니다 — 빈 div가 flex 정렬에 영향을 주지
     // 않도록.
+    // 로고 파일이 아직 없는 회사(2026-11-04 추가한 HRA 등)는 로고 자리 대신
+    // 회사명 글자를 보여줍니다 — 깨진 이미지가 인쇄되지 않도록.
+    var hasLogo = !!(c.docLogo || c.logoMark);
+    if (!hasLogo) showCompanyName = true;
     var showTextBlock = showCompanyName || docTypeTag;
     var textBlockHtml = showTextBlock ?
       '<div class="doc-header-text">' +
@@ -529,9 +533,9 @@ DISE.components = {
 
     target.innerHTML =
       '<div class="doc-header-band">' +
-        '<div class="' + logoClass + '" style="width:' + logoWidthPx + 'px;height:' + logoHeightPx + 'px;">' +
+        (hasLogo ? '<div class="' + logoClass + '" style="width:' + logoWidthPx + 'px;height:' + logoHeightPx + 'px;">' +
           '<img src="' + logoUrl + '" alt="' + c.nameKr + ' 로고">' +
-        '</div>' +
+        '</div>' : '') +
         textBlockHtml +
       '</div>';
   },
