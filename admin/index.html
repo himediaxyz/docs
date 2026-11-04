@@ -48,10 +48,10 @@
   .b-admin { background:#e8eefc; color:var(--accent); }
   .b-hr { background:#f1ebfa; color:#6a3fa0; }
   .name-cell { display:flex; align-items:center; gap:9px; }
-  .thumb { width:32px; height:32px; border-radius:50%; object-fit:cover; background:#e9ecf3; flex:none; }
+  .thumb { width:32px; height:32px; border-radius:50%; object-fit:cover; object-position:center 15%; background:#e9ecf3; flex:none; }
   .thumb-none { display:inline-flex; align-items:center; justify-content:center; color:#9aa1b0; font-size:13px; font-weight:700; }
   .photo-row { grid-column:1 / -1; display:flex; gap:16px; align-items:center; }
-  .photo-box { width:96px; height:120px; border-radius:10px; background:#eef0f5 center/cover no-repeat; border:1px solid var(--line); flex:none; display:flex; align-items:center; justify-content:center; color:#9aa1b0; font-size:12.5px; }
+  .photo-box { width:96px; height:128px; border-radius:10px; background:#eef0f5 center/contain no-repeat; border:1px solid var(--line); flex:none; display:flex; align-items:center; justify-content:center; color:#9aa1b0; font-size:12.5px; }
   .photo-row .muted { margin:6px 0 0; }
   .muted { color:var(--sub); font-size:12.5px; }
   .empty { padding:40px; text-align:center; color:var(--sub); }
@@ -141,7 +141,7 @@
           <button type="button" class="btn small" id="btnPhoto">사진 선택</button>
           <button type="button" class="btn small danger" id="btnPhotoDel">사진 삭제</button>
           <input type="file" id="photoFile" accept="image/jpeg,image/png,image/webp" hidden>
-          <p class="muted">정면 상반신 사진을 권장합니다. 큰 사진도 자동으로 줄여서 저장합니다(JPG·PNG).<br>저장 버튼을 눌러야 반영됩니다.</p>
+          <p class="muted">규격: <b>600×800 PNG, 배경 투명</b>. 크기가 달라도 자동으로 맞춥니다(자르지 않고 남는 곳은 투명).<br>저장 버튼을 눌러야 반영됩니다.</p>
         </div>
       </div>
       <label>회사 <select name="company" id="empCompany"></select></label>
@@ -339,28 +339,32 @@
   var pendingPhoto = null, deletePhoto = false, previewUrl = '';
   function setPhotoBox(src) {
     var box = $('photoBox');
-    box.style.backgroundImage = src ? 'url("' + src + '")' : '';
+    box.style.backgroundImage = src ? 'url("' + src + '"), repeating-conic-gradient(#e3e6ee 0 25%, #fff 0 50%)' : '';
+    box.style.backgroundSize = src ? 'contain, 16px 16px' : '';
+    box.style.backgroundRepeat = src ? 'no-repeat, repeat' : '';
     box.textContent = src ? '' : '사진 없음';
     $('btnPhotoDel').style.display = src ? '' : 'none';
   }
-  // 긴 변 1200px JPEG로 줄이기(1.4MB 넘으면 화질을 낮춰 다시)
+  // 회사 규격: 600×800 PNG(배경 투명 유지). 비율이 다르면 자르지 않고 가운데에 맞춘 뒤 남는 곳은 투명.
+  var PHOTO_W = 600, PHOTO_H = 800;
   function shrinkImage(file) {
     return new Promise(function (resolve, reject) {
       var url = URL.createObjectURL(file), img = new Image();
       img.onload = function () {
-        var max = 1200, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, max / Math.max(w, h));
-        var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
-        var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+        var w = img.naturalWidth, h = img.naturalHeight, k = Math.min(PHOTO_W / w, PHOTO_H / h);
+        var dw = Math.round(w * k), dh = Math.round(h * k);
+        var c = document.createElement('canvas'); c.width = PHOTO_W; c.height = PHOTO_H;
+        var g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+        g.drawImage(img, Math.round((PHOTO_W - dw) / 2), Math.round((PHOTO_H - dh) / 2), dw, dh);
         URL.revokeObjectURL(url);
-        (function tryQ(q) {
-          c.toBlob(function (blob) {
-            if (!blob) return reject(new Error('사진을 처리하지 못했습니다.'));
-            if (blob.size > 1.4 * 1024 * 1024 && q > 0.5) return tryQ(q - 0.1);
-            resolve(blob);
-          }, 'image/jpeg', q);
-        })(0.88);
+        c.toBlob(function (blob) {
+          if (!blob) return reject(new Error('사진을 처리하지 못했습니다.'));
+          if (blob.size > 1.45 * 1024 * 1024) return reject(new Error('사진을 600×800 PNG로 바꾸니 1.5MB가 넘습니다. 배경을 지운(투명) 사진을 쓰거나 무늬가 적은 사진으로 다시 해 주세요.'));
+          blob.note = (w === PHOTO_W && h === PHOTO_H) ? '' : ('원본 ' + w + '×' + h + ' → 600×800으로 맞춤');
+          resolve(blob);
+        }, 'image/png');
       };
-      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('이 사진 형식은 열 수 없습니다. JPG나 PNG로 저장해서 올려 주세요(아이폰 HEIC는 안 됨).')); };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('이 사진 형식은 열 수 없습니다. PNG나 JPG로 저장해서 올려 주세요(아이폰 HEIC는 안 됨).')); };
       img.src = url;
     });
   }
@@ -371,12 +375,13 @@
       pendingPhoto = blob; deletePhoto = false;
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       previewUrl = URL.createObjectURL(blob); setPhotoBox(previewUrl);
+      if (blob.note) toast(blob.note);
     }).catch(function (x) { toast(x.message); });
   });
   $('btnPhotoDel').addEventListener('click', function () { pendingPhoto = null; deletePhoto = true; setPhotoBox(''); });
   function savePhoto(id) {
     if (pendingPhoto) {
-      return fetch('/api/admin/employees/' + id + '/photo', { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: pendingPhoto, credentials: 'same-origin' })
+      return fetch('/api/admin/employees/' + id + '/photo', { method: 'PUT', headers: { 'Content-Type': 'image/png' }, body: pendingPhoto, credentials: 'same-origin' })
         .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error('사진: ' + (j.error || r.status)); }); });
     }
     if (deletePhoto && editingId) return api('/employees/' + id + '/photo', { method: 'DELETE' });
