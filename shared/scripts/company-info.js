@@ -146,11 +146,16 @@ DISE.companies = {
      badgeColor는 브랜드 색을 받기 전 임시 무채색입니다. */
   hra: {
     nameKr: '헤이치알에이',
-    nameEn: 'HRA',
+    nameEn: 'HRA',                       // 로고 문구: HJ.KIM & R2V ASSOCIATION
+    logoMark: 'hra/hra-mark.svg',        // 단색(노랑 부분은 투명으로 뚫음) — AI 원본에서 변환
+    docLogo: 'hra/hra-mark-color.svg',   // 문서 헤더: 원색 엠블럼
+    logoAi: 'hra/HRA_Logo_Original.ai',
+    logoRatio: 1,                        // 원형 엠블럼
     docNoPrefix: 'HRA',
     lhShowName: true,
-    badgeColor: '#4A5568'                // 임시(브랜드 색 받으면 교체)
-    // TODO: logoMark·logoRatio·주소·전화·이메일·사업자 정보
+    badgeColor: '#DA251D',               // HRA 메인(빨강). 서브 #FFFF01(노랑)
+    brandSub: '#FFFF01'
+    // TODO: 주소·전화·이메일·사업자 정보
   },
 
   haetteure: {
