@@ -61,6 +61,11 @@ async function handle(request, env, ctx) {
   if (path === '/api/setup' && request.method === 'POST') return apiSetup(request, env);
   if (path === '/logout' || path === '/api/logout') return logout(request, env);
   if (path === '/favicon.ico') return new Response(null, { status: 204 });
+  // 로그인 화면 로고 티커: 공개 목록과 각 회사 단색 로고(-mark.svg)만 로그인 없이 허용
+  if (request.method === 'GET' && (path === '/login-logos.json' || /^\/shared\/assets\/logos\/[a-z0-9-]+\/[a-z0-9-]+-mark\.svg$/.test(path))) {
+    const r = await env.ASSETS.fetch(request);
+    const out = new Response(r.body, r); out.headers.set('Cache-Control', 'public, max-age=3600'); return out;
+  }
   if (path.startsWith('/_worker') || path === '/_routes.json') return new Response('Not found', { status: 404 });
 
   // ---- 1) 로그인 확인 ----
@@ -651,12 +656,28 @@ const AUTH_CSS = `*{box-sizing:border-box}body{margin:0;min-height:100vh;display
 .brand{font-size:12px;letter-spacing:.18em;color:#5b6476;margin:0 0 6px}h1{font-size:21px;margin:0 0 22px;color:#0b234f}
 label{display:block;font-size:13px;color:#5b6476;margin:14px 0 6px}input{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1px solid #cfd4df;border-radius:9px}
 input:focus{outline:2px solid #2f5fd0;outline-offset:-1px;border-color:#2f5fd0}button{width:100%;margin-top:22px;font:inherit;font-size:15px;font-weight:700;padding:12px;border:0;border-radius:9px;background:#0b234f;color:#fff;cursor:pointer}
-button[disabled]{opacity:.6}.err{color:#c0392b;font-size:13.5px;margin:14px 0 0;min-height:1em;line-height:1.5}.hint{font-size:12.5px;color:#7a8191;line-height:1.6;margin:16px 0 0}a{color:#2f5fd0}`;
+button[disabled]{opacity:.6}
+.logos{position:relative;height:40px;overflow:hidden;margin:2px 0 16px;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 22%,#000 78%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 22%,#000 78%,transparent 100%)}
+.logos .track{display:flex;align-items:center;height:100%;width:max-content;animation:dise-tick 26s linear infinite}
+.logos .lg{flex:none;margin-right:34px;background:#212B43;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.logos.single{-webkit-mask-image:none;mask-image:none}
+.logos.single .track{animation:none;width:100%;justify-content:center}
+.logos.single .lg{margin-right:0}
+.logos:hover .track{animation-play-state:paused}
+@keyframes dise-tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.logos .track{animation:none}}.err{color:#c0392b;font-size:13.5px;margin:14px 0 0;min-height:1em;line-height:1.5}.hint{font-size:12.5px;color:#7a8191;line-height:1.6;margin:16px 0 0}a{color:#2f5fd0}`;
 
-function authShell(title, inner, script) {
+function authShell(title, inner, script, onlyCompany) {
   return new Response(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>${esc(title)} · 다이즈하이미디어 문서 시스템</title><style>${AUTH_CSS}</style></head>
-<body><div class="box"><p class="brand">DISEHIMEDIA GROUP</p>${inner}</div><script>
+<body><div class="box"><div class="logos${onlyCompany ? ' single' : ''}" id="logos" aria-hidden="true"><div class="track" id="logoTrack"></div></div><p class="brand">DISEHIMEDIA GROUP</p>${inner}</div><script>
+(function(){var only=${JSON.stringify(onlyCompany || '')};fetch('/login-logos.json').then(function(r){return r.ok?r.json():[];}).then(function(list){
+  if(only)list=list.filter(function(c){return c.key===only;});
+  if(!list.length){document.getElementById('logos').style.display='none';return;}
+  var H=only?34:24;function one(c){var h=Math.round(H*Math.min(c.scale||1,1.4));var w=Math.round(h*(c.ratio||1));
+    return '<span class="lg" title="'+c.name+'" style="--m:url('+c.mark+');width:'+w+'px;height:'+h+'px"></span>';}
+  var html=list.map(one).join('');document.getElementById('logoTrack').innerHTML=only?html:html+html;
+}).catch(function(){document.getElementById('logos').style.display='none';});})();
 function post(u,b){return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(b)}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok)throw new Error(j.error||'요청 실패');return j;});});}
 ${script}</script></body></html>`, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
@@ -696,7 +717,7 @@ ${forced ? '<p class="hint" style="margin:0 0 6px;color:#b26a00">처음 로그�
 <p class="hint">${forced ? '' : '<a href="/">문서 시스템으로</a> · '}<a href="/logout">로그아웃</a></p>`,
   `document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();var err=document.getElementById('err');err.textContent='';
 var p=document.getElementById('pw').value;if(p!==document.getElementById('pw2').value){err.textContent='새 비밀번호가 서로 다릅니다.';return;}
-var b=document.getElementById('btn');b.disabled=true;post('/api/password',{current:document.getElementById('cur').value,password:p}).then(function(j){location.href=j.next||'/';}).catch(function(x){err.textContent=x.message;b.disabled=false;});});`);
+var b=document.getElementById('btn');b.disabled=true;post('/api/password',{current:document.getElementById('cur').value,password:p}).then(function(j){location.href=j.next||'/';}).catch(function(x){err.textContent=x.message;b.disabled=false;});});`, user.company);
 }
 
 /* ------------------------------------------------------------
