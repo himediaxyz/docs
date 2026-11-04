@@ -203,7 +203,13 @@ DISE.companies = {
     noWhiteLogo: true,                   // 같은 이유로 흰색 단색 다운로드 없음
     docNoPrefix: 'SSG',
     lhShowName: true,
-    // lhDesign: 'a',                    // 레터헤드 시안 확정 시 a|b|c (미리보기 ?design=)
+    lhDesign: 'a',                       // 레터헤드 기본: A안 "정통 증서형"(2026-11-04 — A·B·C 모두 사용)
+    lhDesignLabel: '정통 증서형',
+    lhDesigns: [
+      { key: 'b', label: '기관 공문형', desc: '왼쪽 심볼·재단명, 청남 선과 적갈 포인트, 청남 푸터 띠의 실무 공문 디자인입니다.' },
+      { key: 'c', label: '단정한 테두리', desc: '청남·적갈 가는 이중 테두리에 가운데 심볼을 둔 단정한 디자인입니다.' }
+    ],
+    // docStyle: 'ssg-a',                // 송장·견적서 — 샘플 확인 후 적용(미리보기 ?docstyle=ssg-a)
     badgeColor: '#A14341',               // 장학재단 메인(적갈색). 서브 #40609B(청남)
     brandSub: '#40609B'
     // TODO: 주소·전화·이메일·사업자 정보

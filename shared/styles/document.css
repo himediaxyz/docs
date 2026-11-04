@@ -471,3 +471,32 @@ body[data-doc-style="htr-a"] .page-footer::before{
 }
 body[data-doc-style="htr-a"] .doc-footer-band{background:transparent;padding:12px 40px 14px;}
 body[data-doc-style="htr-a"] .doc-footer-band .l1{color:var(--ht-ink);}
+
+
+/* 창업지장 신숭겸 장학재단 — 레터헤드 A안 "정통 증서형"과 같은 머리말(샘플, ?docstyle=ssg-a) */
+body[data-doc-style="ssg-a"]{--ssg-red:#A14341;--ssg-navy:#40609B;--ssg-navy-d:#2c4570;--ssg-ink:#1f2430;
+  --ssg-serif:'Noto Serif KR','Nanum Myeongjo','Batang',serif;}
+body[data-doc-style="ssg-a"] .doc-header-band{
+  flex-direction:column;justify-content:center;align-items:center;gap:0;text-align:center;
+  background:transparent;padding:34px 50px 8px;min-height:0;
+}
+body[data-doc-style="ssg-a"] .doc-logo{order:0;margin-bottom:10px;}
+body[data-doc-style="ssg-a"] .doc-header-text{display:none;}
+body[data-doc-style="ssg-a"] .doc-header-band::before{
+  content:'창업지장 신숭겸 장학재단';order:1;font:700 21px/1.3 var(--ssg-serif);letter-spacing:4px;padding-left:4px;color:var(--ssg-ink);
+}
+body[data-doc-style="ssg-a"] .doc-header-band::after{
+  content:'SSG SCHOLARSHIP';order:2;margin-top:5px;font:600 10.5px var(--ssg-serif);letter-spacing:5px;padding-left:5px;color:var(--ssg-navy);
+}
+body[data-doc-style="ssg-a"] .page-header::after{
+  content:'◆';display:block;margin:10px 50px 0;text-align:center;color:var(--ssg-red);font-size:9px;line-height:10px;
+  background:
+    linear-gradient(var(--ssg-navy),var(--ssg-navy)) left 3px/calc(50% - 14px) 1px no-repeat,
+    linear-gradient(var(--ssg-navy),var(--ssg-navy)) right 3px/calc(50% - 14px) 1px no-repeat,
+    linear-gradient(var(--ssg-red),var(--ssg-red)) left 6px/calc(50% - 14px) 1px no-repeat,
+    linear-gradient(var(--ssg-red),var(--ssg-red)) right 6px/calc(50% - 14px) 1px no-repeat;
+}
+body[data-doc-style="ssg-a"] .inv-title,
+body[data-doc-style="ssg-a"] .q-title{font-family:var(--ssg-serif);font-weight:700;color:var(--ssg-ink);}
+body[data-doc-style="ssg-a"] .doc-footer-band{background:transparent;border-top:1px solid var(--ssg-navy);margin:0 50px;padding:12px 0 18px;}
+body[data-doc-style="ssg-a"] .doc-footer-band .l1{color:var(--ssg-navy-d);}
